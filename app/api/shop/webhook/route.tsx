@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { stripe } from "../../../../lib/stripe";
 import { getSupabaseAdmin } from "../../../../lib/supabaseAdmin";
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 function escapeHtml(value: unknown) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")

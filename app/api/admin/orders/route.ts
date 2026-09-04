@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Verify admin session
 async function requireAdmin() {
   const adminEmail = process.env.ADMIN_EMAIL ?? "";

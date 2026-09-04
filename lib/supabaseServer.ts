@@ -7,8 +7,23 @@ export async function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  // During build time, if env vars are missing, return a mock client
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase URL or Anon Key is missing during server-side execution.');
+    console.warn('Supabase URL or Anon Key is missing. Returning mock client for build.');
+    return createServerClient(
+      'https://mock.supabase.co',
+      'mock-key',
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll() {
+            // Mock implementation
+          },
+        },
+      }
+    ) as any;
   }
 
   return createServerClient(

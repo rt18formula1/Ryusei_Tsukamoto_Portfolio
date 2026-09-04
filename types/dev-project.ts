@@ -14,6 +14,7 @@ export interface DevProjectInfoItem {
   value: string | string[];
   type: DevProjectInfoValueType;
   serviceIconUrl?: string;
+  serviceName?: string;
   displayUrl?: string; 
 }
 
@@ -47,6 +48,7 @@ export interface DevProjectLink {
   title: "Website" | "GitHub" | string;
   description: string;
   url: string;
+  displayUrl?: string; // For UI display (shortened URL)
   buttonLabel: string;
   order: number;
 }
@@ -56,6 +58,7 @@ export interface DeveloperProject {
   projectName: string;
   shortDescription: string;
   mainVisualUrl: string;
+  mainVisualFocalPoint?: { x: number; y: number }; // 0-1 range for future focal point support
   information: DevProjectInformation[];
   details: DevProjectDetailBlock[];
   gallery: DevProjectGalleryItem[];

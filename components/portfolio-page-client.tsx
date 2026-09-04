@@ -29,6 +29,7 @@ export default function PortfolioPageClient({
   const [breadcrumbs, setBreadcrumbs] = useState<Crumb[]>([
     { id: null, title: language === "ja" ? "ホーム" : "Home" }
   ]);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const currentAlbumId = breadcrumbs[breadcrumbs.length - 1]?.id ?? null;
 
@@ -52,6 +53,15 @@ export default function PortfolioPageClient({
     const itemIds = new Set(mapping.filter(m => m.album_id === currentAlbumId).map(m => m.portfolio_id));
     return portfolio.filter(p => itemIds.has(p.id));
   }, [portfolio, currentAlbumId, mapping, activeTab]);
+
+  const filteredDevProjects = useMemo(() => {
+    if (!searchQuery.trim()) return devProjects;
+    const query = searchQuery.toLowerCase();
+    return devProjects.filter(project =>
+      project.projectName.toLowerCase().includes(query) ||
+      project.shortDescription.toLowerCase().includes(query)
+    );
+  }, [devProjects, searchQuery]);
 
   const title = language === "ja" ? "ポートフォリオ" : "Portfolio";
 
@@ -178,8 +188,20 @@ export default function PortfolioPageClient({
             </h2>
             
             {activeTab === "dev_projects" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-10 mb-20">
-                {devProjects.length > 0 ? devProjects.map((project) => (
+              <>
+                {/* Search bar */}
+                <div className="mb-8">
+                  <input
+                    type="text"
+                    placeholder={language === "ja" ? "プロジェクトを検索..." : "Search projects..."}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-4 py-3 border border-black/10 rounded-xl text-sm font-medium focus:outline-none focus:border-black/30 transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-10 mb-20">
+                {filteredDevProjects.length > 0 ? filteredDevProjects.map((project) => (
                   <div
                     key={project.id}
                     onClick={() => setSelectedDevProject(project)}
@@ -204,10 +226,20 @@ export default function PortfolioPageClient({
                       </p>
                     </div>
                   </div>
-                )) : (
-                  <p className="text-gray-400 font-bold italic col-span-full">No developer projects found.</p>
-                )}
+                )) : null}
               </div>
+
+              {filteredDevProjects.length === 0 && (
+                <div className="text-center py-20">
+                  <p className="text-gray-400 font-medium">
+                    {searchQuery
+                      ? (language === "ja" ? "検索結果がありません" : "No results found")
+                      : (language === "ja" ? "開発プロジェクトがありません" : "No developer projects yet")
+                    }
+                  </p>
+                </div>
+              )}
+              </>
             )}
             
             {selectedDevProject && (

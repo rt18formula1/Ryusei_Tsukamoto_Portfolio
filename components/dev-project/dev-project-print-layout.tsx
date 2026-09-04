@@ -242,13 +242,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
         <hr style={{ border: "none", borderTop: "0.5px solid #ccc", margin: "6mm 0" }} />
 
         {/* ===== PROJECT INFORMATION ===== */}
-        <div style={{ marginBottom: "10mm", breakInside: "avoid", pageBreakInside: "avoid" }}>
-          {/* Ensure GENERAL category stays on page 1 */}
-          <style dangerouslySetInnerHTML={{
-            __html: `
-              .general-category { break-inside: avoid; page-break-inside: avoid; }
-            `
-          }} />
+        <div style={{ marginBottom: "12mm", breakInside: "avoid", pageBreakInside: "avoid" }}>
           <p
             style={{
               fontSize: "7px",
@@ -256,7 +250,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
               letterSpacing: "0.25em",
               textTransform: "uppercase",
               color: "#555",
-              marginBottom: "4mm",
+              marginBottom: "5mm",
             }}
           >
             PROJECT INFORMATION
@@ -265,12 +259,11 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
           {sortedInformation.map((info, idx) => (
             <div
               key={idx}
-              className={info.category === "GENERAL" ? "general-category" : ""}
-              style={{ marginBottom: "5mm", breakInside: "avoid", pageBreakInside: "avoid" }}
+              style={{ marginBottom: "6mm", breakInside: "avoid", pageBreakInside: "avoid" }}
             >
               {/* Category header with thin rule */}
               {idx > 0 && (
-                <hr style={{ border: "none", borderTop: "0.5px solid #e0e0e0", margin: "4mm 0 4mm 0" }} />
+                <hr style={{ border: "none", borderTop: "0.5px solid #e0e0e0", margin: "5mm 0 5mm 0" }} />
               )}
               <p
                 style={{
@@ -279,7 +272,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                   letterSpacing: "0.22em",
                   textTransform: "uppercase",
                   color: "#888",
-                  marginBottom: "3mm",
+                  marginBottom: "3.5mm",
                 }}
               >
                 {info.category}
@@ -291,15 +284,16 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                     <tr
                       key={itemIdx}
                       style={{
-                        borderBottom: info.items.length > 4 ? "0.5px solid #f0f0f0" : "none",
+                        borderBottom: info.items.length > 4 ? "0.5px solid #f5f5f5" : "none",
                       }}
                     >
                       <td
                         style={{
                           fontSize: "8.5px",
-                          color: "#777",
-                          padding: "1.5mm 0",
+                          color: "#666",
+                          padding: "2mm 0",
                           width: "40%",
+                          fontWeight: 500,
                         }}
                       >
                         {item.label}
@@ -309,7 +303,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                           fontSize: "8.5px",
                           fontWeight: 700,
                           color: "#000",
-                          padding: "1.5mm 0",
+                          padding: "2mm 0",
                           textAlign: "right",
                         }}
                       >
@@ -317,6 +311,8 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                           ? item.value.join(" / ")
                           : item.type === "URL"
                           ? (item.displayUrl || (item.value as string))
+                          : item.type === "Service"
+                          ? (item.serviceName || (item.value as string))
                           : (item.value as string)}
                       </td>
                     </tr>
@@ -330,8 +326,8 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
         {/* ===== PROJECT DETAILS ===== */}
         {project.details.length > 0 && (
           <>
-            <hr style={{ border: "none", borderTop: "0.5px solid #ccc", margin: "6mm 0" }} />
-            <div style={{ marginBottom: "10mm" }}>
+            <hr style={{ border: "none", borderTop: "0.5px solid #ccc", margin: "8mm 0" }} />
+            <div style={{ marginBottom: "12mm" }}>
               <p
                 style={{
                   fontSize: "7px",
@@ -339,7 +335,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                   letterSpacing: "0.25em",
                   textTransform: "uppercase",
                   color: "#555",
-                  marginBottom: "4mm",
+                  marginBottom: "5mm",
                 }}
               >
                 PROJECT DETAILS
@@ -352,8 +348,8 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
         {/* ===== GALLERY ===== */}
         {project.gallery.length > 0 && (
           <>
-            <hr style={{ border: "none", borderTop: "0.5px solid #ccc", margin: "6mm 0" }} />
-            <div style={{ marginBottom: "10mm" }}>
+            <hr style={{ border: "none", borderTop: "0.5px solid #ccc", margin: "8mm 0" }} />
+            <div style={{ marginBottom: "12mm" }}>
               <p
                 style={{
                   fontSize: "7px",
@@ -361,7 +357,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                   letterSpacing: "0.25em",
                   textTransform: "uppercase",
                   color: "#555",
-                  marginBottom: "4mm",
+                  marginBottom: "5mm",
                 }}
               >
                 GALLERY
@@ -370,7 +366,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
-                  gap: "4mm",
+                  gap: "5mm",
                 }}
               >
                 {project.gallery.sort((a, b) => a.order - b.order).map(item => (
@@ -416,7 +412,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
         {/* ===== LINKS ===== */}
         {project.links.length > 0 && (
           <>
-            <hr style={{ border: "none", borderTop: "0.5px solid #ccc", margin: "6mm 0" }} />
+            <hr style={{ border: "none", borderTop: "0.5px solid #ccc", margin: "8mm 0" }} />
             <div>
               <p
                 style={{
@@ -425,7 +421,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                   letterSpacing: "0.25em",
                   textTransform: "uppercase",
                   color: "#555",
-                  marginBottom: "4mm",
+                  marginBottom: "5mm",
                 }}
               >
                 LINKS
@@ -439,7 +435,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                     display: "flex",
                     alignItems: "flex-start",
                     justifyContent: "space-between",
-                    marginBottom: "5mm",
+                    marginBottom: "6mm",
                     breakInside: "avoid",
                     pageBreakInside: "avoid",
                     borderLeft: "2.5px solid #000",
@@ -468,7 +464,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                 <div
                   key={link.id}
                   style={{
-                    marginBottom: "4mm",
+                    marginBottom: "5mm",
                     breakInside: "avoid",
                     pageBreakInside: "avoid",
                     borderLeft: "1px solid #ccc",

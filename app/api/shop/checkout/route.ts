@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "../../../../lib/supabaseAdmin";
 import { createClient } from "../../../../lib/supabaseServer";
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 function cleanText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";

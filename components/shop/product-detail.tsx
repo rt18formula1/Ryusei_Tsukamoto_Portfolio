@@ -26,7 +26,7 @@ const TYPE_LABELS: Record<string, string> = {
 export function ProductDetail({ product }: { product: Product }) {
   const { addItem, items } = useCart();
   const [added, setAdded] = useState(false);
-  const { language: lang } = useLanguage();
+  const { language: lang, setLanguage } = useLanguage();
 
   useEffect(() => {
   }, []);
@@ -79,8 +79,7 @@ export function ProductDetail({ product }: { product: Product }) {
             <button
               onClick={() => {
                 const next = lang === "ja" ? "en" : "ja";
-                setLang(next);
-                localStorage.setItem("language", next);
+                setLanguage(next);
               }}
               className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black border border-black/10 rounded-full px-3 py-1 transition-colors"
             >

@@ -513,6 +513,49 @@ const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
           </div>
         </section>
 
+        {/* Dev Projects Section */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between border-b border-black/10 pb-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold">Developer Projects</h2>
+              <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">Static / Mock</span>
+            </div>
+            <a
+              href="/portfolio"
+              className="text-sm font-bold underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View Portfolio →
+            </a>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-sm text-amber-800">
+            <p className="font-bold mb-1">📋 Static Data Mode</p>
+            <p>Developer Projects are currently managed as static data in <code className="bg-amber-100 px-1 rounded font-mono">lib/dev-project/mock.ts</code>. A Supabase table (<code className="bg-amber-100 px-1 rounded font-mono">dev_projects</code>) can be added later to enable dynamic management from this panel.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[{ id: "proj-001", name: "F1 SNS Post Automator", url: "/portfolio/dev/proj-001", printUrl: "/portfolio/dev/proj-001/print" }].map((proj) => (
+              <div key={proj.id} className="border border-black/10 rounded-2xl p-5 bg-white hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="font-black text-sm">{proj.name}</p>
+                    <p className="text-xs text-gray-400 font-mono mt-1">ID: {proj.id}</p>
+                  </div>
+                  <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full">Active</span>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <a href={proj.url} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs font-bold border border-black/20 rounded-lg py-2 hover:bg-black hover:text-white transition-colors">
+                    View Detail
+                  </a>
+                  <a href={proj.printUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs font-bold border border-black/20 rounded-lg py-2 hover:bg-black hover:text-white transition-colors">
+                    Print / PDF
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* Shop Management Section */}
         <section className="space-y-6">
           <div className="flex items-center justify-between border-b border-black/10 pb-4">

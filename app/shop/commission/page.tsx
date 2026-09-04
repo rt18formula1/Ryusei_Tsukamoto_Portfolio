@@ -52,7 +52,7 @@ const t = {
 
 export default function CommissionPage() {
   const router = useRouter();
-  const { language: lang } = useLanguage();
+  const { language: lang, setLanguage: setLang } = useLanguage();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

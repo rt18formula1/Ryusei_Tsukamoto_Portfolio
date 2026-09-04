@@ -53,7 +53,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/shop";
-  const { language: lang } = useLanguage();
+  const { language: lang, setLanguage: setLang } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);

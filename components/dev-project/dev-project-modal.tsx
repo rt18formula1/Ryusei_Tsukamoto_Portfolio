@@ -1,0 +1,325 @@
+"use client";
+
+import { useEffect, useCallback } from "react";
+import { DeveloperProject, DevProjectDetailBlock } from "@/types/dev-project";
+import Link from "next/link";
+import { X, ExternalLink, Printer } from "lucide-react";
+
+interface DevProjectModalProps {
+  project: DeveloperProject;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalProps) {
+  // Keyboard handler
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose]
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Lock scroll
+    const scrollY = window.scrollY;
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+
+    // Keyboard
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      // Restore scroll position
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollY);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, handleKeyDown]);
+
+  if (!isOpen) return null;
+
+  const renderBlock = (block: DevProjectDetailBlock) => {
+    switch (block.type) {
+      case "Section":
+        return (
+          <h3
+            key={block.id}
+            className="text-xl font-black mt-12 mb-4 text-black tracking-tight"
+          >
+            {block.content}
+          </h3>
+        );
+      case "Text":
+        return (
+          <p
+            key={block.id}
+            className="text-[15px] text-gray-700 leading-relaxed mb-6 whitespace-pre-wrap"
+          >
+            {block.content}
+          </p>
+        );
+      case "Image":
+        return (
+          <figure key={block.id} className="mb-8">
+            <div className="rounded-xl overflow-hidden bg-gray-100 border border-black/5">
+              <img
+                src={block.imageUrl}
+                alt={block.imageCaption || ""}
+                className="w-full h-auto"
+              />
+            </div>
+            {block.imageCaption && (
+              <figcaption className="text-xs text-gray-500 mt-2 text-center font-medium">
+                {block.imageCaption}
+              </figcaption>
+            )}
+          </figure>
+        );
+      case "ImageText":
+        return (
+          <div
+            key={block.id}
+            className="flex flex-col md:flex-row gap-6 mb-8 items-start"
+          >
+            <div className="md:w-1/2 w-full rounded-xl overflow-hidden bg-gray-100">
+              <img
+                src={block.imageUrl}
+                alt=""
+                className="w-full h-full object-cover"
+                style={{ maxHeight: "280px" }}
+              />
+            </div>
+            <div className="md:w-1/2">
+              <p className="text-[15px] text-gray-700 leading-relaxed">{block.text}</p>
+            </div>
+          </div>
+        );
+      case "Highlight":
+        return (
+          <div
+            key={block.id}
+            className="bg-black text-white px-7 py-6 rounded-2xl my-8 font-semibold text-base leading-relaxed border-l-4 border-yellow-400"
+          >
+            {block.content}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const websiteLink = project.links.find((l) => l.title.toLowerCase() === "website");
+  const githubLink = project.links.find((l) => l.title.toLowerCase() === "github");
+  const otherLinks = project.links.filter(
+    (l) => l.title.toLowerCase() !== "website" && l.title.toLowerCase() !== "github"
+  );
+  const orderedLinks = [
+    ...(websiteLink ? [websiteLink] : []),
+    ...(githubLink ? [githubLink] : []),
+    ...otherLinks,
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start md:items-center justify-center md:p-6 bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={project.projectName}
+    >
+      <div
+        className="bg-white w-full h-full md:h-auto md:max-h-[92vh] md:rounded-3xl overflow-y-auto shadow-2xl relative"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: "1100px" }}
+      >
+        {/* Top action bar */}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 backdrop-blur-sm border-b border-black/5">
+          <div className="flex items-center gap-3">
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/portfolio/dev/${project.id}/print`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-black border border-black/10 hover:border-black/30 rounded-full px-4 py-2 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Printer size={13} />
+              Print / PDF
+            </Link>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-black hover:text-white rounded-full transition-colors text-gray-500"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Main Visual */}
+        <div className="w-full bg-gray-100" style={{ aspectRatio: "16/9" }}>
+          <img
+            src={project.mainVisualUrl}
+            alt={project.projectName}
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        <div className="flex flex-col lg:flex-row">
+          {/* Left: main content */}
+          <div className="flex-1 min-w-0 px-6 md:px-12 lg:px-14 py-10 lg:py-12">
+            {/* Title */}
+            <header className="mb-12">
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-4 leading-tight">
+                {project.projectName}
+              </h1>
+              <p className="text-lg text-gray-600 font-medium leading-relaxed">
+                {project.shortDescription}
+              </p>
+            </header>
+
+            {/* Details */}
+            <section className="mb-14">
+              {project.details
+                .sort((a, b) => a.order - b.order)
+                .map(renderBlock)}
+            </section>
+
+            {/* Gallery */}
+            {project.gallery.length > 0 && (
+              <section className="mb-14">
+                <h3 className="text-xl font-black mb-6 tracking-tight">Gallery</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {project.gallery
+                    .sort((a, b) => a.order - b.order)
+                    .map((item) => (
+                      <figure key={item.id} className="group">
+                        <div className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 border border-black/5">
+                          <img
+                            src={item.imageUrl}
+                            alt={item.caption || ""}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
+                        {item.caption && (
+                          <figcaption className="font-bold text-sm mt-2">
+                            {item.caption}
+                          </figcaption>
+                        )}
+                        {item.description && (
+                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                            {item.description}
+                          </p>
+                        )}
+                      </figure>
+                    ))}
+                </div>
+              </section>
+            )}
+
+            {/* Links */}
+            {orderedLinks.length > 0 && (
+              <section>
+                <h3 className="text-xl font-black mb-6 tracking-tight">Links</h3>
+                <div className="space-y-3">
+                  {orderedLinks.map((link) => (
+                    <div
+                      key={link.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-black/8 hover:border-black/20 bg-gray-50/50 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-base mb-1">{link.title}</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          {link.description}
+                        </p>
+                      </div>
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex shrink-0 items-center gap-2 px-5 py-2.5 bg-black text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition-colors"
+                      >
+                        {link.buttonLabel}
+                        <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* Right: Project Information sidebar */}
+          <div className="lg:w-[300px] xl:w-[340px] shrink-0 px-6 md:px-8 lg:px-8 pb-12 pt-0 lg:pt-12 lg:border-l border-black/8">
+            <div className="lg:sticky lg:top-20">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-8">
+                Project Information
+              </h3>
+              <div className="space-y-8">
+                {project.information.map((info, idx) => (
+                  <div key={idx}>
+                    <h4 className="text-[9px] font-black uppercase tracking-[0.22em] text-black mb-4 pb-2 border-b border-black/8">
+                      {info.category}
+                    </h4>
+                    <dl className="space-y-3">
+                      {info.items.map((item, i) => (
+                        <div key={i} className="flex justify-between items-start gap-3">
+                          <dt className="text-[12px] text-gray-500 font-medium shrink-0">
+                            {item.label}
+                          </dt>
+                          <dd className="text-[12px] font-bold text-black text-right">
+                            {item.type === "Multiple Values" && Array.isArray(item.value) ? (
+                              <span>{item.value.join(" / ")}</span>
+                            ) : item.type === "URL" ? (
+                              <a
+                                href={item.value as string}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
+                                {item.displayUrl || (item.value as string)}
+                              </a>
+                            ) : (
+                              <span>{item.value as string}</span>
+                            )}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-10 pt-8 border-t border-black/8">
+                <Link
+                  href={`/portfolio/dev/${project.id}`}
+                  className="block text-center text-xs font-bold text-gray-400 hover:text-black transition-colors underline underline-offset-4 mb-3"
+                  onClick={onClose}
+                >
+                  Permalink →
+                </Link>
+                <Link
+                  href={`/portfolio/dev/${project.id}/print`}
+                  target="_blank"
+                  className="flex items-center justify-center gap-2 w-full text-xs font-bold text-gray-500 hover:text-black border border-black/10 hover:border-black/40 rounded-xl py-3 transition-colors"
+                >
+                  <Printer size={13} />
+                  Print / Save as PDF
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

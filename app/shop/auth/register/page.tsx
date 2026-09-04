@@ -112,7 +112,7 @@ const t = {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { language: lang } = useLanguage();
+  const { language: lang, setLanguage: setLang } = useLanguage();
   const [step, setStep] = useState<Step>("account");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

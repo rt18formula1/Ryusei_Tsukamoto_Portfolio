@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useLanguage } from "@/components/providers/language-provider";
 import type { DbPortfolio, DbAlbum } from "@/lib/supabase-queries";
+import { DeveloperProject } from "@/types/dev-project";
+import { DevProjectModal } from "@/components/dev-project/dev-project-modal";
 
 type Crumb = { id: string | null; title: string };
 
@@ -13,14 +15,17 @@ export default function PortfolioPageClient({
   portfolio,
   albums,
   mapping = [],
+  devProjects = [],
 }: {
   portfolio: DbPortfolio[];
   albums: DbAlbum[];
   mapping?: { portfolio_id: string; album_id: string }[];
+  devProjects?: DeveloperProject[];
 }) {
   const { language } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState<"collections" | "albums">("collections");
+  const [activeTab, setActiveTab] = useState<"collections" | "albums" | "dev_projects">("collections");
+  const [selectedDevProject, setSelectedDevProject] = useState<DeveloperProject | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<Crumb[]>([
     { id: null, title: language === "ja" ? "ホーム" : "Home" }
   ]);
@@ -87,6 +92,19 @@ export default function PortfolioPageClient({
               >
                 {language === "ja" ? "アルバム" : "Albums"}
               </button>
+              <button
+                onClick={() => {
+                  setActiveTab("dev_projects");
+                  setBreadcrumbs([{ id: null, title: language === "ja" ? "ホーム" : "Home" }]);
+                }}
+                className={`px-6 py-3 text-sm font-black uppercase tracking-widest transition-colors border-b-2 ${
+                  activeTab === "dev_projects"
+                    ? "text-black border-black"
+                    : "text-gray-400 border-transparent hover:text-gray-600"
+                }`}
+              >
+                {language === "ja" ? "開発プロジェクト" : "Dev Projects"}
+              </button>
             </div>
             
             {/* Breadcrumbs (only show for Albums tab) */}
@@ -148,15 +166,59 @@ export default function PortfolioPageClient({
             </div>
           )}
 
-          {/* Works section */}
+          {/* Works / Dev Projects section */}
           <div>
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-10">
               {activeTab === "collections" 
                 ? (language === "ja" ? "全作品" : "All Works")
-                : (currentAlbumId ? (language === "ja" ? "このアルバム内の作品" : "Works in this album") : (language === "ja" ? "全作品" : "All Works"))
+                : activeTab === "dev_projects"
+                  ? (language === "ja" ? "開発プロジェクト" : "Developer Projects")
+                  : (currentAlbumId ? (language === "ja" ? "このアルバム内の作品" : "Works in this album") : (language === "ja" ? "全作品" : "All Works"))
               }
             </h2>
-            {currentLevelWorks.length > 0 ? (
+            
+            {activeTab === "dev_projects" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-10 mb-20">
+                {devProjects.length > 0 ? devProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    onClick={() => setSelectedDevProject(project)}
+                    className="group cursor-pointer border border-black/10 rounded-2xl overflow-hidden bg-white hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 flex flex-col"
+                  >
+                    <div className="aspect-video bg-gray-100 relative overflow-hidden shrink-0">
+                      <img 
+                        src={project.mainVisualUrl} 
+                        alt="" 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                      />
+                      <div className="absolute top-4 left-4 bg-black text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                        Dev Project
+                      </div>
+                    </div>
+                    <div className="p-4 md:p-6 flex-1 flex flex-col">
+                      <h3 className="font-black text-lg md:text-xl group-hover:text-blue-600 transition-colors mb-2 line-clamp-1">
+                        {project.projectName}
+                      </h3>
+                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                        {project.shortDescription}
+                      </p>
+                    </div>
+                  </div>
+                )) : (
+                  <p className="text-gray-400 font-bold italic col-span-full">No developer projects found.</p>
+                )}
+              </div>
+            )}
+            
+            {selectedDevProject && (
+              <DevProjectModal 
+                project={selectedDevProject} 
+                isOpen={true} 
+                onClose={() => setSelectedDevProject(null)} 
+              />
+            )}
+
+            {activeTab !== "dev_projects" && currentLevelWorks.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-10">
                 {currentLevelWorks.map((work) => (
                   <Link

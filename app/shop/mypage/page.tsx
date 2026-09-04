@@ -156,7 +156,7 @@ const countries = ["Japan","United States","United Kingdom","Australia","Canada"
 
 export default function MyPage() {
   const router = useRouter();
-  const { language: lang } = useLanguage();
+  const { language: lang, setLanguage: setLang } = useLanguage();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
@@ -319,7 +319,7 @@ export default function MyPage() {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold truncate">{name}</p>
-                        <p className="text-xs text-gray-400">x{item.quantity} &nbsp; &yen;[item.price_at_purchase * item.quantity}.toLocaleString()}</p>
+                        <p className="text-xs text-gray-400">x{item.quantity} &nbsp; &yen;{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
                         {isDigital && order.status === "paid" && (
                           <div className="mt-2 space-y-1">
                             {codes.length > 0 && codes.map((code, i) => (

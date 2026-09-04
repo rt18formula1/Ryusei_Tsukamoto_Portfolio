@@ -3,6 +3,8 @@ import { stripe } from "../../../../lib/stripe";
 import { getSupabaseAdmin } from "../../../../lib/supabaseAdmin";
 import { createClient } from "../../../../lib/supabaseServer";
 
+export const dynamic = 'force-dynamic';
+
 function cleanText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }

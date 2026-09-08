@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
-import { DeveloperProject, DevProjectDetailBlock } from "@/types/dev-project";
-import Link from "next/link";
-import { X, ExternalLink, Printer } from "lucide-react";
+import { useEffect, useState } from "react";
+import { DeveloperProject } from "@/types/dev-project";
+import { useLanguage } from "@/components/providers/language-provider";
 
 interface DevProjectModalProps {
   project: DeveloperProject;
@@ -11,319 +10,277 @@ interface DevProjectModalProps {
   onClose: () => void;
 }
 
-export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalProps) {
-  // Keyboard handler
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    },
-    [onClose]
-  );
+export default function DevProjectModal({ project, isOpen, onClose }: DevProjectModalProps) {
+  const { language } = useLanguage();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
+    setMounted(true);
+  }, []);
 
-    // Lock scroll
-    const scrollY = window.scrollY;
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
+  if (!isOpen || !mounted) return null;
 
-    // Keyboard
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      // Restore scroll position
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      window.scrollTo(0, scrollY);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, handleKeyDown]);
-
-  if (!isOpen) return null;
-
-  const renderBlock = (block: DevProjectDetailBlock) => {
-    switch (block.type) {
-      case "Section":
-        return (
-          <h3
-            key={block.id}
-            className="text-xl font-black mt-12 mb-4 text-black tracking-tight"
-          >
-            {block.content}
-          </h3>
-        );
-      case "Text":
-        return (
-          <p
-            key={block.id}
-            className="text-[15px] text-gray-700 leading-relaxed mb-6 whitespace-pre-wrap"
-          >
-            {block.content}
-          </p>
-        );
-      case "Image":
-        return (
-          <figure key={block.id} className="mb-8">
-            <div className="rounded-xl overflow-hidden bg-gray-100 border border-black/5">
-              <img
-                src={block.imageUrl}
-                alt={block.imageCaption || ""}
-                className="w-full h-auto"
-              />
-            </div>
-            {block.imageCaption && (
-              <figcaption className="text-xs text-gray-500 mt-2 text-center font-medium">
-                {block.imageCaption}
-              </figcaption>
-            )}
-          </figure>
-        );
-      case "ImageText":
-        return (
-          <div
-            key={block.id}
-            className="flex flex-col md:flex-row gap-6 mb-8 items-start"
-          >
-            <div className="md:w-1/2 w-full rounded-xl overflow-hidden bg-gray-100">
-              <img
-                src={block.imageUrl}
-                alt=""
-                className="w-full h-full object-cover"
-                style={{ maxHeight: "280px" }}
-              />
-            </div>
-            <div className="md:w-1/2">
-              <p className="text-[15px] text-gray-700 leading-relaxed">{block.text}</p>
-            </div>
-          </div>
-        );
-      case "Highlight":
-        return (
-          <div
-            key={block.id}
-            className="bg-black text-white px-7 py-6 rounded-2xl my-8 font-semibold text-base leading-relaxed border-l-4 border-yellow-400"
-          >
-            {block.content}
-          </div>
-        );
-      default:
-        return null;
-    }
+  // Main Visual
+  const mainVisualStyle: React.CSSProperties = {
+    aspectRatio: "16 / 9",
+    width: "100%",
+    objectFit: "cover",
+    borderRadius: "16px",
+    marginBottom: "24px",
   };
 
-  const websiteLink = project.links.find((l) => l.title.toLowerCase() === "website");
-  const githubLink = project.links.find((l) => l.title.toLowerCase() === "github");
-  const otherLinks = project.links.filter(
-    (l) => l.title.toLowerCase() !== "website" && l.title.toLowerCase() !== "github"
-  );
-  const orderedLinks = [
-    ...(websiteLink ? [websiteLink] : []),
-    ...(githubLink ? [githubLink] : []),
-    ...otherLinks,
+  // Category display order
+  const categoryOrder = [
+    "GENERAL",
+    "INFRASTRUCTURE",
+    "DATA",
+    "AUTHENTICATION",
+    "API / INTEGRATION",
+    "OTHER",
   ];
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-start md:items-center justify-center md:p-6 bg-black/70 backdrop-blur-sm"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={project.projectName}
-    >
-      <div
-        className="bg-white w-full h-full md:h-auto md:max-h-[92vh] md:rounded-3xl overflow-y-auto shadow-2xl relative"
-        onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: "1100px" }}
-      >
-        {/* Top action bar */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-4 md:px-6 py-3 md:py-4 bg-white/95 backdrop-blur-sm border-b border-black/5">
-          <div className="flex items-center gap-3">
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/portfolio/dev/${project.id}/print`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-black border border-black/10 hover:border-black/30 rounded-full px-4 py-2 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Printer size={13} />
-              Print / PDF
-            </Link>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-black hover:text-white rounded-full transition-colors text-gray-500"
-              aria-label="Close"
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </div>
+  const sortedInfo = [...project.information].sort((a, b) => {
+    const aIndex = categoryOrder.indexOf(a.category);
+    const bIndex = categoryOrder.indexOf(b.category);
+    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+    if (aIndex !== -1) return -1;
+    if (bIndex !== -1) return 1;
+    return a.category.localeCompare(b.category);
+  });
 
-        {/* Main Visual */}
-        <div className="w-full bg-gray-100" style={{ aspectRatio: "16/9" }}>
-          <img
-            src={project.mainVisualUrl}
-            alt={project.projectName}
-            className="w-full h-full object-cover"
-          />
-        </div>
+  const formatValue = (item: typeof project.information[0]["items"][0]) => {
+    if (item.type === "Multiple Values" && Array.isArray(item.value)) {
+      return item.value.map((v, i) => (
+        <span key={i} className="block">{v}</span>
+      ));
+    }
+    if (item.type === "URL") {
+      const display = item.displayUrl || item.value;
+      return (
+        <a
+          href={item.value as string}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline break-all"
+        >
+          {display}
+        </a>
+      );
+    }
+    if (item.type === "Service" && item.serviceIconUrl) {
+      return (
+        <span className="flex items-center gap-2">
+          <img src={item.serviceIconUrl} alt={item.serviceName || ""} className="w-4 h-4" />
+          <span>{item.serviceName || item.value}</span>
+        </span>
+      );
+    }
+    return String(item.value);
+  };
 
-        <div className="flex flex-col lg:flex-row">
-          {/* Left: main content */}
-          <div className="flex-1 min-w-0 px-4 md:px-6 lg:px-12 lg:px-14 py-6 md:py-10 lg:py-12">
-            {/* Title */}
-            <header className="mb-8 md:mb-12">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight mb-3 md:mb-4 leading-tight">
-                {project.projectName}
-              </h1>
-              <p className="text-sm md:text-base lg:text-lg text-gray-600 font-medium leading-relaxed">
-                {project.shortDescription}
-              </p>
-            </header>
-
-            {/* Details */}
-            <section className="mb-10 md:mb-14">
-              {project.details
-                .sort((a, b) => a.order - b.order)
-                .map(renderBlock)}
-            </section>
-
-            {/* Gallery */}
-            {project.gallery.length > 0 && (
-              <section className="mb-10 md:mb-14">
-                <h3 className="text-lg md:text-xl font-black mb-4 md:mb-6 tracking-tight">Gallery</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
-                  {project.gallery
-                    .sort((a, b) => a.order - b.order)
-                    .map((item) => (
-                      <figure key={item.id} className="group">
-                        <div className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 border border-black/5">
-                          <img
-                            src={item.imageUrl}
-                            alt={item.caption || ""}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        </div>
-                        {item.caption && (
-                          <figcaption className="font-bold text-sm mt-2">
-                            {item.caption}
-                          </figcaption>
-                        )}
-                        {item.description && (
-                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                            {item.description}
-                          </p>
-                        )}
-                      </figure>
-                    ))}
+  const renderDetailBlocks = () => {
+    return project.details
+      .sort((a, b) => a.order - b.order)
+      .map((block) => {
+        switch (block.type) {
+          case "Section":
+            return (
+              <h3 key={block.id} className="text-xl font-bold mt-8 mb-4 pb-2 border-b border-black/10">
+                {block.content}
+              </h3>
+            );
+          case "Text":
+            return (
+              <div key={block.id} className="prose prose-sm max-w-none text-gray-700 mb-6 whitespace-pre-wrap">
+                {block.content}
+              </div>
+            );
+          case "Image":
+            return (
+              <div key={block.id} className="mb-6">
+                {block.imageUrl && (
+                  <>
+                    <img
+                      src={block.imageUrl}
+                      alt={block.imageCaption || ""}
+                      className="w-full rounded-xl object-cover aspect-video mb-2"
+                    />
+                    {block.imageCaption && (
+                      <p className="text-xs text-gray-500 text-center italic">{block.imageCaption}</p>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          case "ImageText":
+            return (
+              <div key={block.id} className="flex flex-col md:flex-row gap-6 mb-8">
+                {block.imageUrl && (
+                  <div className="md:w-1/2 flex-shrink-0">
+                    <img
+                      src={block.imageUrl}
+                      alt={block.imageCaption || ""}
+                      className="w-full rounded-xl object-cover aspect-video"
+                    />
+                    {block.imageCaption && (
+                      <p className="text-xs text-gray-500 text-center italic mt-1">{block.imageCaption}</p>
+                    )}
+                  </div>
+                )}
+                <div className="md:w-1/2 prose prose-sm max-w-none text-gray-700">
+                  {block.text}
                 </div>
-              </section>
-            )}
+              </div>
+            );
+          case "Highlight":
+            return (
+              <div
+                key={block.id}
+                className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-xl"
+              >
+                <p className="font-medium text-yellow-900">{block.content}</p>
+              </div>
+            );
+          default:
+            return null;
+        }
+      });
+  };
 
-            {/* Links */}
-            {orderedLinks.length > 0 && (
-              <section>
-                <h3 className="text-lg md:text-xl font-black mb-4 md:mb-6 tracking-tight">Links</h3>
-                <div className="space-y-3">
-                  {orderedLinks.map((link) => (
-                    <div
-                      key={link.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4 p-4 md:p-5 rounded-2xl border border-black/8 hover:border-black/20 bg-gray-50/50 transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <h4 className="font-bold text-sm md:text-base mb-1">{link.title}</h4>
-                        <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
-                          {link.description}
-                        </p>
+  const renderLinks = () => {
+    const sortedLinks = [...project.links].sort((a, b) => {
+      // Website and GitHub first
+      const aPriority = a.title === "Website" ? 0 : a.title === "GitHub" ? 1 : 2;
+      const bPriority = b.title === "Website" ? 0 : b.title === "GitHub" ? 1 : 2;
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      return a.order - b.order;
+    });
+
+    return sortedLinks.map((link) => (
+      <a
+        key={link.id}
+        href={link.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex items-start gap-4 p-4 border border-black/10 rounded-xl hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-bold text-sm">{link.title}</span>
+            <svg className="w-4 h-4 text-gray-400 group-hover:text-black transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </div>
+          <p className="text-sm text-gray-600 mb-2">{link.description}</p>
+          <span className="text-xs font-bold text-blue-600 hover:underline">{link.buttonLabel}</span>
+        </div>
+      </a>
+    ));
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
+      <div
+        className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-4 border-b border-black/10 shrink-0">
+          <div>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Developer Project</span>
+            <h2 className="text-2xl font-black mt-1">{project.projectName}</h2>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-black text-2xl p-2 -mr-2 -mt-2 transition-colors">✕</button>
+        </div>
+
+        {/* Content */}
+        <div className="overflow-y-auto flex-1 p-6 space-y-8 custom-scrollbar">
+          {/* Main Visual */}
+          {project.mainVisualUrl && (
+            <img src={project.mainVisualUrl} alt={project.projectName} style={mainVisualStyle} />
+          )}
+
+          {/* Short Description */}
+          <p className="text-lg text-gray-600 leading-relaxed font-medium">{project.shortDescription}</p>
+
+          {/* Project Information */}
+          <section>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6 flex items-center gap-4">
+              Project Information <div className="h-px flex-1 bg-black/5" />
+            </h3>
+            <div className="space-y-6">
+              {sortedInfo.map((cat) => (
+                <div key={cat.category} className="border border-black/10 rounded-xl p-5">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">{cat.category}</h4>
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    {cat.items.map((item, idx) => (
+                      <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center">
+                        <dt className="text-sm font-bold text-gray-500 w-full sm:w-32 shrink-0">{item.label}</dt>
+                        <dd className="text-sm text-gray-800 flex-1">{formatValue(item)}</dd>
                       </div>
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex shrink-0 items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-black text-white text-xs md:text-sm font-bold rounded-xl hover:bg-gray-800 transition-colors"
-                      >
-                        {link.buttonLabel}
-                        <ExternalLink size={12} />
-                      </a>
+                    ))}
+                  </dl>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Project Details */}
+          {project.details.length > 0 && (
+            <section>
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6 flex items-center gap-4">
+                Project Details <div className="h-px flex-1 bg-black/5" />
+              </h3>
+              <div>{renderDetailBlocks()}</div>
+            </section>
+          )}
+
+          {/* Gallery */}
+          {project.gallery.length > 0 && (
+            <section>
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6 flex items-center gap-4">
+                Gallery <div className="h-px flex-1 bg-black/5" />
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {project.gallery
+                  .sort((a, b) => a.order - b.order)
+                  .map((item) => (
+                    <div key={item.id} className="group">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.caption || ""}
+                        className="w-full aspect-square object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
+                      />
+                      {item.caption && (
+                        <p className="text-xs text-gray-500 mt-1 text-center">{item.caption}</p>
+                      )}
                     </div>
                   ))}
-                </div>
-              </section>
-            )}
-          </div>
+              </div>
+            </section>
+          )}
 
-          {/* Right: Project Information sidebar */}
-          <div className="lg:w-[300px] xl:w-[340px] shrink-0 px-4 md:px-6 lg:px-8 pb-8 md:pb-12 pt-0 lg:pt-12 lg:border-l border-black/8">
-            <div className="lg:sticky lg:top-20">
-              <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-6 md:mb-8">
-                Project Information
+          {/* Links */}
+          {project.links.length > 0 && (
+            <section>
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6 flex items-center gap-4">
+                Links <div className="h-px flex-1 bg-black/5" />
               </h3>
-              <div className="space-y-6 md:space-y-8">
-                {project.information.map((info, idx) => (
-                  <div key={idx}>
-                    <h4 className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.22em] text-black mb-3 md:mb-4 pb-2 border-b border-black/8">
-                      {info.category}
-                    </h4>
-                    <dl className="space-y-2 md:space-y-3">
-                      {info.items.map((item, i) => (
-                        <div key={i} className="flex justify-between items-start gap-2 md:gap-3">
-                          <dt className="text-[11px] md:text-[12px] text-gray-500 font-medium shrink-0">
-                            {item.label}
-                          </dt>
-                          <dd className="text-[11px] md:text-[12px] font-bold text-black text-right">
-                            {item.type === "Multiple Values" && Array.isArray(item.value) ? (
-                              <span>{item.value.join(" / ")}</span>
-                            ) : item.type === "URL" ? (
-                              <a
-                                href={item.value as string}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
-                              >
-                                {item.displayUrl || (item.value as string)}
-                              </a>
-                            ) : item.type === "Service" ? (
-                              <div className="flex items-center justify-end gap-2">
-                                {item.serviceIconUrl && (
-                                  <img src={item.serviceIconUrl} alt="" className="w-4 h-4" />
-                                )}
-                                <span>{item.serviceName || (item.value as string)}</span>
-                              </div>
-                            ) : (
-                              <span>{item.value as string}</span>
-                            )}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </div>
-                ))}
-              </div>
+              <div className="space-y-3">{renderLinks()}</div>
+            </section>
+          )}
 
-              <div className="mt-8 md:mt-10 pt-6 md:pt-8 border-t border-black/8">
-                <Link
-                  href={`/portfolio/dev/${project.id}`}
-                  className="block text-center text-[10px] md:text-xs font-bold text-gray-400 hover:text-black transition-colors underline underline-offset-4 mb-2 md:mb-3"
-                  onClick={onClose}
-                >
-                  Permalink →
-                </Link>
-                <Link
-                  href={`/portfolio/dev/${project.id}/print`}
-                  target="_blank"
-                  className="flex items-center justify-center gap-2 w-full text-[10px] md:text-xs font-bold text-gray-500 hover:text-black border border-black/10 hover:border-black/40 rounded-xl py-2.5 md:py-3 transition-colors"
-                >
-                  <Printer size={13} />
-                  Print / Save as PDF
-                </Link>
-              </div>
-            </div>
+          {/* Print Button */}
+          <div className="pt-8 border-t border-black/10 flex justify-end">
+            <button
+              onClick={() => window.print()}
+              className="px-6 py-3 bg-black text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-gray-900 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Print / Save as PDF
+            </button>
           </div>
         </div>
       </div>

@@ -10,7 +10,7 @@ interface DevProjectModalProps {
   onClose: () => void;
 }
 
-export default function DevProjectModal({ project, isOpen, onClose }: DevProjectModalProps) {
+export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalProps) {
   const { language } = useLanguage();
   const [mounted, setMounted] = useState(false);
 

@@ -51,6 +51,21 @@ export type DbEvent = {
   created_at: string;
 };
 
+export type DbDevProject = {
+  id: string;
+  project_name: string;
+  short_description: string;
+  main_visual_url: string | null;
+  main_visual_focal_point_x: number | null;
+  main_visual_focal_point_y: number | null;
+  information: any; // JSON
+  details: any; // JSON
+  gallery: any; // JSON
+  links: any; // JSON
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
 
 // ----------------------------------------------------------------------
 // Storage Upload
@@ -474,4 +489,49 @@ export async function getCommissions() {
   const { data, error } = await supabase.from("commissions").select("*, user_profiles(*)").order("created_at", { ascending: false });
   if (error) return [];
   return data;
+}
+
+// ----------------------------------------------------------------------
+// Developer Projects CRUD
+// ----------------------------------------------------------------------
+
+export async function getDevProjects() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("dev_projects")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("Error fetching dev projects:", error);
+    return [];
+  }
+  return data as DbDevProject[];
+}
+
+export async function getDevProjectById(id: string) {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("dev_projects").select("*").eq("id", id).single();
+  if (error) return null;
+  return data as DbDevProject;
+}
+
+export async function createDevProject(project: Partial<DbDevProject>) {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { data, error } = await supabase.from("dev_projects").insert(project).select().single();
+  if (error) throw error;
+  return data as DbDevProject;
+}
+
+export async function updateDevProject(id: string, project: Partial<DbDevProject>) {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { data, error } = await supabase.from("dev_projects").update(project).eq("id", id).select().single();
+  if (error) throw error;
+  return data as DbDevProject;
+}
+
+export async function deleteDevProject(id: string) {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { error } = await supabase.from("dev_projects").delete().eq("id", id);
+  if (error) throw error;
 }

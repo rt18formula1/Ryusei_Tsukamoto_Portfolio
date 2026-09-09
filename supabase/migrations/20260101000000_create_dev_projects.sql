@@ -26,10 +26,11 @@ ALTER TABLE dev_projects ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read access" ON dev_projects
   FOR SELECT USING (true);
 
--- Admin write access (service role bypasses RLS, but policy allows explicit admin users if needed)
+-- Admin write access (service role bypasses RLS automatically)
+-- This policy allows explicit admin users if needed in the future
 CREATE POLICY "Admin write access" ON dev_projects
-  FOR ALL USING (auth.role() = 'service_role' OR auth.jwt() ->> 'email' = current_setting('app.admin_email', true))
-  WITH CHECK (auth.role() = 'service_role' OR auth.jwt() ->> 'email' = current_setting('app.admin_email', true));
+  FOR ALL USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
 
 -- Updated at trigger
 CREATE OR REPLACE FUNCTION update_updated_at_column()

@@ -13,10 +13,12 @@ import {
   getProducts,
   getOrders,
   getCommissions,
+  getDevProjects,
   type DbNews,
   type DbPortfolio,
   type DbAlbum,
   type DbEvent,
+  type DbDevProject,
 } from "@/lib/supabase-queries";
 import {
   createNewsAction,
@@ -31,16 +33,12 @@ import {
   deleteEventAction,
   createProductAction,
   deleteProductAction,
+  createDevProjectAction,
+  updateDevProjectAction,
+  deleteDevProjectAction,
+  uploadDevProjectImageAction,
 } from "@/lib/admin-actions";
 import { createAlbumRelation } from "@/lib/supabase-queries";
-// Edit actions will be used when implementing the edit modal
-// import {
-//   updateNewsTitle,
-//   updatePortfolioTitle,
-//   updateNewsContent,
-//   updatePortfolioContent,
-// } from "@/lib/admin-edit-actions";
-
 import { AdminImageCard } from "@/components/admin-image-card";
 import { AlbumNodeEditor } from "@/components/album-node-editor";
 import { ShopAdminTab } from "@/components/shop/shop-admin-tab";
@@ -59,6 +57,7 @@ export default function AdminPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [commissions, setCommissions] = useState<any[]>([]);
+  const [devProjects, setDevProjects] = useState<DbDevProject[]>([]);
   const [loading, setLoading] = useState(false);
   
   // Collapsible sections state
@@ -67,13 +66,14 @@ export default function AdminPage() {
     news: false,
     albums: false,
     events: false,
-    shop: false
+    shop: false,
+    devProjects: false
   });
 
-  // Album Modal State
-  const [activeModal, setActiveModal] = useState<"news" | "portfolio" | "album" | "event" | "product" | "edit" | null>(null);
+  // Dev Project Modal State
+  const [activeModal, setActiveModal] = useState<"news" | "portfolio" | "album" | "event" | "product" | "devProject" | "edit" | null>(null);
   const [albumType, setAlbumType] = useState<"backnumber" | "portfolio">("portfolio");
-  // const [editItem, setEditItem] = useState<{ id: string; type: "news" | "portfolio"; title_en: string; title_ja: string; body_en?: string; body_ja?: string } | null>(null);
+  const [editingDevProject, setEditingDevProject] = useState<DbDevProject | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -88,10 +88,43 @@ export default function AdminPage() {
     price: "",
     type: "digital" as "digital" | "physical" | "skill",
     status: "draft" as "on_sale" | "sold_out" | "draft",
+    // Dev Project fields
+    shortDescription: "",
+    mainVisualUrl: "",
+    mainVisualFocalPointX: 0.5,
+    mainVisualFocalPointY: 0.5,
+    information: [] as any[],
+    details: [] as any[],
+    gallery: [] as any[],
+    links: [] as any[],
+    sortOrder: 0,
   });
 
   const resetForm = () => {
-    setFormData({ title: "", content: "", file: null, previewUrl: "", albumId: "", parentId: "", location: "", startTime: "", endTime: "", price: "", type: "digital", status: "draft" });
+    setFormData({ 
+      title: "", 
+      content: "", 
+      file: null, 
+      previewUrl: "", 
+      albumId: "", 
+      parentId: "", 
+      location: "", 
+      startTime: "", 
+      endTime: "",
+      price: "",
+      type: "digital",
+      status: "draft",
+      shortDescription: "",
+      mainVisualUrl: "",
+      mainVisualFocalPointX: 0.5,
+      mainVisualFocalPointY: 0.5,
+      information: [],
+      details: [],
+      gallery: [],
+      links: [],
+      sortOrder: 0,
+    });
+    setEditingDevProject(null);
   };
 
   const buildAlbumOptions = (type: "backnumber" | "portfolio", parentId: string | null = null, depth = 0): DbAlbum[] => {
@@ -117,7 +150,7 @@ export default function AdminPage() {
   }, []);
 
   const loadData = async () => {
-    const [n, p, allAlbums, relations, e, prods, allOrders, allCommissions] = await Promise.all([
+    const [n, p, allAlbums, relations, e, prods, allOrders, allCommissions, dps] = await Promise.all([
       getNewsList(),
       getPortfolioList(),
       getAllAlbums(),
@@ -126,6 +159,7 @@ export default function AdminPage() {
       getProducts(),
       getOrders(),
       getCommissions(),
+      getDevProjects(),
     ]);
     setNews(n);
     setPortfolio(p);
@@ -135,6 +169,7 @@ export default function AdminPage() {
     setProducts(prods);
     setOrders(allOrders);
     setCommissions(allCommissions);
+    setDevProjects(dps);
   };
 
   const login = async () => {
@@ -172,7 +207,7 @@ export default function AdminPage() {
   };
 
   const handlePost = async () => {
-    if (!formData.title || (!formData.file && activeModal !== "album")) {
+    if (!formData.title || (!formData.file && activeModal !== "album" && activeModal !== "devProject")) {
       alert("Title and Image are required!");
       return;
     }
@@ -216,7 +251,7 @@ export default function AdminPage() {
           description_en: formData.content,
           description_ja: formData.content,
           type: albumType,
-          parent_id: null, // 使わない
+          parent_id: null,
           cover_image_url,
           sort_order: albums.length,
         });
@@ -237,7 +272,7 @@ export default function AdminPage() {
       } else if (activeModal === "product") {
         let image_url = null;
         if (formData.file) {
-          image_url = await uploadImageToStorage("portfolio-images", formData.file); // Reusing bucket for now
+          image_url = await uploadImageToStorage("portfolio-images", formData.file);
         }
         await createProductAction({
           name_ja: formData.title,
@@ -250,6 +285,31 @@ export default function AdminPage() {
           image_url,
           sort_order: products.length,
         });
+      } else if (activeModal === "devProject") {
+        // Upload main visual if provided
+        let mainVisualUrl = formData.mainVisualUrl;
+        if (formData.file) {
+          mainVisualUrl = await uploadDevProjectImageAction("portfolio-images", formData.file);
+        }
+        
+        const projectData: Partial<DbDevProject> = {
+          project_name: formData.title,
+          short_description: formData.shortDescription,
+          main_visual_url: mainVisualUrl,
+          main_visual_focal_point_x: formData.mainVisualFocalPointX,
+          main_visual_focal_point_y: formData.mainVisualFocalPointY,
+          information: formData.information,
+          details: formData.details,
+          gallery: formData.gallery,
+          links: formData.links,
+          sort_order: formData.sortOrder,
+        };
+        
+        if (editingDevProject) {
+          await updateDevProjectAction(editingDevProject.id, projectData);
+        } else {
+          await createDevProjectAction(projectData);
+        }
       }
       await loadData();
       setActiveModal(null);
@@ -296,6 +356,42 @@ export default function AdminPage() {
     setLoading(false);
   };
 
+  const handleDeleteDevProject = async (id: string) => {
+    if (!confirm("Delete this Developer Project?")) return;
+    setLoading(true);
+    await deleteDevProjectAction(id);
+    await loadData();
+    setLoading(false);
+  };
+
+  const handleEditDevProject = (project: DbDevProject) => {
+    setEditingDevProject(project);
+    setFormData({
+      title: project.project_name,
+      content: "",
+      file: null,
+      previewUrl: project.main_visual_url || "",
+      albumId: "",
+      parentId: "",
+      location: "",
+      startTime: "",
+      endTime: "",
+      price: "",
+      type: "digital",
+      status: "draft",
+      shortDescription: project.short_description,
+      mainVisualUrl: project.main_visual_url || "",
+      mainVisualFocalPointX: project.main_visual_focal_point_x || 0.5,
+      mainVisualFocalPointY: project.main_visual_focal_point_y || 0.5,
+      information: project.information || [],
+      details: project.details || [],
+      gallery: project.gallery || [],
+      links: project.links || [],
+      sortOrder: project.sort_order,
+    });
+    setActiveModal("devProject");
+  };
+
   const toggleSection = (section: keyof typeof collapsedSections) => {
     setCollapsedSections(prev => ({
       ...prev,
@@ -304,19 +400,12 @@ export default function AdminPage() {
   };
 
   const handleEdit = (item: { id: string; type: "news" | "portfolio"; title_en: string; title_ja: string; body_en?: string; body_ja?: string }) => {
-  // 編集機能は後で実装
-  alert(`Edit functionality for ${item.type} ID: ${item.id} will be implemented soon.`);
-};
+    alert(`Edit functionality for ${item.type} ID: ${item.id} will be implemented soon.`);
+  };
 
-// const handleAlbumEdit = (album: DbAlbum) => {
-//   // アルバム編集機能
-//   alert(`Album edit functionality for ${album.name_en || album.name_ja} will be implemented soon.`);
-// };
-
-const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
-  // アルバム作成機能
-  alert(`Album creation: ${name} (${type}) will be implemented soon.`);
-};
+  const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
+    alert(`Album creation: ${name} (${type}) will be implemented soon.`);
+  };
 
   if (!sessionOk) {
     return (
@@ -357,40 +446,34 @@ const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
           <h1 className="text-3xl font-black">Dashboard</h1>
           <div className="flex gap-4">
             <button
-              onClick={() => {
-                resetForm();
-                setActiveModal("portfolio");
-              }}
+              onClick={() => { resetForm(); setActiveModal("portfolio"); }}
               className="px-6 py-2 bg-black text-white font-bold rounded-full hover:bg-black/80 transition shadow-sm"
             >
               + Post Portfolio
             </button>
             <button
-              onClick={() => {
-                resetForm();
-                setActiveModal("news");
-              }}
+              onClick={() => { resetForm(); setActiveModal("news"); }}
               className="px-6 py-2 border-2 border-black font-bold rounded-full hover:bg-black/5 transition"
             >
               + Post News
             </button>
             <button
-              onClick={() => {
-                resetForm();
-                setActiveModal("event");
-              }}
+              onClick={() => { resetForm(); setActiveModal("event"); }}
               className="px-6 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition shadow-sm"
             >
               + Post Event
             </button>
             <button
-              onClick={() => {
-                resetForm();
-                setActiveModal("product");
-              }}
+              onClick={() => { resetForm(); setActiveModal("product"); }}
               className="px-6 py-2 bg-purple-600 text-white font-bold rounded-full hover:bg-purple-700 transition shadow-sm"
             >
               + Post Product
+            </button>
+            <button
+              onClick={() => { resetForm(); setActiveModal("devProject"); }}
+              className="px-6 py-2 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition shadow-sm"
+            >
+              + Post Dev Project
             </button>
             <button onClick={logout} className="text-sm underline">Logout</button>
           </div>
@@ -517,43 +600,56 @@ const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
         <section className="space-y-6">
           <div className="flex items-center justify-between border-b border-black/10 pb-4">
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold">Developer Projects</h2>
-              <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">Static / Mock</span>
+              <button
+                onClick={() => toggleSection("devProjects")}
+                className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/5 rounded transition-colors"
+              >
+                <span className={`transform transition-transform ${collapsedSections.devProjects ? "rotate-90" : ""}`}>▶</span>
+              </button>
+              <h2 className="text-xl font-bold">Developer Projects ({devProjects.length})</h2>
             </div>
-            <a
-              href="/portfolio"
-              className="text-sm font-bold underline"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => { resetForm(); setActiveModal("devProject"); }}
+              className="px-4 py-2 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition shadow-sm text-sm"
             >
-              View Portfolio →
-            </a>
+              + New Dev Project
+            </button>
           </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-sm text-amber-800">
-            <p className="font-bold mb-1">📋 Static Data Mode</p>
-            <p>Developer Projects are currently managed as static data in <code className="bg-amber-100 px-1 rounded font-mono">lib/dev-project/mock.ts</code>. A Supabase table (<code className="bg-amber-100 px-1 rounded font-mono">dev_projects</code>) can be added later to enable dynamic management from this panel.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[{ id: "proj-001", name: "F1 SNS Post Automator", url: "/portfolio/dev/proj-001", printUrl: "/portfolio/dev/proj-001/print" }].map((proj) => (
-              <div key={proj.id} className="border border-black/10 rounded-2xl p-5 bg-white hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="font-black text-sm">{proj.name}</p>
-                    <p className="text-xs text-gray-400 font-mono mt-1">ID: {proj.id}</p>
+          {!collapsedSections.devProjects && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {devProjects.map((proj) => (
+                <div key={proj.id} className="border border-black/10 rounded-2xl p-5 bg-white hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="font-black text-sm">{proj.project_name}</p>
+                      <p className="text-xs text-gray-400 font-mono mt-1">ID: {proj.id}</p>
+                    </div>
+                    <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full">Active</span>
                   </div>
-                  <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full">Active</span>
+                  <div className="flex gap-2 mt-4">
+                    <a href={`/portfolio/dev/${proj.id}`} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs font-bold border border-black/20 rounded-lg py-2 hover:bg-black hover:text-white transition-colors">
+                      View Detail
+                    </a>
+                    <a href={`/portfolio/dev/${proj.id}/print`} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs font-bold border border-black/20 rounded-lg py-2 hover:bg-black hover:text-white transition-colors">
+                      Print / PDF
+                    </a>
+                    <button
+                      onClick={() => handleEditDevProject(proj)}
+                      className="flex-1 text-center text-xs font-bold bg-amber-600 text-white rounded-lg py-2 hover:bg-amber-700 transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteDevProject(proj.id)}
+                      className="flex-1 text-center text-xs font-bold bg-red-600 text-white rounded-lg py-2 hover:bg-red-700 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <a href={proj.url} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs font-bold border border-black/20 rounded-lg py-2 hover:bg-black hover:text-white transition-colors">
-                    View Detail
-                  </a>
-                  <a href={proj.printUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs font-bold border border-black/20 rounded-lg py-2 hover:bg-black hover:text-white transition-colors">
-                    Print / PDF
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Shop Management Section */}
@@ -622,10 +718,12 @@ const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
               <button onClick={() => { setActiveModal(null); resetForm(); }} className="text-sm font-bold text-gray-400 hover:text-black">Cancel</button>
               <div className="text-center">
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
-                  {activeModal === "album" ? "Collection Setup" : "Publisher"}
+                  {activeModal === "album" ? "Collection Setup" : activeModal === "devProject" ? "Developer Project" : "Publisher"}
                 </p>
                 <h3 className="font-black text-lg">
-                  {activeModal === "album" ? `New ${albumType === "backnumber" ? "Backnumber" : "Album"}` : `New ${activeModal === "news" ? "News" : "Post"}`}
+                  {activeModal === "album" ? `New ${albumType === "backnumber" ? "Backnumber" : "Album"}` : 
+                   activeModal === "devProject" ? (editingDevProject ? "Edit Developer Project" : "New Developer Project") :
+                   `New ${activeModal === "news" ? "News" : "Post"}`}
                 </h3>
               </div>
               <button
@@ -633,7 +731,7 @@ const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
                 disabled={loading}
                 className="text-blue-500 font-black text-sm disabled:opacity-30"
               >
-                {loading ? "Processing..." : (activeModal === "album" ? "Create" : "Share")}
+                {loading ? "Processing..." : (activeModal === "album" ? "Create" : (editingDevProject ? "Update" : "Share"))}
               </button>
             </div>
             
@@ -649,6 +747,8 @@ const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
                     <p className="text-xs text-gray-500 mb-6 leading-relaxed">
                       {activeModal === "album"
                         ? "Choose a cover that makes this collection immediately recognizable."
+                        : activeModal === "devProject"
+                        ? "Upload the main visual for this developer project (16:9 recommended)."
                         : "Drop in the hero image first so the preview and card layouts are easy to judge."}
                     </p>
                     <input
@@ -798,6 +898,473 @@ const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
                     </div>
                   )}
 
+                  {activeModal === "devProject" && (
+                    <div className="space-y-6 pt-4 border-t border-black/5">
+                      {/* Short Description */}
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Short Description</label>
+                        <textarea
+                          placeholder="Brief description for cards and previews..."
+                          rows={3}
+                          value={formData.shortDescription}
+                          onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
+                          className="w-full text-sm resize-none focus:outline-none leading-relaxed"
+                        />
+                      </div>
+
+                      {/* Main Visual Focal Point */}
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Main Visual Focal Point (0-1)</label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">X (Horizontal)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="1"
+                              value={formData.mainVisualFocalPointX}
+                              onChange={(e) => setFormData({ ...formData, mainVisualFocalPointX: parseFloat(e.target.value) })}
+                              className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Y (Vertical)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="1"
+                              value={formData.mainVisualFocalPointY}
+                              onChange={(e) => setFormData({ ...formData, mainVisualFocalPointY: parseFloat(e.target.value) })}
+                              className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Sort Order */}
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort Order</label>
+                        <input
+                          type="number"
+                          value={formData.sortOrder}
+                          onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                          className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold"
+                        />
+                      </div>
+
+                      {/* Information Categories */}
+                      <div className="space-y-4 pt-4 border-t border-black/5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Project Information</label>
+                          <button
+                            onClick={() => setFormData({ ...formData, information: [...formData.information, { category: "GENERAL", items: [] }] })}
+                            className="text-xs font-bold text-blue-600 hover:underline"
+                          >
+                            + Add Category
+                          </button>
+                        </div>
+                        {formData.information.map((cat, catIdx) => (
+                          <div key={catIdx} className="border border-black/10 rounded-xl p-4 bg-gray-50 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <select
+                                value={cat.category}
+                                onChange={(e) => {
+                                  const newInfo = [...formData.information];
+                                  newInfo[catIdx] = { ...newInfo[catIdx], category: e.target.value };
+                                  setFormData({ ...formData, information: newInfo });
+                                }}
+                                className="w-full md:w-1/2 p-2 bg-white border border-black/10 rounded-lg text-sm font-bold appearance-none"
+                              >
+                                <option value="GENERAL">GENERAL</option>
+                                <option value="INFRASTRUCTURE">INFRASTRUCTURE</option>
+                                <option value="DATA">DATA</option>
+                                <option value="AUTHENTICATION">AUTHENTICATION</option>
+                                <option value="API / INTEGRATION">API / INTEGRATION</option>
+                                <option value="OTHER">OTHER</option>
+                              </select>
+                              <button
+                                onClick={() => {
+                                  const newInfo = formData.information.filter((_, i) => i !== catIdx);
+                                  setFormData({ ...formData, information: newInfo });
+                                }}
+                                className="text-red-500 text-xs font-bold hover:underline ml-2"
+                              >
+                                Remove Category
+                              </button>
+                            </div>
+                            <div className="space-y-2">
+                              {cat.items.map((item: any, itemIdx: number) => (
+                                <div key={itemIdx} className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Label"
+                                    value={item.label}
+                                    onChange={(e) => {
+                                      const newInfo = [...formData.information];
+                                      newInfo[catIdx] = { ...newInfo[catIdx], items: newInfo[catIdx].items.map((it: any, i: number) => i === itemIdx ? { ...it, label: e.target.value } : it) };
+                                      setFormData({ ...formData, information: newInfo });
+                                    }}
+                                    className="w-1/3 p-2 bg-white border border-black/10 rounded-lg text-sm font-bold"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Value"
+                                    value={Array.isArray(item.value) ? item.value.join(", ") : item.value}
+                                    onChange={(e) => {
+                                      const newInfo = [...formData.information];
+                                      const vals = e.target.value.split(",").map(v => v.trim());
+                                      newInfo[catIdx] = { ...newInfo[catIdx], items: newInfo[catIdx].items.map((it: any, i: number) => i === itemIdx ? { ...it, value: vals.length > 1 ? vals : e.target.value } : it) };
+                                      setFormData({ ...formData, information: newInfo });
+                                    }}
+                                    className="w-2/3 p-2 bg-white border border-black/10 rounded-lg text-sm"
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      const newInfo = [...formData.information];
+                                      newInfo[catIdx] = { ...newInfo[catIdx], items: newInfo[catIdx].items.filter((_: any, i: number) => i !== itemIdx) };
+                                      setFormData({ ...formData, information: newInfo });
+                                    }}
+                                    className="text-red-500 text-xs font-bold hover:underline"
+                                  >
+                                    ✕
+                                  </button>
+                                ))}
+                              <button
+                                onClick={() => {
+                                  const newInfo = [...formData.information];
+                                  newInfo[catIdx] = { ...newInfo[catIdx], items: [...newInfo[catIdx].items, { label: "", value: "", type: "Text" }] };
+                                  setFormData({ ...formData, information: newInfo });
+                                }}
+                                className="text-xs font-bold text-blue-600 hover:underline"
+                              >
+                                + Add Item
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Details Blocks */}
+                      <div className="space-y-4 pt-4 border-t border-black/5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Project Details</label>
+                          <button
+                            onClick={() => setFormData({ ...formData, details: [...formData.details, { id: `d${Date.now()}`, type: "Text", content: "", order: formData.details.length }] })}
+                            className="text-xs font-bold text-blue-600 hover:underline"
+                          >
+                            + Add Block
+                          </button>
+                        </div>
+                        {formData.details.map((block: any, blockIdx: number) => (
+                          <div key={blockIdx} className="border border-black/10 rounded-xl p-4 bg-gray-50 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <select
+                                value={block.type}
+                                onChange={(e) => {
+                                  const newDetails = [...formData.details];
+                                  newDetails[blockIdx] = { ...newDetails[blockIdx], type: e.target.value };
+                                  setFormData({ ...formData, details: newDetails });
+                                }}
+                                className="w-full md:w-1/3 p-2 bg-white border border-black/10 rounded-lg text-sm font-bold appearance-none"
+                              >
+                                <option value="Section">Section</option>
+                                <option value="Text">Text</option>
+                                <option value="Image">Image</option>
+                                <option value="ImageText">Image + Text</option>
+                                <option value="Highlight">Highlight</option>
+                              </select>
+                              <button
+                                onClick={() => {
+                                  const newDetails = formData.details.filter((_: any, i: number) => i !== blockIdx);
+                                  setFormData({ ...formData, details: newDetails });
+                                }}
+                                className="text-red-500 text-xs font-bold hover:underline ml-2"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            <div className="space-y-2">
+                              {block.type === "Section" && (
+                                <input
+                                  type="text"
+                                  placeholder="Section Title"
+                                  value={block.content || ""}
+                                  onChange={(e) => {
+                                    const newDetails = [...formData.details];
+                                    newDetails[blockIdx] = { ...newDetails[blockIdx], content: e.target.value };
+                                    setFormData({ ...formData, details: newDetails });
+                                  }}
+                                  className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm font-bold"
+                                />
+                              )}
+                              {block.type === "Text" && (
+                                <textarea
+                                  placeholder="Text content..."
+                                  rows={4}
+                                  value={block.content || ""}
+                                  onChange={(e) => {
+                                    const newDetails = [...formData.details];
+                                    newDetails[blockIdx] = { ...newDetails[blockIdx], content: e.target.value };
+                                    setFormData({ ...formData, details: newDetails });
+                                  }}
+                                  className="w-full text-sm resize-none focus:outline-none leading-relaxed"
+                                />
+                              )}
+                              {block.type === "Image" && (
+                                <div className="space-y-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Image URL"
+                                    value={block.imageUrl || ""}
+                                    onChange={(e) => {
+                                      const newDetails = [...formData.details];
+                                      newDetails[blockIdx] = { ...newDetails[blockIdx], imageUrl: e.target.value };
+                                      setFormData({ ...formData, details: newDetails });
+                                    }}
+                                    className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Caption (optional)"
+                                    value={block.imageCaption || ""}
+                                    onChange={(e) => {
+                                      const newDetails = [...formData.details];
+                                      newDetails[blockIdx] = { ...newDetails[blockIdx], imageCaption: e.target.value };
+                                      setFormData({ ...formData, details: newDetails });
+                                    }}
+                                    className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
+                                  />
+                                </div>
+                              )}
+                              {block.type === "ImageText" && (
+                                <div className="space-y-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Image URL"
+                                    value={block.imageUrl || ""}
+                                    onChange={(e) => {
+                                      const newDetails = [...formData.details];
+                                      newDetails[blockIdx] = { ...newDetails[blockIdx], imageUrl: e.target.value };
+                                      setFormData({ ...formData, details: newDetails });
+                                    }}
+                                    className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
+                                  />
+                                  <textarea
+                                    placeholder="Text content..."
+                                    rows={3}
+                                    value={block.text || ""}
+                                    onChange={(e) => {
+                                      const newDetails = [...formData.details];
+                                      newDetails[blockIdx] = { ...newDetails[blockIdx], text: e.target.value };
+                                      setFormData({ ...formData, details: newDetails });
+                                    }}
+                                    className="w-full text-sm resize-none focus:outline-none leading-relaxed"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Caption (optional)"
+                                    value={block.imageCaption || ""}
+                                    onChange={(e) => {
+                                      const newDetails = [...formData.details];
+                                      newDetails[blockIdx] = { ...newDetails[blockIdx], imageCaption: e.target.value };
+                                      setFormData({ ...formData, details: newDetails });
+                                    }}
+                                    className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
+                                  />
+                                </div>
+                              )}
+                              {block.type === "Highlight" && (
+                                <input
+                                  type="text"
+                                  placeholder="Highlight text"
+                                  value={block.content || ""}
+                                  onChange={(e) => {
+                                    const newDetails = [...formData.details];
+                                    newDetails[blockIdx] = { ...newDetails[blockIdx], content: e.target.value };
+                                    setFormData({ ...formData, details: newDetails });
+                                  }}
+                                  className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm font-bold"
+                                />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Gallery */}
+                      <div className="space-y-4 pt-4 border-t border-black/5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Gallery</label>
+                          <button
+                            onClick={() => setFormData({ ...formData, gallery: [...formData.gallery, { id: `g${Date.now()}`, imageUrl: "", caption: "", description: "", order: formData.gallery.length }] })}
+                            className="text-xs font-bold text-blue-600 hover:underline"
+                          >
+                            + Add Image
+                          </button>
+                        </div>
+                        {formData.gallery.map((item: any, itemIdx: number) => (
+                          <div key={itemIdx} className="border border-black/10 rounded-xl p-4 bg-gray-50 space-y-2 flex gap-4">
+                            <input
+                              type="text"
+                              placeholder="Image URL"
+                              value={item.imageUrl}
+                              onChange={(e) => {
+                                const newGallery = [...formData.gallery];
+                                newGallery[itemIdx] = { ...newGallery[itemIdx], imageUrl: e.target.value };
+                                setFormData({ ...formData, gallery: newGallery });
+                              }}
+                              className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Caption"
+                              value={item.caption || ""}
+                              onChange={(e) => {
+                                const newGallery = [...formData.gallery];
+                                newGallery[itemIdx] = { ...newGallery[itemIdx], caption: e.target.value };
+                                setFormData({ ...formData, gallery: newGallery });
+                              }}
+                              className="w-1/2 p-2 bg-white border border-black/10 rounded-lg text-sm"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Description (optional)"
+                              value={item.description || ""}
+                              onChange={(e) => {
+                                const newGallery = [...formData.gallery];
+                                newGallery[itemIdx] = { ...newGallery[itemIdx], description: e.target.value };
+                                setFormData({ ...formData, gallery: newGallery });
+                              }}
+                              className="w-1/2 p-2 bg-white border border-black/10 rounded-lg text-sm"
+                            />
+                            <input
+                              type="number"
+                              placeholder="Order"
+                              value={item.order}
+                              onChange={(e) => {
+                                const newGallery = [...formData.gallery];
+                                newGallery[itemIdx] = { ...newGallery[itemIdx], order: parseInt(e.target.value) || 0 };
+                                setFormData({ ...formData, gallery: newGallery });
+                              }}
+                              className="w-20 p-2 bg-white border border-black/10 rounded-lg text-sm"
+                            />
+                            <button
+                              onClick={() => {
+                                const newGallery = formData.gallery.filter((_: any, i: number) => i !== itemIdx);
+                                setFormData({ ...formData, gallery: newGallery });
+                              }}
+                              className="text-red-500 text-xs font-bold hover:underline"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Links */}
+                      <div className="space-y-4 pt-4 border-t border-black/5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Links</label>
+                          <button
+                            onClick={() => setFormData({ ...formData, links: [...formData.links, { id: `l${Date.now()}`, title: "Website", description: "", url: "", displayUrl: "", buttonLabel: "Visit", order: formData.links.length }] })}
+                            className="text-xs font-bold text-blue-600 hover:underline"
+                          >
+                            + Add Link
+                          </button>
+                        </div>
+                        {formData.links.map((link: any, linkIdx: number) => (
+                          <div key={linkIdx} className="border border-black/10 rounded-xl p-4 bg-gray-50 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <select
+                                value={link.title}
+                                onChange={(e) => {
+                                  const newLinks = [...formData.links];
+                                  newLinks[linkIdx] = { ...newLinks[linkIdx], title: e.target.value };
+                                  setFormData({ ...formData, links: newLinks });
+                                }}
+                                className="w-full md:w-1/3 p-2 bg-white border border-black/10 rounded-lg text-sm font-bold appearance-none"
+                              >
+                                <option value="Website">Website</option>
+                                <option value="GitHub">GitHub</option>
+                                <option value="Documentation">Documentation</option>
+                                <option value="Demo">Demo</option>
+                                <option value="Other">Other</option>
+                              </select>
+                              <button
+                                onClick={() => {
+                                  const newLinks = formData.links.filter((_: any, i: number) => i !== linkIdx);
+                                  setFormData({ ...formData, links: newLinks });
+                                }}
+                                className="text-red-500 text-xs font-bold hover:underline ml-2"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                placeholder="Description"
+                                value={link.description || ""}
+                                onChange={(e) => {
+                                  const newLinks = [...formData.links];
+                                  newLinks[linkIdx] = { ...newLinks[linkIdx], description: e.target.value };
+                                  setFormData({ ...formData, links: newLinks });
+                                }}
+                                className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Full URL"
+                                value={link.url || ""}
+                                onChange={(e) => {
+                                  const newLinks = [...formData.links];
+                                  newLinks[linkIdx] = { ...newLinks[linkIdx], url: e.target.value };
+                                  setFormData({ ...formData, links: newLinks });
+                                }}
+                                className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Display URL (shortened for UI)"
+                                value={link.displayUrl || ""}
+                                onChange={(e) => {
+                                  const newLinks = [...formData.links];
+                                  newLinks[linkIdx] = { ...newLinks[linkIdx], displayUrl: e.target.value };
+                                  setFormData({ ...formData, links: newLinks });
+                                }}
+                                className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Button Label"
+                                value={link.buttonLabel || "Visit"}
+                                onChange={(e) => {
+                                  const newLinks = [...formData.links];
+                                  newLinks[linkIdx] = { ...newLinks[linkIdx], buttonLabel: e.target.value };
+                                  setFormData({ ...formData, links: newLinks });
+                                }}
+                                className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
+                              />
+                              <input
+                                type="number"
+                                placeholder="Order"
+                                value={link.order}
+                                onChange={(e) => {
+                                  const newLinks = [...formData.links];
+                                  newLinks[linkIdx] = { ...newLinks[linkIdx], order: parseInt(e.target.value) || 0 };
+                                  setFormData({ ...formData, links: newLinks });
+                                }}
+                                className="w-20 p-2 bg-white border border-black/10 rounded-lg text-sm"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {(activeModal === "portfolio" || activeModal === "news") && (
                     <div className="pt-6 border-t border-black/5">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">
@@ -825,6 +1392,8 @@ const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
                         ? "News cards read best with a strong thumbnail, a short title, and the correct Backnumber selected before publishing."
                         : activeModal === "portfolio"
                           ? "Portfolio posts feel stronger when the cover image is clean and the album assignment already matches the collection structure."
+                          : activeModal === "devProject"
+                          ? "Fill in all sections for a complete developer project. Main visual, information categories, details blocks, gallery, and links will all appear in the detail view and print layout."
                           : "Nested collections are easiest to scan when parent albums stay broad and child albums stay specific."}
                     </p>
                   </div>

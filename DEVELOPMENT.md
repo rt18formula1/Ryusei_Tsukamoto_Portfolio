@@ -1,363 +1,509 @@
-# rt18_formula1 Official Site - DEVELOPMENT.md
-最終更新: 2026-06-22 00:00 (JST)
-
----
+Developer Project Portfolio Feature — Implementation Brief
 
-## 重要: AIエージェントへの指示
-
-このファイルはエージェント間で共有する「設計書」兼「進捗管理表」です。
-ClaudeやDevinなどの後続エージェントは、作業前に必ず以下の **「Stripe/ショップの実装状況」** を熟読してください。
-
----
-
-## プロジェクト概要
-
-- **サイトURL**: https://rt18-formula1-official-site.vercel.app
-- **DB**: Supabase (PostgreSQL)
-- **決済**: Stripe (Managed Payments / Checkout Session方式)
-- **メール**: Resend
-- **画像ストレージ**: Cloudflare R2
+このリポジトリに、Developer Projectの詳細表示およびA4 Printable Project Sheet機能を実装してください。
 
----
+First: Analyze the Existing Project
 
-## ショップ / Stripe 実装状況 (2026-05-13 更新)
+実装を開始する前に、現在のコードベースを確認してください。
 
-### 完了した作業
-- **Stripe Managed Payments 移行**: `PaymentIntent` 直接作成方式から、最新のブループリントに基づいた `Stripe Checkout Session` 方式へ移行済み。
-- **Webhook 実装**: `app/api/shop/webhook/route.tsx` で `checkout.session.completed` を受信し、注文作成とResendメール送信を行うロジックを実装済み。
-- **Stripe設定**: ダッシュボード側での Webhook 登録 (`whsec_...`)、テスト商品の作成完了。
-- **UI バグ修正**: 
-  - `product.type` が null の場合に `.toUpperCase()` でクラッシュする問題を全ショップコンポーネントで修正済み。
-  - ログインリダイレクト先を `/shop/mypage` (未作成) から `/shop` (トップ) へ修正。
-  - 新規ユーザー（プロフィール未作成）がチェックアウト画面で無限リダイレクトされる問題を、Authセッション確認のみのガードに変更して修正。
-  - RLSポリシーを修正し、ログイン済みユーザー（authenticated）でも商品を `SELECT` できるように変更。
-
-### 技術的な特記事項
-- **Stripe API Version**: 決済処理では `2026-02-25.preview` ヘッダーを使用。
-- **環境変数**: Vercelには `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY` 等が設定済み。
-
----
-
-## 開発ログ
-
-### 2026-05-21 Supabase Security Advisor対応
-
-#### 対応内容
-- Supabaseから `rls_disabled_in_public` のCritical通知が届いたため、project `ghnnfndnjvtrgkovuxte` のSecurity Advisorを確認。
-- RLSが無効だった `public.album_relations`, `public.album_news`, `public.album_portfolio`, `public.orders`, `public.order_items`, `public.user_profiles` に対して RLS を有効化。
-- `public.activate_codes`, `public.commissions`, `public.digital_contents`, `public.inquiries` は RLS 有効だが policy が無かったため、用途に合わせた最小限の policy を追加。
-- `public.albums` の `Allow all operations` policy と、`public.products` の `Authenticated users can manage products` policy を削除。どちらも書き込み許可が広すぎるため、管理系書き込みは service role 経由に寄せる。
-- 適用SQLを `supabase-security-fix-2026-05-21.sql` に保存。
-
-#### 検証
-- Supabase Security Advisor再実行: `rls_disabled_in_public` は解消。
-- 残存WARN: `auth_leaked_password_protection` のみ。これはDashboardのAuth設定でLeaked Password Protectionを有効化する必要がある。
-- SQLで `public` schema の RLS無効テーブルを確認: 0件。
-- `anon` roleで検証: `album_relations` は公開読み取り可、`orders`, `user_profiles`, `digital_contents`, `activate_codes` は0件で非公開化されていることを確認。
-
-#### 後続エージェントへの注意
-- RLS強化により、anon/authenticated Supabase clientからの管理系直接書き込みは失敗する。Admin画面の注文ステータス変更、商品デジタル納品データ作成、commission更新などは service role を使うAPI/Server Actionへ移行すること。
-- 購入者向けの `digital_contents` は、`orders.status in ('paid', 'processing', 'shipped', 'delivered')` の注文を持つユーザーのみ参照可能。
-- `activate_codes` は `used_by = auth.uid()` のユーザーのみ参照可能。
-- Leaked Password ProtectionはSQLではなくSupabase Dashboard側のAuth設定で対応する。
-
----
-
-### 2026-05-21 Codex作業ログ
-
-#### 実装内容
-- **チェックアウト住所保存**: `app/api/shop/checkout/route.ts` で、チェックアウト時の配送先情報を `user_profiles` に `upsert` する処理を追加。
-- **注文数量の永続化**: Stripe Checkout metadata に `cart_quantities` を追加し、`app/api/shop/webhook/route.tsx` 側で `order_items.quantity` を正しく保存するよう修正。従来は数量が常に `1` になり得た。
-- **注文確認メール修正**: 注文確認メールで `\${order.total_price.toLocaleString()}` が文字列のまま表示される問題を修正。金額、注文ID、配送先、ステータスを含むHTMLメールに整理。
-- **発送通知メール改善**: `app/api/shop/shipping-notification/route.ts` のHTML生成にエスケープ処理を追加し、配送先表示を整理。
-- **チェックアウトUI改善**: `components/shop/checkout-client.tsx` に必須入力チェック、Country入力、エラー表示を追加。ローカル環境で Supabase public env が未設定の場合、無限Loadingではなく設定不足メッセージを表示。
-- **マイページ強化**: `app/shop/mypage/page.tsx` で注文履歴に商品明細、数量、小計、配送先、追跡番号、デジタル納品リンク/テキスト/アクティベートコードを表示。
-- **Admin注文管理強化**: `components/shop/shop-admin-tab.tsx` で注文詳細に商品明細を表示。発送処理時に注文内容を確認しやすくした。
-
-#### 検証
-- `npx tsc --noEmit`: 成功。
-- `npm run build`: 成功。
-- `npm run lint`: 既存の広範な lint エラーにより失敗。今回変更範囲の型エラーは `tsc` で解消済み。
-- Browserで `http://localhost:3000/shop/checkout` を確認。ローカル `.env.local` に `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` が無いため、設定不足メッセージが表示されることを確認。
-
-#### Git / Deploy
-- Commit: `8185dc6` `Polish shop checkout and order flow`
-- Push: `origin/main` へ push 済み。
-- Production deploy: `npx vercel --prod` 実行済み、Vercel deployment `dpl_9aSYnSG2KAwfnQRV6WJBiHSfYbUj` が `READY`。
-- 本番URL: https://rt18-formula1-official-site.vercel.app
-- デプロイ中に `/calendar` の `Dynamic server usage` 警告が出たが、ビルドと本番デプロイは成功。
-
-#### 後続エージェントへの注意
-- 本番環境では Supabase/Stripe/Resend の環境変数が設定済み前提。ローカル `.env.local` には `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` が無かったため、ローカルで実決済フローを検証する場合は追加が必要。
-- `orders.shipping_country` / `user_profiles.country` をコード上で参照している。DBに未追加の環境がある場合はカラム追加が必要。
-- `activate_codes` は `used_by = user.id` でマイページ表示している。RLSが厳しい環境ではユーザー自身が使用済みコードを読めるポリシーを確認すること。
-- 注文メール/発送メールは `onboarding@resend.dev` 送信元のまま。独自ドメイン送信に切り替える場合は Resend 側のドメイン認証と `from` の更新が必要。
-
----
-
-## 次のタスク (Claudeへの引き継ぎ事項)
-
-1. **決済完了フローの最終確認 (最優先)**
-   - Stripe Checkoutでテスト決済完了後、Supabaseの `orders` および `order_items` テーブルに正しくデータが書き込まれるか確認。
-   - Resend経由で注文確認メールが実際に届くか確認。
-   - 数量2以上の商品購入時に `order_items.quantity` が正しく保存されるか確認。
-
-2. **Admin UI の詳細実装**
-   - 注文一覧、注文詳細、ステータス変更、追跡番号登録、発送通知メール送信は実装済み。
-   - 今後は検索、絞り込み、注文CSV出力、発送メール再送履歴などを追加すると運用しやすい。
-
-3. **マイページ (My Page) の構築**
-   - ユーザーがログイン後に自分の購入履歴を確認できる画面は `/shop/mypage` に実装済み。
-   - デジタルコンテンツ（`digital_contents`）のダウンロードリンクやアクティベートコード表示も実装済み。
-   - 今後はダウンロード期限、購入者限定表示のRLS検証、UIの多言語化を確認する。
-
-4. **プロフィール管理の強化**
-   - チェックアウト時に入力された住所を `user_profiles` テーブルに保存・更新するロジックは実装済み。
-   - 今後は本番DBの `country` カラム有無、住所更新時の既存プロフィール情報の保持、郵便番号補完のチェックを行う。
-
----
-
-## DBテーブル設計 (抜粋)
-
-### products
-| Name | Type | Note |
-|------|------|------|
-| id | uuid | Primary |
-| status | text | 'on_sale', 'sold_out', 'draft' |
-| stripe_product_id | text | Stripe側の商品ID |
-| stripe_price_id | text | Stripe側の価格ID |
-
-### orders
-| Name | Type | Note |
-|------|------|------|
-| id | uuid | Primary |
-| user_id | uuid | references user_profiles(id) |
-| status | text | 'pending', 'paid', 'shipped', etc. |
-| stripe_checkout_session_id | text | Webhookでの照合用 |
-
----
-
-## 進捗
-
-### 完了済み
-- [x] 基本ページ構成 (News, Portfolio, Calendar, Profile, Contact, Request)
-- [x] Admin管理画面 (骨格実装)
-- [x] Cloudflare R2連携
-- [x] Supabase Auth 会員登録・ログイン実装
-- [x] Stripe Managed Payments 移行完了
-- [x] Webhook による注文自動作成・メール送信ロジック実装
-- [x] チェックアウト時の住所保存・更新
-- [x] 注文数量を `order_items` に反映
-- [x] 注文確認メールの金額表示バグ修正
-- [x] Admin 注文管理・発送通知UIの強化
-- [x] マイページ購入履歴・デジタル納品表示
-
-### 進行中
-- [ ] ショップデータの整合性確認 (Stripe同期テスト)
-- [ ] 本番環境でのStripe Checkout実決済テスト
-- [ ] Admin画面の管理系書き込みを service role API/Server Action へ移行
-
-### 未着手 (優先度高)
-- [ ] Supabase Auth Leaked Password Protection の有効化
-- [ ] 注文検索・絞り込み・CSV出力
-- [ ] Resend独自ドメイン送信元への切り替え
-- [ ] lint既存エラーの整理
-
----
-
-### 2026-05-29 プロジェクト保存場所の移行
-
-#### 作業内容
-- プロジェクトの保存場所を `/Users/Ryusei_Tsukamoto/Downloads/rt18_formula1-Official-Site/` から外部HDD `/Volumes/Mac Hdd/RYUSEI/rt18_formula1-Official-Site/` へ移行。
-- 移行手順:
-  1. `rsync` でプロジェクトファイル（node_modules, .next 除く）を外部HDDへコピー
-  2. `.git` ディレクトリを外部HDDへコピー（Git履歴を保持）
-  3. `node_modules` を元フォルダからrsyncでコピー
-- 外部HDD: `/Volumes/Mac Hdd/` (3.6TB, 使用量299GB, 空き527GB)
-
-#### 新しい作業パス
-**今後の開発は `/Volumes/Mac Hdd/RYUSEI/rt18_formula1-Official-Site/` で行うこと。**
-
-#### 後続エージェントへの注意
-- プロジェクトの正式パスが変更されました。
-- `cd '/Volumes/Mac Hdd/RYUSEI/rt18_formula1-Official-Site/'` でプロジェクトに移動してから作業してください。
-- npm/node コマンドは nvm 経由で使用: `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"`
-
----
-
-### 2026-06-01 Claude作業ログ: F1DB AI取得機能の追加
-
-#### 実装内容
-- **新規APIルート `app/api/f1-ai-fetch/route.ts`** を作成
-  - Anthropic claude-sonnet-4-20250514 + web_search_20250305 ツールを使用
-  - `type: 'schedule'` → グランプリの週末スケジュール（TrackTime / JapanTime付き）を取得
-  - `type: 'result'` → 指定セッション（Race / Qualifying / Sprint等）の公式リザルトを取得
-  - 環境変数 `ANTHROPIC_API_KEY` が必須（Vercelに要設定）
-
-- **`components/f1-jolpica-client.tsx` にAI取得タブを追加**
-  - タブに「AI取得 / AI Fetch」を追加（activeTab: 'aifetch'）
-  - 週末スケジュール / セッション結果の切り替え
-  - Grand Prix名・Year・Sessionを入力してAIで取得
-  - 結果をTrackTime + JapanTimeのテーブル形式で表示
-
-#### 重要: 環境変数
-- Vercelダッシュボードで `ANTHROPIC_API_KEY` の追加が必要
-- プロジェクト設定 → Environment Variables → `ANTHROPIC_API_KEY` を追加
-
-#### Git / Deploy
-- Commit: 後続で記録
-- Push: origin/main へ push 済み
-- Production deploy: npx vercel --prod 実行済み
-
-#### 後続エージェントへの注意
-- `ANTHROPIC_API_KEY` がVercelに未設定の場合、AI取得ボタン押下時に500エラーが出る
-- APIルートは `/app/api/f1-ai-fetch/route.ts` に存在
-- f1-jolpica-clientの他タブ（schedule, standings等）は変更なし
-
----
-
-### 2026-06-02 Codex作業ログ: F1DB AI取得機能をGemini構成へ移行
-
-#### 実装内容
-- **`app/api/f1-ai-fetch/route.ts` をGemini API構成に変更**
-  - Base44側で使用していた `add_context_from_internet: true + gemini_3_flash + response_json_schema` の考え方に合わせ、Gemini REST APIの `google_search` tool と `generationConfig.response_schema` を使用。
-  - `RESULT_PROMPT_BASE` はユーザー提示のプロンプトに合わせ、DSQ・ペナルティ・107%例外などのnotesを含めるルールを反映。
-  - レスポンスに `provider: "gemini"`, `model`, `sources` を含めるようにした。
-  - `GEMINI_MODEL` 未設定時のデフォルトは `gemini-3-flash-preview`。
-
-- **`components/f1-jolpica-client.tsx` のAI取得タブを更新**
-  - 表示文を Claude から Gemini + Google Search に変更。
-  - Gemini grounding metadata 由来の参照元URLを結果下部に表示。
-  - APIエラー詳細がUIに出るように改善。
-
-#### 重要: 環境変数
-- Vercelダッシュボードで `GEMINI_API_KEY` の設定が必要。
-- 必要に応じて `GEMINI_MODEL` を設定可能。未設定時は `gemini-3-flash-preview`。
-- 旧 `ANTHROPIC_API_KEY` はこのAI取得APIでは不要。
-
-#### 検証
-- `npx tsc --noEmit`: 成功。
-- `npm run build`: 成功。既存の `/calendar` Dynamic server usage 警告と、ローカルSupabaseキー不足による取得エラーは出るがビルドは完了。
-- ローカル `.env.local` の `GEMINI_API_KEY` は空のため、実際のGemini検索取得は未検証。
-
----
-
-### 2026-06-02 Codex作業ログ: F1DBスケジュール取得をGoogle Calendar iCal優先に変更
-
-#### 実装内容
-- **`lib/calendar-service.ts` にF1スケジュール抽出機能を追加**
-  - 既存のFormula 1 public Google Calendar iCalからGP名・年に一致するセッションを抽出。
-  - Practice / Sprint Qualifying / Sprint / Qualifying / Race をセッション順に整列。
-  - iCalの開始・終了時刻から `TrackTime` と `JapanTime` を生成。
-  - JST日付も `japanDate` として返し、日付跨ぎ（例: Monaco Practice 2のJST 06/06 00:00）を表示できるようにした。
-
-- **`app/api/f1-ai-fetch/route.ts` のschedule取得をiCal優先に変更**
-  - `type: "schedule"` はまず `fetchF1CalendarSchedule()` を使用。
-  - iCalで一致するGPが見つかった場合は `provider: "google-calendar-ical"` として返却。
-  - iCalで見つからない場合のみ従来どおりGemini + Google Searchへフォールバック。
-
-- **`components/f1-jolpica-client.tsx` のAI取得タブを更新**
-  - 説明文を「スケジュールはiCal、結果はGemini検索」に変更。
-  - 取得元表示を `via Calendar iCal` / `via Gemini + Google Search` で切り替え。
-  - スケジュール表示を `Track: MM/DD HH:MM - HH:MM`, `Japan: MM/DD HH:MM - HH:MM` 形式に変更。
-
-#### 検証
-- ローカルAPI確認:
-  - Monaco 2026: `provider: "google-calendar-ical"` でPractice 1/2/3, Qualifying, Raceを取得。
-  - China 2026: Sprint weekendとしてPractice 1, Sprint Qualifying, Sprint, Qualifying, Raceを取得。
-- `npx tsc --noEmit`: 成功。
-- `npm run build`: 成功。既存の `/calendar` Dynamic server usage 警告と、ローカルSupabaseキー不足による取得エラーは出るがビルドは完了。
-
----
-
-### 2026-06-04 Claude work log: Fix F1DB always showing loading spinner
-
-#### Problem
-- `loading` useState was initialized to `true`
-- This caused a full-screen spinner before any data loaded
-- The AI Fetch tab was never visible until Jolpica API responded (which it was failing to do)
-
-#### Fix
-- Changed `useState(true)` -> `useState(false)` in f1-jolpica-client.tsx
-- Now the full UI (including AI Fetch tab) renders immediately on page load
-- Jolpica data loads in the background after mount via useEffect
-
-#### Git / Deploy
-- Commit: e6a1781
-- Push: origin/main
-- Vercel Production: Ready in 2m
-- URL: https://rt18-formula1-official-site.vercel.app/f1-database
-
-#### Notes for next agent
-- GEMINI_API_KEY must be set in Vercel env vars for AI Fetch to work
-- Schedule fetch uses Google Calendar iCal first, falls back to Gemini + Google Search
-- Result fetch always uses Gemini + Google Search
-
----
-
-### 2026-06-04 Claude: AI Fetch UI redesign (Base44 style + text copy + JPEG export)
-
-#### Changes
-- f1-jolpica-client.tsx: AI Fetch tab UI completely redesigned to match Base44 app output style
-  - Output card uses monospace font, white background
-  - Schedule: GP title, [Schedule] header, each session with TrackTime / JapanTime
-  - Result: GP title, session name, [Result] header, P1..P22 list, notes
-  - Footer: Racing car emoji + rt18_formula1
-  - Text Copy button: copies output card text to clipboard
-  - JPEG Save button: exports output card as JPEG via html2canvas (dynamic import)
-- html2canvas already present in package.json (no new install needed)
-
-#### Commit / Deploy
-- Commit: e6e07ce
-- Push: origin/main
-- Vercel: Ready in 1m
-
----
-
-### 2026-06-22 Claude/Codex整理ログ: F1 SNS投稿定型文出力と公式結果取得の統合
-
-#### Claude開発で追加・変更された内容
-- **F1DBにSNS投稿定型文出力タブを追加**
-  - `components/f1-jolpica-client.tsx` に `sns` タブを追加。
-  - `F1_2026_CALENDAR` をもとにRound一覧を表示。
-  - 中止扱いのRound 4 Bahrain / Round 5 Saudi Arabia は無効表示。
-  - 各Roundを開くと、スケジュール・スプリント予選・スプリント・予選・レースの定型文生成ボタンを表示。
-
-- **Base44風の出力モーダルを追加**
-  - 新規 `components/f1-image-export-modal.tsx` を追加。
-  - 生成された投稿文をモーダルでプレビュー。
-  - ハッシュタグ/メンションを除いた本文をコピー可能。
-  - Canvasで4:5寄りのJPEGを書き出し、`rt18_formula1` ロゴを下部に配置。
-  - 未導入依存を避けるため、`lucide-react` / `framer-motion` は使わず標準DOMで実装。
-
-- **2026年F1カレンダー・トリガー定義を追加**
-  - 新規 `lib/f1-data-constants.ts` を追加。
-  - Round番号、国名、公式GP名、サーキット、日程、Sprint有無、Formula1.com meetingId / slug を管理。
-  - `TRIGGER_TYPES` で投稿出力ボタン定義を一元管理。
-
-- **Formula1.com公式結果スクレイパーを追加**
-  - 新規 `lib/f1-official-scraper.ts` を追加。
-  - `https://www.formula1.com/en/results/{year}/races/{meetingId}/{slug}/{page}` からHTMLテーブルを取得。
-  - Race / Qualifying / Sprint / Sprint Qualifying の結果ページに対応。
-  - ドライバー名末尾の3文字コード除去、Pos列の保持、Notes抽出を実装。
-
-- **SNSテンプレート生成サービスを強化**
-  - `lib/f1-sns-service.ts` を更新。
-  - スケジュールはGoogle Calendar iCalを優先。
-  - 結果系の取得優先順位を以下に整理:
-    1. Formula1.com公式結果スクレイピング
-    2. Jolpica
-    3. OpenF1
-    4. OpenRouter LLMフォールバック
-  - セッション終了時刻から、終了済みセッションの投稿候補を返す `getEndedSessionsForRace()` / `syncEndedSessionsForYear()` を追加。
-  - 文字化けしていたコメント、`Race` 判定、`TEMPLATE_OPTIONS.find()` の変数名ミスを修正。
-
-- **OpenF1クライアント補助関数を追加**
-  - `lib/openf1-api.ts` に `getMeetings`, `getSessions`, `getResultRows`, `getDriverRows` を追加。
-  - `components/f1-database-round-modal.tsx` はこれらのローカルlib row helperを使う形に更新。
-
-#### 注意点
-- ローカル外部HDD上で `npx tsc --noEmit` と `npm run build` が初期化/I/O待ちで戻らない事象あり。
-- `.next` 生成キャッシュをプロジェクト外 `/tmp/rt18-next-backups/` に退避して再試行したが、TypeScript/Nextのローカル検証は完了できず。
-- 差分静的チェックでは未導入依存参照と明らかな文字化け/構文崩れは修正済み。
-- 最終確認はVercelのリモートProduction build結果をもって行う。
+特に以下を調査してください。
+
+使用しているFrameworkおよびVersion
+
+Routing構造
+
+Projectデータの現在の管理方法
+
+既存のProject一覧およびDetail UI
+
+Modal Componentの構造
+
+Styling System
+
+Image管理方法
+
+PDF / Print関連の既存実装
+
+DatabaseまたはCMSの有無
+
+TypeScriptの型構造
+
+既存Componentの再利用可能性
+
+まず既存構造を理解し、現在の設計を不必要に破壊しないでください。
+
+既存実装に近い構造を優先し、必要な場合のみ新しい抽象化やデータ構造を追加してください。
+
+Core Concept
+
+Developer Projectは単なるPortfolio Cardではありません。
+
+1つのProjectデータから、
+
+Web Portfolio Detail
+
+A4 Printable Project Sheet
+
+PDF / Print Output
+
+を生成できる構造にしてください。
+
+Project Data
+    │
+    ├── Web Detail Renderer
+    │
+    └── Print Renderer
+            │
+            └── PDF / Print
+
+Web用とPDF用で別々のProjectデータを持たないでください。
+
+同じデータを媒体ごとに異なるLayoutでRenderしてください。
+
+Developer Project Data Structure
+
+Developer Projectは概念的に以下を持ちます。
+
+Developer Project
+│
+├── Main Visual
+│
+├── Project Name
+│
+├── Short Description
+│
+├── Project Information
+│
+├── Project Details
+│
+├── Gallery
+│
+└── Links
+
+Web Detail View
+
+WebではProject詳細をLarge Detail Modalとして表示してください。
+
+基本的な情報順：
+
+Main Visual
+
+Project Name
+
+Short Description
+
+Project Information
+
+Project Details
+
+Gallery
+
+Links
+
+Web Viewでは閲覧体験を優先してください。
+
+A4版と同じ情報を使用しますが、Layoutまで同一にする必要はありません。
+
+DEVELOPER PROJECTのEyebrowはWeb Viewには表示しません。
+
+Main Visual
+
+Main Visualの仕様：
+
+A4では16:9固定
+
+object-fit: cover
+
+必要に応じて画像端部をトリミング
+
+WebとA4で同じ画像データを使用
+
+将来的なFocal Point対応を考慮したデータ構造にする
+
+Main VisualとGalleryは完全に別管理です。
+
+Project Information
+
+Project Informationは構造化されたLabel / Value情報です。
+
+CATEGORY
+
+Label        Value
+Label        Value
+
+基本カテゴリ：
+
+GENERAL
+INFRASTRUCTURE
+DATA
+AUTHENTICATION
+API / INTEGRATION
+Custom Categories...
+OTHER
+
+Custom Categoryは、
+
+基本カテゴリの後
+
+OTHERの前
+
+作成順
+
+で表示してください。
+
+OTHERは常に最後です。
+
+GENERAL
+
+GENERALには以下の固定項目があります。
+
+Status
+Type
+Started
+Platform
+
+例：
+
+Status        Public
+Type          Web Application
+Started       2026/03/15
+Platform      Web / iOS
+
+Startedの日付表示形式：
+
+YYYY/MM/DD
+
+Platformは複数値に対応してください。
+
+Information Value Types
+
+将来的に以下のValue Typeへ拡張可能な構造にしてください。
+
+Text
+Multiple Values
+URL
+Service
+
+Service Valueは、
+
+[ Service Icon ] Service Name
+
+として表示可能にしてください。
+
+Registered ServiceとCustom Serviceの両方を将来的に扱える設計にしてください。
+
+URL Rules
+
+URLには、
+
+実際に使用するFull URL
+
+UI上のDisplay URL
+
+という概念を持たせてください。
+
+表示時は長いURLを省略可能です。
+
+ただし、
+
+Click → Full URL
+
+Copy → Full URL
+
+QR Code → Full URL
+
+PDF Link → Full URL
+
+としてください。
+
+Tracking ParameterやCampaign Codeなど、URLの意味に直接関係しない部分は表示上省略可能です。
+
+Project Details
+
+Project DetailsはProject Informationとは別です。
+
+Project Information：
+
+Database      Supabase
+Deployment    Vercel
+Framework     Next.js
+
+Project Details：
+
+Background
+Problem
+Solution
+Development
+Design Concept
+Future Plans
+
+などの文章・説明コンテンツです。
+
+固定された1つの長文ではなく、Content Blockを並べる構造にしてください。
+
+初期Block Type：
+
+Section
+Text
+Image
+Image + Text
+Highlight
+
+Blockは順序を持ち、将来的に並び替え可能な構造にしてください。
+
+Gallery
+
+Galleryは、
+
+Main Visual
+
+Project Details内のImage
+
+とは別です。
+
+GalleryはProject成果物・UI・スクリーンショットなどを一覧的に見せるためのものです。
+
+Gallery Itemは将来的に、
+
+Image
+
+Caption
+
+Description
+
+などを持てる構造にしてください。
+
+Links
+
+LinksはProject Detailの最後に配置してください。
+
+基本順：
+
+Website
+GitHub
+Additional Links...
+
+WebsiteとGitHubが存在する場合は先頭固定。
+
+Additional Linksのみ順序変更可能な設計にしてください。
+
+各Linkは最低限、
+
+Title
+Description
+URL
+Button Label
+
+を持ちます。
+
+Descriptionは必須です。
+
+外部リンクは新しいタブで開いてください。
+
+A4 Printable Project Sheet
+
+Developer ProjectはA4縦のProject SheetとしてPrint / PDF出力可能にしてください。
+
+用途：
+
+PDF
+
+印刷
+
+提案資料
+
+対面で直接渡す資料
+
+Paper：
+
+A4
+Portrait
+
+A4 Header
+
+全ページ共通：
+
+RYUSEI TSUKAMOTO PORTFOLIO
+
+A4 Footer
+
+全ページ共通：
+
+Ryusei Tsukamoto        Project Name        1 / 3
+
+配置：
+
+Left: Ryusei Tsukamoto
+
+Center: Project Name
+
+Right: Page Number
+
+1ページのみの場合も、
+
+1 / 1
+
+形式を使用してください。
+
+First Page
+
+基本構造：
+
+RYUSEI TSUKAMOTO PORTFOLIO
+
+
+[ MAIN VISUAL — 16:9 / cover ]
+
+
+DEVELOPER PROJECT
+
+PROJECT NAME
+
+Short Description
+
+
+PROJECT INFORMATION
+
+
+GENERAL
+
+ルール：
+
+DEVELOPER PROJECTはA4版のみ
+
+Projectごとに変更しない
+
+Title Areaは左揃え
+
+Short Descriptionに文字数制限を設けない
+
+可能な限りGENERALまで1ページ目に配置
+
+GENERALカテゴリ自体は途中でページ分割しない
+
+A4 Category Layout
+
+カテゴリ間：
+
+Whitespace
+
+Thin Horizontal Rule
+
+Whitespace
+
+カテゴリ内は基本的に余白で整理してください。
+
+項目数が多い場合のみ、薄いRow Separatorを使用可能です。
+
+Project Details Print Rules
+
+以下を可能な限り分断しないでください。
+
+Section Titleと本文先頭
+
+ImageとCaption
+
+Image + Text Block
+
+Highlight Block
+
+Block全体が入らない場合は次ページへ送ってください。
+
+ただし、非常に長いText Blockは自然なページ分割を許可してください。
+
+Links Print Layout
+
+A4ではLinkを縦方向に表示してください。
+
+Website
+
+Description
+
+URL                              [ QR Code ]
+
+QR Codeは、
+
+Website
+GitHub
+
+のみ。
+
+Additional LinksにはQR Codeを表示しないでください。
+
+QR CodeはWeb Viewでは表示しません。
+
+QR Codeには必ずFull URLを使用してください。
+
+Print Pagination
+
+基本原則：
+
+意味のある情報Blockを途中で不自然に分断しない。
+
+対象：
+
+GENERAL Category
+
+Project Information Category
+
+Link Block
+
+Image + Caption
+
+Highlight
+
+Image + Text Block
+
+入り切らない場合はBlock全体を次ページへ送ってください。
+
+Implementation Approach
+
+以下の順番で進めてください。
+
+Step 1
+
+既存コードを調査し、現在の構造を理解する。
+
+Step 2
+
+この仕様との差分を整理する。
+
+既存構造を無駄に置き換えない。
+
+Step 3
+
+必要なData Model / Typeを設計する。
+
+将来の拡張性を確保しつつ、過剰な抽象化は避ける。
+
+Step 4
+
+Web Detail Viewを実装する。
+
+Step 5
+
+A4 Print Viewを実装する。
+
+Step 6
+
+実際に印刷PreviewまたはPDF生成を確認し、A4でLayoutが崩れないよう調整する。
+
+Important Constraints
+
+既存コードを不必要に破壊しない
+
+既存のComponent / Styling Systemを可能な限り再利用する
+
+Web用とPDF用でProject Dataを複製しない
+
+過剰なCMS化をしない
+
+初期段階で不要なBlock Typeを追加しない
+
+Mobile / Responsive Viewも既存Portfolioの設計方針に合わせる
+
+Print Layoutは実際のA4印刷を前提とする
+
+Web ViewとPrint Viewの責務を明確に分離する
+
+実装後、既存機能にRegressionがないことを確認する

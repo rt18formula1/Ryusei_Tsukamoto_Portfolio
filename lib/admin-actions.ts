@@ -2,8 +2,9 @@
 
 import { supabaseAdmin } from "./supabaseAdmin";
 import { stripe } from "./stripe";
-import type { DbNews, DbPortfolio, DbAlbum, DbEvent } from "./supabase-queries";
+import type { DbNews, DbPortfolio, DbAlbum, DbEvent, DbDevProject } from "./supabase-queries";
 import { verifyAdmin } from "./admin-auth";
+import { uploadImageToStorage } from "./supabase-queries";
 
 
 export async function createNewsAction(news: Partial<DbNews>) {
@@ -142,4 +143,34 @@ export async function syncProductToStripeAction(productId: string) {
   }).eq("id", productId);
 
   return stripeProduct;
+}
+
+// ----------------------------------------------------------------------
+// Developer Projects
+// ----------------------------------------------------------------------
+
+export async function createDevProjectAction(project: Partial<DbDevProject>) {
+  await verifyAdmin();
+  const { data, error } = await supabaseAdmin.from("dev_projects").insert(project).select().single();
+  if (error) throw error;
+  return data as DbDevProject;
+}
+
+export async function updateDevProjectAction(id: string, project: Partial<DbDevProject>) {
+  await verifyAdmin();
+  const { data, error } = await supabaseAdmin.from("dev_projects").update(project).eq("id", id).select().single();
+  if (error) throw error;
+  return data as DbDevProject;
+}
+
+export async function deleteDevProjectAction(id: string) {
+  await verifyAdmin();
+  const { error } = await supabaseAdmin.from("dev_projects").delete().eq("id", id);
+  if (error) throw error;
+  return { success: true };
+}
+
+export async function uploadDevProjectImageAction(bucket: "news-images" | "portfolio-images" | "album-covers" | "bucknumber-covers", file: File) {
+  await verifyAdmin();
+  return await uploadImageToStorage(bucket, file);
 }

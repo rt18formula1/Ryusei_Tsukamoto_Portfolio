@@ -27,10 +27,10 @@ CREATE POLICY "Public read access" ON dev_projects
   FOR SELECT USING (true);
 
 -- Admin write access (service role bypasses RLS automatically)
--- This policy allows explicit admin users if needed in the future
+-- This policy is kept for explicit admin users if needed in the future
 CREATE POLICY "Admin write access" ON dev_projects
-  FOR ALL USING (auth.role() = 'service_role')
-  WITH CHECK (auth.role() = 'service_role');
+  FOR ALL USING (auth.jwt() ->> 'role' = 'service_role')
+  WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
 
 -- Updated at trigger
 CREATE OR REPLACE FUNCTION update_updated_at_column()

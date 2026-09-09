@@ -287,3 +287,6 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
     </div>
   );
 }
+
+// Default export for compatibility
+export default DevProjectModal;

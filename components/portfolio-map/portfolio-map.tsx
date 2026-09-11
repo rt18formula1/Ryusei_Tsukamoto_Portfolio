@@ -45,10 +45,12 @@ export function PortfolioMap() {
 
   const handleDisciplineClick = (disciplineId: DisciplineId) => {
     // Navigate to discipline page
-    if (disciplineId === "developer") {
-      window.location.href = "/portfolio/dev";
-    }
-    // Other disciplines will be implemented later
+    window.location.href = `/portfolio/${disciplineId}`;
+  };
+
+  const handleCentralNodeClick = () => {
+    // Navigate to profile page
+    window.location.href = "/profile";
   };
 
   const handleHomeClick = () => {
@@ -81,10 +83,10 @@ export function PortfolioMap() {
   return (
     <div className="w-full h-screen bg-white overflow-hidden relative">
       {/* Navigation Bar */}
-      <nav className="absolute top-0 left-0 right-0 z-10 bg-white/90 backdrop-blur-md border-b border-black/10 px-6 py-4">
+      <nav className="absolute top-0 left-0 right-0 z-10 bg-white/90 backdrop-blur-md border-b border-black/10 px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-600">
+          <div className="flex items-center gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-600">
             {state.breadcrumb.map((item, index) => (
               <span key={index}>
                 {index > 0 && <span className="mx-2 text-gray-300">/</span>}
@@ -96,22 +98,22 @@ export function PortfolioMap() {
           </div>
 
           {/* Right Controls */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={toggleViewMode}
-              className="text-[10px] font-bold uppercase tracking-widest border border-black/15 rounded-full px-4 py-2 hover:border-black hover:bg-black hover:text-white transition-all"
+              className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest border border-black/15 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 hover:border-black hover:bg-black hover:text-white transition-all"
             >
               {state.viewMode === "map" ? "List View" : "Map View"}
             </button>
             <button
               onClick={handleHomeClick}
-              className="text-[10px] font-bold uppercase tracking-widest bg-black text-white rounded-full px-4 py-2 hover:bg-gray-800 transition-all"
+              className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest bg-black text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-800 transition-all"
             >
               Home
             </button>
             <Link
               href="/portfolio"
-              className="text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors"
+              className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors hidden sm:block"
             >
               Portfolio
             </Link>
@@ -151,7 +153,10 @@ export function PortfolioMap() {
           {/* Central Node - RYUSEI TSUKAMOTO */}
           <g
             className="cursor-pointer"
-            onClick={() => handleNodeClick("central")}
+            onClick={() => {
+              handleNodeClick("central");
+              handleCentralNodeClick();
+            }}
             onMouseEnter={() => setHoveredNode("central")}
             onMouseLeave={() => setHoveredNode(null)}
           >
@@ -231,32 +236,32 @@ export function PortfolioMap() {
 
       {/* List View */}
       {state.viewMode === "list" && (
-        <div className="pt-24 px-6 max-w-4xl mx-auto">
-          <h1 className="text-3xl font-black uppercase tracking-tighter mb-12">
+        <div className="pt-24 px-4 sm:px-6 max-w-4xl mx-auto">
+          <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter mb-8 sm:mb-12">
             All Disciplines
           </h1>
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {Object.entries(DISCIPLINES).map(([disciplineId, { label, color }]) => (
               <Link
                 key={disciplineId}
-                href={disciplineId === "developer" ? "/portfolio/dev" : "#"}
+                href={`/portfolio/${disciplineId}`}
                 className="block"
               >
                 <div
-                  className="group border border-black/10 rounded-2xl p-6 hover:border-black/30 hover:shadow-xl transition-all cursor-pointer"
+                  className="group border border-black/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:border-black/30 hover:shadow-xl transition-all cursor-pointer"
                   onClick={() => handleNodeClick(disciplineId, disciplineId as DisciplineId)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <div 
-                        className="w-3 h-3 rounded-full"
+                        className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full"
                         style={{ backgroundColor: color }}
                       />
-                      <h2 className="text-xl font-black uppercase tracking-tight group-hover:text-blue-600 transition-colors">
+                      <h2 className="text-base sm:text-xl font-black uppercase tracking-tight group-hover:text-blue-600 transition-colors">
                         {label}
                       </h2>
                     </div>
-                    <span className="text-gray-300 text-xl group-hover:text-black transition-colors">
+                    <span className="text-gray-300 text-lg sm:text-xl group-hover:text-black transition-colors">
                       →
                     </span>
                   </div>

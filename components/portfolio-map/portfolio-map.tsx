@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { PortfolioMapState, DisciplineId } from "@/types/portfolio-map";
 
 const DISCIPLINES: Record<DisciplineId, { label: string; color: string }> = {
@@ -40,6 +41,14 @@ export function PortfolioMap() {
       selectedNode: nodeId,
       breadcrumb: disciplineId ? ["HOME", DISCIPLINES[disciplineId].label] : ["HOME"],
     }));
+  };
+
+  const handleDisciplineClick = (disciplineId: DisciplineId) => {
+    // Navigate to discipline page
+    if (disciplineId === "developer") {
+      window.location.href = "/portfolio/dev";
+    }
+    // Other disciplines will be implemented later
   };
 
   const handleHomeClick = () => {
@@ -100,6 +109,12 @@ export function PortfolioMap() {
             >
               Home
             </button>
+            <Link
+              href="/portfolio"
+              className="text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors"
+            >
+              Portfolio
+            </Link>
           </div>
         </div>
       </nav>
@@ -182,7 +197,10 @@ export function PortfolioMap() {
               <g
                 key={disciplineId}
                 className="cursor-pointer"
-                onClick={() => handleNodeClick(disciplineId, disciplineId as DisciplineId)}
+                onClick={() => {
+                  handleNodeClick(disciplineId, disciplineId as DisciplineId);
+                  handleDisciplineClick(disciplineId as DisciplineId);
+                }}
                 onMouseEnter={() => setHoveredNode(disciplineId)}
                 onMouseLeave={() => setHoveredNode(null)}
               >
@@ -219,26 +237,31 @@ export function PortfolioMap() {
           </h1>
           <div className="space-y-6">
             {Object.entries(DISCIPLINES).map(([disciplineId, { label, color }]) => (
-              <div
+              <Link
                 key={disciplineId}
-                className="group border border-black/10 rounded-2xl p-6 hover:border-black/30 hover:shadow-xl transition-all cursor-pointer"
-                onClick={() => handleNodeClick(disciplineId, disciplineId as DisciplineId)}
+                href={disciplineId === "developer" ? "/portfolio/dev" : "#"}
+                className="block"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: color }}
-                    />
-                    <h2 className="text-xl font-black uppercase tracking-tight group-hover:text-blue-600 transition-colors">
-                      {label}
-                    </h2>
+                <div
+                  className="group border border-black/10 rounded-2xl p-6 hover:border-black/30 hover:shadow-xl transition-all cursor-pointer"
+                  onClick={() => handleNodeClick(disciplineId, disciplineId as DisciplineId)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                      <h2 className="text-xl font-black uppercase tracking-tight group-hover:text-blue-600 transition-colors">
+                        {label}
+                      </h2>
+                    </div>
+                    <span className="text-gray-300 text-xl group-hover:text-black transition-colors">
+                      →
+                    </span>
                   </div>
-                  <span className="text-gray-300 text-xl group-hover:text-black transition-colors">
-                    →
-                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

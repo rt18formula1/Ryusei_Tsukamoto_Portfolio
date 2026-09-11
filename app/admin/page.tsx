@@ -995,42 +995,11 @@ export default function AdminPage() {
                               </button>
                             </div>
                             <div className="space-y-2">
-                              {cat.items.map((item: any, itemIdx: number) => (
-                                <div key={itemIdx} className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Label"
-                                    value={item.label}
-                                    onChange={(e) => {
-                                      const newInfo = [...formData.information];
-                                      newInfo[catIdx] = { ...newInfo[catIdx], items: newInfo[catIdx].items.map((it: any, i: number) => i === itemIdx ? { ...it, label: e.target.value } : it) };
-                                      setFormData({ ...formData, information: newInfo });
-                                    }}
-                                    className="w-1/3 p-2 bg-white border border-black/10 rounded-lg text-sm font-bold"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Value"
-                                    value={Array.isArray(item.value) ? item.value.join(", ") : item.value}
-                                    onChange={(e) => {
-                                      const newInfo = [...formData.information];
-                                      const vals = e.target.value.split(",").map(v => v.trim());
-                                      newInfo[catIdx] = { ...newInfo[catIdx], items: newInfo[catIdx].items.map((it: any, i: number) => i === itemIdx ? { ...it, value: vals.length > 1 ? vals : e.target.value } : it) };
-                                      setFormData({ ...formData, information: newInfo });
-                                    }}
-                                    className="w-2/3 p-2 bg-white border border-black/10 rounded-lg text-sm"
-                                  />
-                                  <button
-                                    onClick={() => {
-                                      const newInfo = [...formData.information];
-                                      newInfo[catIdx] = { ...newInfo[catIdx], items: newInfo[catIdx].items.filter((_: any, i: number) => i !== itemIdx) };
-                                      setFormData({ ...formData, information: newInfo });
-                                    }}
-                                    className="text-red-500 text-xs font-bold hover:underline"
-                                  >
-                                    ✕
-                                  </button>
-                                ))}
+                              {cat.items.map((item: any, itemIdx: number) => <div key={itemIdx} className="flex gap-2">
+                                <input type="text" placeholder="Label" value={item.label} onChange={(e) => { const information = [...formData.information]; information[catIdx] = { ...information[catIdx], items: information[catIdx].items.map((entry: any, index: number) => index === itemIdx ? { ...entry, label: e.target.value } : entry) }; setFormData({ ...formData, information }); }} className="w-1/3 rounded-lg border border-black/10 bg-white p-2 text-sm font-bold" />
+                                <input type="text" placeholder="Value" value={Array.isArray(item.value) ? item.value.join(", ") : item.value} onChange={(e) => { const information = [...formData.information]; const values = e.target.value.split(",").map((value) => value.trim()); information[catIdx] = { ...information[catIdx], items: information[catIdx].items.map((entry: any, index: number) => index === itemIdx ? { ...entry, value: values.length > 1 ? values : e.target.value } : entry) }; setFormData({ ...formData, information }); }} className="w-2/3 rounded-lg border border-black/10 bg-white p-2 text-sm" />
+                                <button onClick={() => { const information = [...formData.information]; information[catIdx] = { ...information[catIdx], items: information[catIdx].items.filter((_: any, index: number) => index !== itemIdx) }; setFormData({ ...formData, information }); }} className="text-xs font-bold text-red-500">✕</button>
+                              </div>)}
                               <button
                                 onClick={() => {
                                   const newInfo = [...formData.information];
@@ -1042,8 +1011,8 @@ export default function AdminPage() {
                                 + Add Item
                               </button>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
 
                       {/* Details Blocks */}

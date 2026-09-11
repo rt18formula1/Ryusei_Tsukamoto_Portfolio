@@ -6,11 +6,19 @@ import { createClient } from "../../../../lib/supabaseServer";
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// Build-time guard to prevent Supabase initialization during build
+const isBuildTime = process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'preview' || process.env.NODE_ENV === 'test';
+
 function cleanText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
 export async function POST(request: Request) {
+  // Build-time guard
+  if (isBuildTime) {
+    return NextResponse.json({ error: "Build time" }, { status: 200 });
+  }
+
   try {
     const body = await request.json();
     const { items, userId, shipping } = body;

@@ -20,13 +20,13 @@ export default async function Home() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "rt18_formula1 Official Website",
-    description: "F1 art portfolio and race news by rt18_formula1",
+    name: "Ryusei Tsukamoto Multi-Discipline Portfolio",
+    description: "Official Personal Portfolio of Ryusei Tsukamoto covering Development, Illustration, Music, Writing, and Investment.",
     url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rt18-formula1-official-site.vercel.app",
     inLanguage: ["en", "ja"],
     author: {
       "@type": "Person",
-      name: "rt18_formula1",
+      name: "Ryusei Tsukamoto",
     },
   };
 

@@ -1,95 +1,85 @@
+"use client";
+
 import Link from "next/link";
-import { snsLinks } from "@/lib/content";
+import { useLanguage } from "@/components/providers/language-provider";
 
 export function SiteFooter() {
+  const { language } = useLanguage();
+
   return (
-    <footer className="bg-black text-white pt-12 md:pt-24 pb-8 md:pb-12">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-16 mb-12 md:mb-24">
-          {/* Logo & Info */}
-          <div className="space-y-8">
-            <div>
-              <h3 className="text-3xl font-black tracking-tighter mb-4">rt18_formula1</h3>
-              <p className="text-sm text-gray-400 font-medium leading-relaxed">
-                Official website featuring F1 fan art, illustrations, and the latest news from the world of Formula 1.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-4">
-              {snsLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center transition-all shadow-sm hover:bg-white/15 hover:scale-110"
-                  title={link.name}
-                >
-                  <img src={link.icon} alt={link.name} width={28} height={28}
-                    className="w-7 h-7 object-contain opacity-80 group-hover:opacity-100 transition-opacity" />
-                </a>
-              ))}
-            </div>
+    <footer className="bg-black text-white py-16 px-4 sm:px-6 border-t border-white/10">
+      <div className="container mx-auto max-w-6xl">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 pb-16 border-b border-white/10">
+          {/* Brand Info */}
+          <div className="md:col-span-5 space-y-4">
+            <h2 className="text-2xl font-black tracking-tighter uppercase">
+              RYUSEI TSUKAMOTO
+            </h2>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">
+              Multi-Discipline Creator & Developer
+            </p>
+            <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
+              {language === "ja"
+                ? "開発、イラスト、音楽、執筆、投資リサーチなど、多様な領域のプロジェクトと知見を一元管理・発信する個人ポートフォリオ。"
+                : "Personal portfolio consolidating projects and insights across software development, illustration, music, writing, and investment research."}
+            </p>
           </div>
 
-          {/* Navigation Items */}
-          <div className="grid grid-cols-3 gap-8 md:col-span-2">
-            <div>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mb-8">Main Menu</h4>
-              <ul className="space-y-5">
-                <li><Link href="/#top" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Home</Link></li>
-                <li><Link href="/#profile" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Profile</Link></li>
-                <li><Link href="/news" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">News</Link></li>
-                <li><Link href="/portfolio" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Portfolio</Link></li>
-                <li><Link href="/calendar" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Calendar</Link></li>
-                <li><Link href="/f1-database" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">F1 DB</Link></li>
-                <li><Link href="/f1-database?tab=sns-post" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">SNS Post</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mb-8">Shop</h4>
-              <ul className="space-y-5">
-                <li><Link href="/shop" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">All Products</Link></li>
-                <li><Link href="/shop?type=digital" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Digital</Link></li>
-                <li><Link href="/shop?type=physical" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Goods</Link></li>
-                <li><Link href="/shop/commission" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Commission</Link></li>
-                <li><Link href="/shop/mypage" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">My Page</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mb-8">Inquiries</h4>
-              <ul className="space-y-5">
-                <li><Link href="/shop/inquiry" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Contact</Link></li>
-                <li><Link href="/#request" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Request</Link></li>
-                <li><a href="https://forms.gle/sCnwiNJ5gkLLt9Bn8" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Feedback</a></li>
-                <li><Link href="/cookie-privacy-policy" className="text-sm font-bold text-gray-300 hover:text-white transition-colors">Privacy Policy</Link></li>
-              </ul>
-            </div>
+          {/* Disciplines */}
+          <div className="md:col-span-4 space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 mb-4">
+              Disciplines
+            </h3>
+            <ul className="space-y-2 text-sm font-bold">
+              <li>
+                <Link href="/#developer" className="hover:text-gray-300 transition-colors flex items-center justify-between">
+                  <span>💻 Developer</span>
+                  <span className="text-[10px] bg-white text-black px-2 py-0.5 rounded-full font-black">Flagship</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/#illustrator" className="hover:text-gray-300 transition-colors">
+                  🎨 Illustrator
+                </Link>
+              </li>
+              <li>
+                <Link href="/#musician" className="hover:text-gray-300 transition-colors">
+                  🎵 Musician
+                </Link>
+              </li>
+              <li>
+                <Link href="/#blogger" className="hover:text-gray-300 transition-colors">
+                  📝 Blogger
+                </Link>
+              </li>
+              <li>
+                <Link href="/#investor" className="hover:text-gray-300 transition-colors">
+                  📈 Investor
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Quick Links */}
+          <div className="md:col-span-3 space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 mb-4">
+              Navigation
+            </h3>
+            <ul className="space-y-2 text-sm text-gray-400 font-medium">
+              <li><Link href="/portfolio" className="hover:text-white transition-colors">All Portfolio</Link></li>
+              <li><Link href="/#profile" className="hover:text-white transition-colors">Profile & Contact</Link></li>
+              <li><Link href="/admin" className="hover:text-white transition-colors">Admin Dashboard</Link></li>
+              <li><Link href="/cookie-privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+            </ul>
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-12 space-y-6">
-          {/* SNS text row */}
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            {snsLinks.map((link) => (
-              <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer"
-                className="text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-white transition-colors">
-                {link.name}
-              </a>
-            ))}
-          </div>
-          {/* Bottom row */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs font-bold text-gray-500">
-              &copy; {new Date().getFullYear()} rt18_formula1. All rights reserved.
-            </p>
-            <div className="flex items-center gap-8 text-[10px] font-black uppercase tracking-widest text-gray-500">
-              <Link href="/cookie-privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <span className="opacity-20">|</span>
-              <Link href="/admin" className="hover:text-white transition-colors">Admin Access</Link>
-              <span className="opacity-20">|</span>
-              <span>Based in Japan</span>
-            </div>
-          </div>
+        {/* Bottom Bar */}
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 font-medium gap-4">
+          <p>© {new Date().getFullYear()} Ryusei Tsukamoto. All rights reserved.</p>
+          <p className="font-mono text-[10px] tracking-widest text-gray-600 uppercase">
+            RYUSEI TSUKAMOTO PORTFOLIO SYSTEM
+          </p>
         </div>
       </div>
     </footer>

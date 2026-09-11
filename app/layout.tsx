@@ -4,6 +4,8 @@ import "./globals.css";
 import { LanguageProvider } from "@/components/providers/language-provider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { CartProvider } from "@/components/shop/cart-context";
+import { CookieBanner } from "@/components/cookie-banner";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -12,48 +14,47 @@ export const metadata: Metadata = {
   other: {
     'google-site-verification': 'G-7V8FYG7SDB',
   },
-  title: "rt18_formula1",
+  title: "Ryusei Tsukamoto — Multi-Discipline Portfolio",
   description:
-    "rt18_formula1 Official Website - Exclusive Formula 1 fan art, illustrations, and the latest F1 news. Discover visual content celebrating motorsport.",
+    "Official Personal Portfolio of Ryusei Tsukamoto. Featuring Developer Projects, Illustrations, Music, Blog Articles, and Investment Research.",
   keywords: [
-    "Formula 1",
-    "F1 fan art",
-    "F1 illustrations",
-    "F1 news",
-    "motorsport art",
-    "F1 artwork",
-    "racing illustrations",
-    "rt18_formula1",
+    "Ryusei Tsukamoto",
+    "Developer Portfolio",
+    "Software Engineer",
+    "Illustrator",
+    "Musician",
+    "Blogger",
+    "Investor",
+    "Web Application",
+    "Next.js",
   ],
   openGraph: {
-    title: "rt18_formula1 - Exclusive Formula1 Fan Art & Illustrations",
+    title: "Ryusei Tsukamoto — Multi-Discipline Portfolio",
     description:
-      "Discover exclusibe Formula1 fan art, illustrations, and the latest F1 news, rt18_formula1.",
+      "Official Personal Portfolio of Ryusei Tsukamoto across Developer Projects, Art, Music, Writing, and Investment.",
     url: "/",
-    siteName: "rt18_formula1",
-    locale: "en_US",
+    siteName: "Ryusei Tsukamoto Portfolio",
+    locale: "ja_JP",
     type: "website",
-    images: ["/favicon.png"],
+    images: ["/icon.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "rt18_formula1 Official Website",
-    description: "F1 illustrations and latest Formula 1 race news by rt18_formula1.",
-    images: ["/favicon.png"],
+    title: "Ryusei Tsukamoto — Multi-Discipline Portfolio",
+    description: "Official Personal Portfolio of Ryusei Tsukamoto.",
+    images: ["/icon.png"],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "rt18_f1",
+    title: "Ryusei Tsukamoto",
   },
   icons: {
     icon: [
-      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/favicon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon.png", sizes: "192x192", type: "image/png" },
     ],
     apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
   alternates: {
@@ -65,9 +66,6 @@ export const viewport: Viewport = {
   themeColor: "#000000",
 };
 
-import { CartProvider } from "@/components/shop/cart-context";
-import { CookieBanner } from "@/components/cookie-banner";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -75,7 +73,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-white text-black">
+      <body className="min-h-full flex flex-col bg-white text-black font-sans selection:bg-black selection:text-white">
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-7V8FYG7SDB"
           strategy="afterInteractive"

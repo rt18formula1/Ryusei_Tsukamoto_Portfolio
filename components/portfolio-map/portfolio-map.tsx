@@ -45,7 +45,7 @@ export function PortfolioMap() {
 
   const handleDisciplineClick = (disciplineId: DisciplineId) => {
     // Navigate to discipline page
-    window.location.href = `/portfolio/${disciplineId}`;
+    window.location.href = `/disciplines/${disciplineId}`;
   };
 
   const handleCentralNodeClick = () => {
@@ -244,7 +244,7 @@ export function PortfolioMap() {
             {Object.entries(DISCIPLINES).map(([disciplineId, { label, color }]) => (
               <Link
                 key={disciplineId}
-                href={`/portfolio/${disciplineId}`}
+                href={`/disciplines/${disciplineId}`}
                 className="block"
               >
                 <div

@@ -1,25 +1,8 @@
 import { getDevProjectById } from "@/lib/supabase-queries";
 import { DevProjectDetailClient } from "@/components/dev-project/dev-project-detail-client";
 import { notFound } from "next/navigation";
-import type { DbDevProject } from "@/lib/supabase-queries";
 import type { Metadata } from "next";
-import { DeveloperProject } from "@/types/dev-project";
-
-function mapDbToDevProject(db: DbDevProject): DeveloperProject {
-  return {
-    id: db.id,
-    projectName: db.project_name,
-    shortDescription: db.short_description,
-    mainVisualUrl: db.main_visual_url || "",
-    mainVisualFocalPoint: db.main_visual_focal_point_x !== null && db.main_visual_focal_point_y !== null
-      ? { x: db.main_visual_focal_point_x, y: db.main_visual_focal_point_y }
-      : undefined,
-    information: db.information || [],
-    details: db.details || [],
-    gallery: db.gallery || [],
-    links: db.links || [],
-  };
-}
+import { mapDbToDevProject } from "@/lib/dev-project/mapper";
 
 export async function generateStaticParams() {
   // For static generation, we could fetch all IDs, but for now return empty

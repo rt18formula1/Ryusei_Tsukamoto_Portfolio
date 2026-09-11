@@ -46,9 +46,6 @@ export function DevProjectDetailClient({ project }: DevProjectDetailClientProps)
             </div>
           </div>
           <div className="p-8 md:p-12">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">
-              Developer Project
-            </p>
             <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4">
               {project.projectName}
             </h1>
@@ -61,7 +58,7 @@ export function DevProjectDetailClient({ project }: DevProjectDetailClientProps)
         {/* Quick info pills */}
         <div className="flex flex-wrap gap-3 mt-8 mb-4">
           {project.information.flatMap(cat =>
-            cat.items.filter(item => cat.category === "GENERAL").map((item, i) => (
+            cat.category === "GENERAL" ? cat.items.map((item, i) => (
               <span
                 key={i}
                 className="px-4 py-2 border border-black/10 rounded-full text-xs font-bold bg-gray-50"
@@ -69,7 +66,7 @@ export function DevProjectDetailClient({ project }: DevProjectDetailClientProps)
                 <span className="text-gray-400 mr-2">{item.label}</span>
                 {Array.isArray(item.value) ? item.value.join(", ") : String(item.value)}
               </span>
-            ))
+            )) : []
           )}
         </div>
 

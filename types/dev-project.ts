@@ -13,9 +13,13 @@ export interface DevProjectInfoItem {
   label: string;
   value: string | string[];
   type: DevProjectInfoValueType;
+  /** Full destination used for click, copy, QR and print. `value` remains supported for stored data. */
+  url?: string;
   serviceIconUrl?: string;
   serviceName?: string;
-  displayUrl?: string; 
+  /** Allows a registered service later without making current JSON data incompatible. */
+  service?: { id?: string; name: string; iconUrl?: string; kind: "registered" | "custom" };
+  displayUrl?: string;
 }
 
 export interface DevProjectInformation {

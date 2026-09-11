@@ -1,1 +1,10 @@
-（ここにペースト）
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { background: #fff; }
+body { min-height: 100vh; }
+
+@media print {
+  .screen-only { display: none !important; }
+}

@@ -3,6 +3,7 @@
 import { DeveloperProject, DevProjectDetailBlock } from "@/types/dev-project";
 import QRCode from "react-qr-code";
 import { useEffect, useState } from "react";
+import { displayValue, focalPointStyle, sortProjectInformation, sortProjectLinks } from "@/lib/dev-project/presentation";
 
 interface DevProjectPrintLayoutProps {
   project: DeveloperProject;
@@ -17,32 +18,15 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
 
   if (!mounted) return null;
 
-  const websiteLink = project.links.find(l => l.title.toLowerCase() === "website");
-  const githubLink = project.links.find(l => l.title.toLowerCase() === "github");
-  const additionalLinks = project.links.filter(
+  const orderedLinks = sortProjectLinks(project.links);
+  const websiteLink = orderedLinks.find(l => l.title.toLowerCase() === "website");
+  const githubLink = orderedLinks.find(l => l.title.toLowerCase() === "github");
+  const additionalLinks = orderedLinks.filter(
     l => l.title.toLowerCase() !== "website" && l.title.toLowerCase() !== "github"
-  ).sort((a, b) => a.order - b.order);
+  );
   const priorityLinks = [websiteLink, githubLink].filter(Boolean) as typeof project.links;
 
-  // Sort information: predefined categories first, custom categories in creation order, OTHER always last
-  const predefinedCategories = ["GENERAL", "INFRASTRUCTURE", "DATA", "AUTHENTICATION", "API / INTEGRATION"];
-  const sortedInformation = [...project.information].sort((a, b) => {
-    const aIsOther = a.category === "OTHER";
-    const bIsOther = b.category === "OTHER";
-    if (aIsOther && !bIsOther) return 1;
-    if (!aIsOther && bIsOther) return -1;
-    
-    const aPredefinedIdx = predefinedCategories.indexOf(a.category);
-    const bPredefinedIdx = predefinedCategories.indexOf(b.category);
-    
-    if (aPredefinedIdx !== -1 && bPredefinedIdx !== -1) {
-      return aPredefinedIdx - bPredefinedIdx;
-    }
-    if (aPredefinedIdx !== -1) return -1;
-    if (bPredefinedIdx !== -1) return 1;
-    
-    return 0;
-  });
+  const sortedInformation = sortProjectInformation(project.information);
 
   const renderBlock = (block: DevProjectDetailBlock) => {
     switch (block.type) {
@@ -51,14 +35,14 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
           <h3
             key={block.id}
             className="text-base font-black mt-8 mb-2 text-black uppercase tracking-widest break-inside-avoid"
-            style={{ pageBreakInside: "avoid" }}
+            style={{ pageBreakInside: "avoid", breakAfter: "avoid" }}
           >
             {block.content}
           </h3>
         );
       case "Text":
         return (
-          <p key={block.id} className="text-[11px] leading-relaxed mb-4 text-black whitespace-pre-wrap">
+          <p key={block.id} className="text-[11px] leading-relaxed mb-4 text-black whitespace-pre-wrap print-text-block">
             {block.content}
           </p>
         );
@@ -70,7 +54,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
             style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
           >
             <img
-              src={block.imageUrl}
+              src={block.imageUrl || ""}
               alt={block.imageCaption || ""}
               className="w-full h-auto"
               style={{ maxHeight: "260px", objectFit: "contain" }}
@@ -89,7 +73,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
           >
             <div className="w-1/2">
               <img
-                src={block.imageUrl}
+                src={block.imageUrl || ""}
                 alt=""
                 className="w-full h-auto"
                 style={{ maxHeight: "220px", objectFit: "cover" }}
@@ -124,8 +108,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
         @media print {
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           html, body { margin: 0; padding: 0; background: white !important; }
-          @page { counter-increment: page; }
-          .page-number::after { content: counter(page); }
+          .page-number::after { content: counter(page) " / " counter(pages); }
           .print-only { display: block !important; }
           .screen-only { display: none !important; }
           .print-header {
@@ -196,7 +179,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
           <img
             src={project.mainVisualUrl}
             alt={project.projectName}
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: focalPointStyle(project.mainVisualFocalPoint), display: "block" }}
           />
         </div>
 
@@ -242,7 +225,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
         <hr style={{ border: "none", borderTop: "0.5px solid #ccc", margin: "6mm 0" }} />
 
         {/* ===== PROJECT INFORMATION ===== */}
-        <div style={{ marginBottom: "12mm", breakInside: "avoid", pageBreakInside: "avoid" }}>
+        <div style={{ marginBottom: "12mm" }}>
           <p
             style={{
               fontSize: "7px",
@@ -307,13 +290,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                           textAlign: "right",
                         }}
                       >
-                        {item.type === "Multiple Values" && Array.isArray(item.value)
-                          ? item.value.join(" / ")
-                          : item.type === "URL"
-                          ? (item.displayUrl || (item.value as string))
-                          : item.type === "Service"
-                          ? (item.serviceName || (item.value as string))
-                          : (item.value as string)}
+                        {displayValue(item)}
                       </td>
                     </tr>
                   ))}
@@ -340,7 +317,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
               >
                 PROJECT DETAILS
               </p>
-              {project.details.sort((a, b) => a.order - b.order).map(renderBlock)}
+              {[...project.details].sort((a, b) => a.order - b.order).map(renderBlock)}
             </div>
           </>
         )}
@@ -369,7 +346,7 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                   gap: "5mm",
                 }}
               >
-                {project.gallery.sort((a, b) => a.order - b.order).map(item => (
+                {[...project.gallery].sort((a, b) => a.order - b.order).map(item => (
                   <figure
                     key={item.id}
                     style={{ margin: 0, breakInside: "avoid", pageBreakInside: "avoid" }}
@@ -449,9 +426,9 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                     <p style={{ fontSize: "8px", color: "#555", marginBottom: "2mm" }}>
                       {link.description}
                     </p>
-                    <p style={{ fontSize: "7.5px", color: "#888", fontFamily: "monospace", wordBreak: "break-all" }}>
+                    <a href={link.url} style={{ display: "block", fontSize: "7.5px", color: "#555", fontFamily: "monospace", wordBreak: "break-all" }}>
                       {link.url}
-                    </p>
+                    </a>
                   </div>
                   <div style={{ flexShrink: 0 }}>
                     <QRCode value={link.url} size={56} level="M" />
@@ -477,9 +454,9 @@ export function DevProjectPrintLayout({ project }: DevProjectPrintLayoutProps) {
                   <p style={{ fontSize: "8px", color: "#555", marginBottom: "1.5mm" }}>
                     {link.description}
                   </p>
-                  <p style={{ fontSize: "7.5px", color: "#888", fontFamily: "monospace", wordBreak: "break-all" }}>
+                  <a href={link.url} style={{ display: "block", fontSize: "7.5px", color: "#555", fontFamily: "monospace", wordBreak: "break-all" }}>
                     {link.url}
-                  </p>
+                  </a>
                 </div>
               ))}
             </div>

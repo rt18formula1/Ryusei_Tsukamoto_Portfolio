@@ -3,8 +3,16 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { PortfolioMapState, DisciplineId } from "@/types/portfolio-map";
+import {
+  getDisciplines,
+  disciplineHref,
+  activityHref,
+  contentHref,
+} from "@/lib/portfolio-hierarchy";
+import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
+import type { BreadcrumbItem } from "@/types/portfolio-hierarchy";
 
-const DISCIPLINES: Record<DisciplineId, { label: string; color: string }> = {
+const NODE_META: Record<DisciplineId, { label: string; color: string }> = {
   developer: { label: "Developer", color: "#2563eb" },
   illustrator: { label: "Illustrator", color: "#7c3aed" },
   musician: { label: "Musician", color: "#db2777" },
@@ -22,34 +30,44 @@ export function PortfolioMap() {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Central node position (center of viewport)
+  const disciplines = getDisciplines();
+
   const centerX = 50;
   const centerY = 50;
 
-  // Discipline node positions (radial layout)
   const disciplinePositions: Record<DisciplineId, { x: number; y: number }> = {
-    developer: { x: 50, y: 18 },    // Top
-    illustrator: { x: 82, y: 35 },  // Top-right
-    musician: { x: 75, y: 72 },    // Bottom-right
-    blogger: { x: 25, y: 72 },    // Bottom-left
-    investor: { x: 18, y: 35 },   // Top-left
+    developer: { x: 50, y: 18 },
+    illustrator: { x: 82, y: 35 },
+    musician: { x: 75, y: 72 },
+    blogger: { x: 25, y: 72 },
+    investor: { x: 18, y: 35 },
   };
+
+  const breadcrumbItems: BreadcrumbItem[] = state.breadcrumb.map((label, index) => {
+    if (index === 0) return { label: "HOME", href: "/" };
+    const discipline = disciplines.find((d) => d.name.toUpperCase() === label.toUpperCase());
+    if (discipline && index === state.breadcrumb.length - 1) {
+      return { label: discipline.name.toUpperCase() };
+    }
+    if (discipline) {
+      return { label: discipline.name.toUpperCase(), href: disciplineHref(discipline.id) };
+    }
+    return { label };
+  });
 
   const handleNodeClick = (nodeId: string, disciplineId?: DisciplineId) => {
     setState((prev) => ({
       ...prev,
       selectedNode: nodeId,
-      breadcrumb: disciplineId ? ["HOME", DISCIPLINES[disciplineId].label] : ["HOME"],
+      breadcrumb: disciplineId ? ["HOME", NODE_META[disciplineId].label] : ["HOME"],
     }));
   };
 
   const handleDisciplineClick = (disciplineId: DisciplineId) => {
-    // Navigate to discipline page
-    window.location.href = `/disciplines/${disciplineId}`;
+    window.location.href = disciplineHref(disciplineId);
   };
 
   const handleCentralNodeClick = () => {
-    // Navigate to profile page
     window.location.href = "/profile";
   };
 
@@ -68,11 +86,10 @@ export function PortfolioMap() {
     }));
   };
 
-  // Pentagon SVG path generator
   const createPentagonPath = (cx: number, cy: number, size: number) => {
     const points = [];
     for (let i = 0; i < 5; i++) {
-      const angle = (i * 72 - 90) * (Math.PI / 180); // Start from top
+      const angle = (i * 72 - 90) * (Math.PI / 180);
       const x = cx + size * Math.cos(angle);
       const y = cy + size * Math.sin(angle);
       points.push(`${x},${y}`);
@@ -82,22 +99,10 @@ export function PortfolioMap() {
 
   return (
     <div className="w-full h-screen bg-white overflow-hidden relative">
-      {/* Navigation Bar */}
       <nav className="absolute top-0 left-0 right-0 z-10 bg-white/90 backdrop-blur-md border-b border-black/10 px-3 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-xs font-bold uppercase tracking-widest text-gray-600">
-            {state.breadcrumb.map((item, index) => (
-              <span key={index}>
-                {index > 0 && <span className="mx-1.5 sm:mx-2 text-gray-300">/</span>}
-                <span className={index === state.breadcrumb.length - 1 ? "text-black" : ""}>
-                  {item}
-                </span>
-              </span>
-            ))}
-          </div>
+          <HierarchyBreadcrumb items={breadcrumbItems} />
 
-          {/* Right Controls */}
           <div className="flex items-center gap-1.5 sm:gap-3">
             <button
               onClick={toggleViewMode}
@@ -121,7 +126,6 @@ export function PortfolioMap() {
         </div>
       </nav>
 
-      {/* Map View */}
       {state.viewMode === "map" && (
         <svg
           ref={svgRef}
@@ -129,13 +133,12 @@ export function PortfolioMap() {
           viewBox="0 0 100 100"
           preserveAspectRatio="xMidYMid slice"
         >
-          {/* Connection Lines */}
           {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
             const isSelected = state.selectedNode === disciplineId;
             const isHovered = hoveredNode === disciplineId;
             const isCentralSelected = state.selectedNode === "central";
             const isCentralHovered = hoveredNode === "central";
-            
+
             return (
               <line
                 key={disciplineId}
@@ -143,15 +146,26 @@ export function PortfolioMap() {
                 y1={centerY}
                 x2={pos.x}
                 y2={pos.y}
-                stroke={isSelected || isHovered || isCentralHovered ? "#000" : isCentralSelected ? "#666" : "#e5e5e5"}
-                strokeWidth={isSelected || isHovered || isCentralHovered ? "0.5" : isCentralSelected ? "0.3" : "0.2"}
+                stroke={
+                  isSelected || isHovered || isCentralHovered
+                    ? "#000"
+                    : isCentralSelected
+                      ? "#666"
+                      : "#e5e5e5"
+                }
+                strokeWidth={
+                  isSelected || isHovered || isCentralHovered
+                    ? "0.5"
+                    : isCentralSelected
+                      ? "0.3"
+                      : "0.2"
+                }
                 className="transition-all duration-300"
                 style={{ transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" }}
               />
             );
           })}
 
-          {/* Central Node - RYUSEI TSUKAMOTO */}
           <g
             className="cursor-pointer"
             onClick={() => {
@@ -163,7 +177,9 @@ export function PortfolioMap() {
           >
             <path
               d={createPentagonPath(centerX, centerY, 15)}
-              fill={state.selectedNode === "central" || hoveredNode === "central" ? "#000" : "#fff"}
+              fill={
+                state.selectedNode === "central" || hoveredNode === "central" ? "#000" : "#fff"
+              }
               stroke="#000"
               strokeWidth="0.4"
               className="transition-all duration-300"
@@ -175,7 +191,9 @@ export function PortfolioMap() {
               textAnchor="middle"
               dominantBaseline="middle"
               className="font-black uppercase tracking-wider pointer-events-none"
-              fill={state.selectedNode === "central" || hoveredNode === "central" ? "#fff" : "#000"}
+              fill={
+                state.selectedNode === "central" || hoveredNode === "central" ? "#fff" : "#000"
+              }
               style={{ fontSize: "2.5px" }}
             >
               RYUSEI
@@ -186,19 +204,20 @@ export function PortfolioMap() {
               textAnchor="middle"
               dominantBaseline="middle"
               className="font-black uppercase tracking-wider pointer-events-none"
-              fill={state.selectedNode === "central" || hoveredNode === "central" ? "#fff" : "#000"}
+              fill={
+                state.selectedNode === "central" || hoveredNode === "central" ? "#fff" : "#000"
+              }
               style={{ fontSize: "2.5px" }}
             >
               TSUKAMOTO
             </text>
           </g>
 
-          {/* Discipline Nodes */}
           {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
             const isSelected = state.selectedNode === disciplineId;
             const isHovered = hoveredNode === disciplineId;
-            const discipline = DISCIPLINES[disciplineId as DisciplineId];
-            
+            const meta = NODE_META[disciplineId as DisciplineId];
+
             return (
               <g
                 key={disciplineId}
@@ -213,7 +232,7 @@ export function PortfolioMap() {
                 <path
                   d={createPentagonPath(pos.x, pos.y, 7)}
                   fill={isSelected || isHovered ? "#000" : "#fff"}
-                  stroke={isSelected || isHovered ? "#000" : discipline.color}
+                  stroke={isSelected || isHovered ? "#000" : meta.color}
                   strokeWidth={isSelected || isHovered ? "0.3" : "0.2"}
                   className="transition-all duration-300"
                   style={{ transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" }}
@@ -227,7 +246,7 @@ export function PortfolioMap() {
                   fill={isSelected || isHovered ? "#fff" : "#000"}
                   style={{ fontSize: "1.4px" }}
                 >
-                  {discipline.label}
+                  {meta.label}
                 </text>
               </g>
             );
@@ -235,39 +254,62 @@ export function PortfolioMap() {
         </svg>
       )}
 
-      {/* List View */}
       {state.viewMode === "list" && (
-        <div className="pt-20 sm:pt-24 px-3 sm:px-6 max-w-4xl mx-auto">
-          <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tighter mb-6 sm:mb-12">
-            All Disciplines
+        <div className="pt-20 sm:pt-24 px-3 sm:px-6 max-w-4xl mx-auto h-full overflow-y-auto pb-12">
+          <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tighter mb-6 sm:mb-10">
+            Portfolio
           </h1>
-          <div className="space-y-3 sm:space-y-6">
-            {Object.entries(DISCIPLINES).map(([disciplineId, { label, color }]) => (
-              <Link
-                key={disciplineId}
-                href={`/disciplines/${disciplineId}`}
-                className="block"
-              >
-                <div
-                  className="group border border-black/10 rounded-xl sm:rounded-2xl p-3 sm:p-6 hover:border-black/30 hover:shadow-xl transition-all cursor-pointer"
-                  onClick={() => handleNodeClick(disciplineId, disciplineId as DisciplineId)}
+          <div className="space-y-8 sm:space-y-10">
+            {disciplines.map((discipline) => (
+              <section key={discipline.id}>
+                <Link
+                  href={disciplineHref(discipline.id)}
+                  className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 group"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 sm:gap-4">
-                      <div
-                        className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
-                        style={{ backgroundColor: color }}
-                      />
-                      <h2 className="text-sm sm:text-xl font-black uppercase tracking-tight group-hover:text-blue-600 transition-colors">
-                        {label}
-                      </h2>
-                    </div>
-                    <span className="text-gray-300 text-base sm:text-xl group-hover:text-black transition-colors">
-                      →
-                    </span>
-                  </div>
-                </div>
-              </Link>
+                  <div
+                    className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
+                    style={{ backgroundColor: discipline.color }}
+                  />
+                  <h2 className="text-sm sm:text-xl font-black uppercase tracking-tight group-hover:text-blue-600 transition-colors">
+                    {discipline.name}
+                  </h2>
+                </Link>
+
+                {discipline.activities.length === 0 ? (
+                  <p className="text-xs text-gray-400 pl-4 sm:pl-6">Coming soon</p>
+                ) : (
+                  <ul className="space-y-3 pl-4 sm:pl-6 border-l border-black/10">
+                    {discipline.activities.map((activity) => (
+                      <li key={activity.id}>
+                        <Link
+                          href={activityHref(discipline.id, activity.slug)}
+                          className="text-sm sm:text-base font-bold tracking-tight hover:text-blue-600 transition-colors"
+                        >
+                          {activity.name}
+                        </Link>
+                        {activity.contents.length > 0 && (
+                          <ul className="mt-2 space-y-1.5 pl-4 border-l border-black/5">
+                            {activity.contents.map((content) => (
+                              <li key={content.id}>
+                                <Link
+                                  href={contentHref(
+                                    discipline.id,
+                                    activity.slug,
+                                    content.slug
+                                  )}
+                                  className="text-xs sm:text-sm text-gray-600 hover:text-black transition-colors"
+                                >
+                                  {content.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
             ))}
           </div>
         </div>

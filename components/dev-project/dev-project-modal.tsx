@@ -4,6 +4,7 @@ import { useEffect, useCallback } from "react";
 import { DeveloperProject, DevProjectDetailBlock } from "@/types/dev-project";
 import Link from "next/link";
 import { X, ExternalLink, Printer } from "lucide-react";
+import { developerProjectPermalink } from "@/lib/portfolio-hierarchy";
 
 interface DevProjectModalProps {
   project: DeveloperProject;
@@ -363,7 +364,7 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
 
               <div className="mt-8 md:mt-10 pt-6 md:pt-8 border-t border-black/8">
                 <Link
-                  href={`/portfolio/dev/${project.id}`}
+                  href={developerProjectPermalink(project.id)}
                   className="block text-center text-[10px] md:text-xs font-bold text-gray-400 hover:text-black transition-colors underline underline-offset-4 mb-2 md:mb-3"
                   onClick={onClose}
                 >

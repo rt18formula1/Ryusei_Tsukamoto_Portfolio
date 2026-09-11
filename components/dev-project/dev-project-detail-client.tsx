@@ -20,11 +20,11 @@ export function DevProjectDetailClient({ project }: DevProjectDetailClientProps)
       <main className="flex-1 container mx-auto px-4 py-12 max-w-5xl">
         <div className="mb-12">
           <Link
-            href="/portfolio"
+            href="/portfolio/developer/rt18-dev"
             className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-black transition-colors flex items-center gap-2 group"
           >
             <span className="group-hover:-translate-x-1 transition-transform">←</span>
-            Back to Portfolio
+            Back to rt18_dev
           </Link>
         </div>
 

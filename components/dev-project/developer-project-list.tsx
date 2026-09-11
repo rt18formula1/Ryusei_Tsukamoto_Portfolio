@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { DeveloperProject } from "@/types/dev-project";
 import { DevProjectModal } from "./dev-project-modal";
+import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
+import { buildBreadcrumbs, getActivity, getDiscipline } from "@/lib/portfolio-hierarchy";
 
 interface DeveloperProjectListProps {
   projects: DeveloperProject[];
@@ -10,29 +12,27 @@ interface DeveloperProjectListProps {
 
 export function DeveloperProjectList({ projects }: DeveloperProjectListProps) {
   const [selectedProject, setSelectedProject] = useState<DeveloperProject | null>(null);
+  const discipline = getDiscipline("developer");
+  const activity = getActivity("developer", "rt18-dev");
+  const breadcrumbs =
+    discipline && activity
+      ? buildBreadcrumbs({ discipline, activity })
+      : [{ label: "HOME", href: "/" }, { label: "DEVELOPER" }];
 
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="border-b border-black/10 bg-white">
         <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-12 max-w-6xl">
-          <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
-            <a
-              href="/"
-              className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors"
-            >
-              ← Home
-            </a>
-            <span className="text-gray-300">/</span>
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-black">
-              Developer
-            </span>
+          <div className="mb-3 sm:mb-4">
+            <HierarchyBreadcrumb items={breadcrumbs} />
           </div>
           <h1 className="text-2xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter">
-            Developer Projects
+            {activity?.name ?? "rt18_dev"}
           </h1>
           <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600 max-w-2xl leading-relaxed">
-            Full-stack web applications, automation pipelines, and software tools built with Next.js, TypeScript, Supabase, and Cloudflare.
+            {activity?.description ??
+              "Full-stack web applications, automation pipelines, and software tools built with Next.js, TypeScript, Supabase, and Cloudflare."}
           </p>
         </div>
       </div>

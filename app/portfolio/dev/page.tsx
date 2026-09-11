@@ -1,14 +1,6 @@
-import { DeveloperProjectList } from "@/components/dev-project/developer-project-list";
-import { MOCK_DEV_PROJECT, MOCK_DEV_PROJECT_2 } from "@/lib/dev-project/mock";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default function DeveloperPage() {
-  const projects = [MOCK_DEV_PROJECT, MOCK_DEV_PROJECT_2];
-
-  return (
-    <div className="min-h-screen bg-white">
-      <DeveloperProjectList projects={projects} />
-    </div>
-  );
+/** Legacy Developer list → Activity rt18_dev */
+export default function LegacyDeveloperPage() {
+  redirect("/portfolio/developer/rt18-dev");
 }

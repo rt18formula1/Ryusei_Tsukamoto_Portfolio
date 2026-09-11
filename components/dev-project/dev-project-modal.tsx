@@ -1,49 +1,334 @@
 "use client";
 
-import { useEffect } from "react";
-import type { DevProjectDetailBlock, DevProjectInfoItem, DeveloperProject } from "@/types/dev-project";
-import { displayValue, focalPointStyle, fullUrl, sortProjectInformation, sortProjectLinks } from "@/lib/dev-project/presentation";
+import { useEffect, useCallback } from "react";
+import { DeveloperProject, DevProjectDetailBlock } from "@/types/dev-project";
+import Link from "next/link";
+import { X, ExternalLink, Printer } from "lucide-react";
 
-interface DevProjectModalProps { project: DeveloperProject; isOpen: boolean; onClose: () => void; }
-
-function Value({ item }: { item: DevProjectInfoItem }) {
-  if (item.type === "URL") return <a href={fullUrl(item)} target="_blank" rel="noreferrer" className="break-all text-blue-700 underline-offset-2 hover:underline">{displayValue(item)}</a>;
-  if (item.type === "Service") { const icon = item.service?.iconUrl ?? item.serviceIconUrl; return <span className="inline-flex items-center gap-2">{icon && <img src={icon} alt="" className="h-4 w-4 object-contain" />}{displayValue(item)}</span>; }
-  return <>{displayValue(item)}</>;
-}
-
-function DetailBlock({ block }: { block: DevProjectDetailBlock }) {
-  if (block.type === "Section") return <h3 className="mt-10 border-b border-black/10 pb-3 text-xl font-black">{block.content}</h3>;
-  if (block.type === "Text") return <p className="whitespace-pre-wrap text-sm leading-7 text-gray-700">{block.content}</p>;
-  if (block.type === "Highlight") return <blockquote className="border-l-4 border-black bg-neutral-50 px-5 py-4 text-sm font-semibold leading-7">{block.content}</blockquote>;
-  if (block.type === "Image") return block.imageUrl ? <figure><img src={block.imageUrl} alt={block.imageCaption ?? ""} className="aspect-video w-full rounded-xl object-cover" />{block.imageCaption && <figcaption className="mt-2 text-center text-xs text-gray-500">{block.imageCaption}</figcaption>}</figure> : null;
-  if (block.type === "ImageText") return <div className="grid gap-4 md:grid-cols-2">{block.imageUrl && <figure><img src={block.imageUrl} alt={block.imageCaption ?? ""} className="aspect-video w-full rounded-xl object-cover" />{block.imageCaption && <figcaption className="mt-2 text-xs text-gray-500">{block.imageCaption}</figcaption>}</figure>}<p className="whitespace-pre-wrap text-sm leading-7 text-gray-700">{block.text}</p></div>;
-  return null;
+interface DevProjectModalProps {
+  project: DeveloperProject;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalProps) {
+  // Keyboard handler
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose]
+  );
+
   useEffect(() => {
     if (!isOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    document.addEventListener("keydown", closeOnEscape); document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", closeOnEscape); document.body.style.overflow = ""; };
-  }, [isOpen, onClose]);
+
+    // Lock scroll
+    const scrollY = window.scrollY;
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+
+    // Keyboard
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      // Restore scroll position
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollY);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, handleKeyDown]);
+
   if (!isOpen) return null;
-  const information = sortProjectInformation(project.information);
-  const details = [...project.details].sort((a, b) => a.order - b.order);
-  const gallery = [...project.gallery].sort((a, b) => a.order - b.order);
-  return <div role="dialog" aria-modal="true" aria-label={`${project.projectName} details`} className="fixed inset-0 z-[100] flex items-end bg-black/60 p-0 backdrop-blur-sm md:items-center md:p-6" onMouseDown={onClose}>
-    <article className="flex h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl md:h-[90vh] md:rounded-3xl" onMouseDown={(event) => event.stopPropagation()}>
-      <header className="flex items-center justify-between border-b border-black/10 px-5 py-4 md:px-8"><h2 className="text-lg font-black md:text-xl">{project.projectName}</h2><button onClick={onClose} aria-label="Close project details" className="rounded-full p-2 text-xl text-gray-500 transition hover:bg-black/5 hover:text-black">×</button></header>
-      <div className="flex-1 overflow-y-auto px-5 py-6 md:px-8 md:py-8"><div className="mx-auto max-w-4xl space-y-12">
-        {project.mainVisualUrl && <img src={project.mainVisualUrl} alt={project.projectName} className="aspect-video w-full rounded-2xl object-cover" style={{ objectPosition: focalPointStyle(project.mainVisualFocalPoint) }} />}
-        <section><h1 className="text-3xl font-black tracking-tight md:text-5xl">{project.projectName}</h1><p className="mt-5 max-w-3xl whitespace-pre-wrap text-base leading-8 text-gray-700 md:text-lg">{project.shortDescription}</p></section>
-        <section><SectionTitle>Project Information</SectionTitle><div className="space-y-7">{information.map((category) => <div key={category.category} className="border-t border-black/10 pt-5"><h3 className="mb-4 text-[11px] font-black tracking-[0.2em] text-gray-500">{category.category}</h3><dl className="divide-y divide-black/5">{category.items.map((item, index) => <div className="grid gap-1 py-3 sm:grid-cols-[10rem_1fr] sm:gap-6" key={`${item.label}-${index}`}><dt className="text-sm font-bold text-gray-500">{item.label}</dt><dd className="text-sm leading-6 text-gray-900"><Value item={item} /></dd></div>)}</dl></div>)}</div></section>
-        {details.length > 0 && <section><SectionTitle>Project Details</SectionTitle><div className="space-y-6">{details.map((block) => <DetailBlock key={block.id} block={block} />)}</div></section>}
-        {gallery.length > 0 && <section><SectionTitle>Gallery</SectionTitle><div className="grid gap-5 sm:grid-cols-2">{gallery.map((item) => <figure key={item.id}><img src={item.imageUrl} alt={item.caption ?? ""} className="aspect-[4/3] w-full rounded-xl object-cover" />{item.caption && <figcaption className="mt-2 text-sm font-bold">{item.caption}</figcaption>}{item.description && <p className="mt-1 text-sm leading-6 text-gray-600">{item.description}</p>}</figure>)}</div></section>}
-        {project.links.length > 0 && <section><SectionTitle>Links</SectionTitle><div className="space-y-3">{sortProjectLinks(project.links).map((link) => <a key={link.id} href={link.url} target="_blank" rel="noreferrer" className="block rounded-xl border border-black/10 p-5 transition hover:border-black/30 hover:bg-neutral-50"><p className="font-black">{link.title} <span aria-hidden="true">↗</span></p><p className="mt-2 text-sm leading-6 text-gray-600">{link.description}</p><p className="mt-3 text-xs font-bold text-blue-700">{link.buttonLabel}</p></a>)}</div></section>}
-      </div></div>
-    </article></div>;
+
+  const renderBlock = (block: DevProjectDetailBlock) => {
+    switch (block.type) {
+      case "Section":
+        return (
+          <h3
+            key={block.id}
+            className="text-xl font-black mt-12 mb-4 text-black tracking-tight"
+          >
+            {block.content}
+          </h3>
+        );
+      case "Text":
+        return (
+          <p
+            key={block.id}
+            className="text-[15px] text-gray-700 leading-relaxed mb-6 whitespace-pre-wrap"
+          >
+            {block.content}
+          </p>
+        );
+      case "Image":
+        return (
+          <figure key={block.id} className="mb-8">
+            <div className="rounded-xl overflow-hidden bg-gray-100 border border-black/5">
+              <img
+                src={block.imageUrl}
+                alt={block.imageCaption || ""}
+                className="w-full h-auto"
+              />
+            </div>
+            {block.imageCaption && (
+              <figcaption className="text-xs text-gray-500 mt-2 text-center font-medium">
+                {block.imageCaption}
+              </figcaption>
+            )}
+          </figure>
+        );
+      case "ImageText":
+        return (
+          <div
+            key={block.id}
+            className="flex flex-col md:flex-row gap-6 mb-8 items-start"
+          >
+            <div className="md:w-1/2 w-full rounded-xl overflow-hidden bg-gray-100">
+              <img
+                src={block.imageUrl}
+                alt=""
+                className="w-full h-full object-cover"
+                style={{ maxHeight: "280px" }}
+              />
+            </div>
+            <div className="md:w-1/2">
+              <p className="text-[15px] text-gray-700 leading-relaxed">{block.text}</p>
+            </div>
+          </div>
+        );
+      case "Highlight":
+        return (
+          <div
+            key={block.id}
+            className="bg-black text-white px-7 py-6 rounded-2xl my-8 font-semibold text-base leading-relaxed border-l-4 border-yellow-400"
+          >
+            {block.content}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const websiteLink = project.links.find((l) => l.title.toLowerCase() === "website");
+  const githubLink = project.links.find((l) => l.title.toLowerCase() === "github");
+  const otherLinks = project.links.filter(
+    (l) => l.title.toLowerCase() !== "website" && l.title.toLowerCase() !== "github"
+  );
+  const orderedLinks = [
+    ...(websiteLink ? [websiteLink] : []),
+    ...(githubLink ? [githubLink] : []),
+    ...otherLinks,
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start md:items-center justify-center md:p-6 bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={project.projectName}
+    >
+      <div
+        className="bg-white w-full h-full md:h-auto md:max-h-[92vh] md:rounded-3xl overflow-y-auto shadow-2xl relative"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: "1100px" }}
+      >
+        {/* Top action bar */}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-4 md:px-6 py-3 md:py-4 bg-white/95 backdrop-blur-sm border-b border-black/5">
+          <div className="flex items-center gap-3">
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/portfolio/dev/${project.id}/print`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-black border border-black/10 hover:border-black/30 rounded-full px-4 py-2 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Printer size={13} />
+              Print / PDF
+            </Link>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-black hover:text-white rounded-full transition-colors text-gray-500"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Main Visual */}
+        <div className="w-full bg-gray-100" style={{ aspectRatio: "16/9" }}>
+          <img
+            src={project.mainVisualUrl}
+            alt={project.projectName}
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        <div className="flex flex-col lg:flex-row">
+          {/* Left: main content */}
+          <div className="flex-1 min-w-0 px-4 md:px-6 lg:px-12 lg:px-14 py-6 md:py-10 lg:py-12">
+            {/* Title */}
+            <header className="mb-8 md:mb-12">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight mb-3 md:mb-4 leading-tight">
+                {project.projectName}
+              </h1>
+              <p className="text-sm md:text-base lg:text-lg text-gray-600 font-medium leading-relaxed">
+                {project.shortDescription}
+              </p>
+            </header>
+
+            {/* Details */}
+            <section className="mb-10 md:mb-14">
+              {project.details
+                .sort((a, b) => a.order - b.order)
+                .map(renderBlock)}
+            </section>
+
+            {/* Gallery */}
+            {project.gallery.length > 0 && (
+              <section className="mb-10 md:mb-14">
+                <h3 className="text-lg md:text-xl font-black mb-4 md:mb-6 tracking-tight">Gallery</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
+                  {project.gallery
+                    .sort((a, b) => a.order - b.order)
+                    .map((item) => (
+                      <figure key={item.id} className="group">
+                        <div className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 border border-black/5">
+                          <img
+                            src={item.imageUrl}
+                            alt={item.caption || ""}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
+                        {item.caption && (
+                          <figcaption className="font-bold text-sm mt-2">
+                            {item.caption}
+                          </figcaption>
+                        )}
+                        {item.description && (
+                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                            {item.description}
+                          </p>
+                        )}
+                      </figure>
+                    ))}
+                </div>
+              </section>
+            )}
+
+            {/* Links */}
+            {orderedLinks.length > 0 && (
+              <section>
+                <h3 className="text-lg md:text-xl font-black mb-4 md:mb-6 tracking-tight">Links</h3>
+                <div className="space-y-3">
+                  {orderedLinks.map((link) => (
+                    <div
+                      key={link.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4 p-4 md:p-5 rounded-2xl border border-black/8 hover:border-black/20 bg-gray-50/50 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-sm md:text-base mb-1">{link.title}</h4>
+                        <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
+                          {link.description}
+                        </p>
+                      </div>
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex shrink-0 items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-black text-white text-xs md:text-sm font-bold rounded-xl hover:bg-gray-800 transition-colors"
+                      >
+                        {link.buttonLabel}
+                        <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* Right: Project Information sidebar */}
+          <div className="lg:w-[300px] xl:w-[340px] shrink-0 px-4 md:px-6 lg:px-8 pb-8 md:pb-12 pt-0 lg:pt-12 lg:border-l border-black/8">
+            <div className="lg:sticky lg:top-20">
+              <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-6 md:mb-8">
+                Project Information
+              </h3>
+              <div className="space-y-6 md:space-y-8">
+                {project.information.map((info, idx) => (
+                  <div key={idx}>
+                    <h4 className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.22em] text-black mb-3 md:mb-4 pb-2 border-b border-black/8">
+                      {info.category}
+                    </h4>
+                    <dl className="space-y-2 md:space-y-3">
+                      {info.items.map((item, i) => (
+                        <div key={i} className="flex justify-between items-start gap-2 md:gap-3">
+                          <dt className="text-[11px] md:text-[12px] text-gray-500 font-medium shrink-0">
+                            {item.label}
+                          </dt>
+                          <dd className="text-[11px] md:text-[12px] font-bold text-black text-right">
+                            {item.type === "Multiple Values" && Array.isArray(item.value) ? (
+                              <span>{item.value.join(" / ")}</span>
+                            ) : item.type === "URL" ? (
+                              <a
+                                href={item.value as string}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
+                                {item.displayUrl || (item.value as string)}
+                              </a>
+                            ) : item.type === "Service" ? (
+                              <div className="flex items-center justify-end gap-2">
+                                {item.serviceIconUrl && (
+                                  <img src={item.serviceIconUrl} alt="" className="w-4 h-4" />
+                                )}
+                                <span>{item.serviceName || (item.value as string)}</span>
+                              </div>
+                            ) : (
+                              <span>{item.value as string}</span>
+                            )}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 md:mt-10 pt-6 md:pt-8 border-t border-black/8">
+                <Link
+                  href={`/portfolio/dev/${project.id}`}
+                  className="block text-center text-[10px] md:text-xs font-bold text-gray-400 hover:text-black transition-colors underline underline-offset-4 mb-2 md:mb-3"
+                  onClick={onClose}
+                >
+                  Permalink →
+                </Link>
+                <Link
+                  href={`/portfolio/dev/${project.id}/print`}
+                  target="_blank"
+                  className="flex items-center justify-center gap-2 w-full text-[10px] md:text-xs font-bold text-gray-500 hover:text-black border border-black/10 hover:border-black/40 rounded-xl py-2.5 md:py-3 transition-colors"
+                >
+                  <Printer size={13} />
+                  Print / Save as PDF
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
-function SectionTitle({ children }: { children: React.ReactNode }) { return <h2 className="mb-6 text-xs font-black uppercase tracking-[0.22em] text-gray-400">{children}</h2>; }
-export default DevProjectModal;
+  );
+}

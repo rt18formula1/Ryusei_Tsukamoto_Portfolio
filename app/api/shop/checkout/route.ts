@@ -14,11 +14,6 @@ function cleanText(value: unknown) {
 }
 
 export async function POST(request: Request) {
-  // Build-time guard
-  if (isBuildTime) {
-    return NextResponse.json({ error: "Build time" }, { status: 200 });
-  }
-
   try {
     const body = await request.json();
     const { items, userId, shipping } = body;

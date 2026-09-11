@@ -187,6 +187,61 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
               </p>
             </header>
 
+            {/* Project Information */}
+            {project.information.length > 0 && (
+              <section className="mb-10 md:mb-14">
+                <h3 className="text-lg md:text-xl font-black mb-4 md:mb-6 tracking-tight">Project Information</h3>
+                <div className="space-y-6">
+                  {project.information.map((infoCategory) => (
+                    <div key={infoCategory.category}>
+                      <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">
+                        {infoCategory.category}
+                      </h4>
+                      <div className="space-y-3">
+                        {infoCategory.items.map((item) => (
+                          <div
+                            key={item.label}
+                            className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 py-2 border-b border-black/5 last:border-0"
+                          >
+                            <span className="text-xs font-bold text-gray-500 sm:w-32 shrink-0 uppercase tracking-wide">
+                              {item.label}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              {Array.isArray(item.value) ? (
+                                <div className="flex flex-wrap gap-2">
+                                  {item.value.map((v, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="text-xs font-medium bg-black/5 px-2 py-1 rounded-md"
+                                    >
+                                      {v}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : item.type === "URL" || item.url ? (
+                                <a
+                                  href={item.url || (typeof item.value === "string" ? item.value : "")}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs font-medium text-blue-600 hover:text-blue-800 break-all"
+                                >
+                                  {item.displayUrl || item.value}
+                                </a>
+                              ) : (
+                                <span className="text-xs font-medium text-gray-700">
+                                  {item.value}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Details */}
             <section className="mb-10 md:mb-14">
               {project.details

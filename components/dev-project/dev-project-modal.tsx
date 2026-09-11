@@ -330,5 +330,3 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
     </div>
   );
 }
-  );
-}

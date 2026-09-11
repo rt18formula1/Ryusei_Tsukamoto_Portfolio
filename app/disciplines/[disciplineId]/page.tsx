@@ -2,13 +2,14 @@ import { DisciplinePageClient } from "@/components/discipline/discipline-page-cl
 import { DisciplineId } from "@/types/portfolio-map";
 
 interface DisciplinePageProps {
-  params: {
+  params: Promise<{
     disciplineId: DisciplineId;
-  };
+  }>;
 }
 
 export const dynamic = "force-dynamic";
 
-export default function DisciplinePage({ params }: DisciplinePageProps) {
-  return <DisciplinePageClient disciplineId={params.disciplineId} />;
+export default async function DisciplinePage({ params }: DisciplinePageProps) {
+  const { disciplineId } = await params;
+  return <DisciplinePageClient disciplineId={disciplineId} />;
 }

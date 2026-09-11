@@ -83,13 +83,13 @@ export function PortfolioMap() {
   return (
     <div className="w-full h-screen bg-white overflow-hidden relative">
       {/* Navigation Bar */}
-      <nav className="absolute top-0 left-0 right-0 z-10 bg-white/90 backdrop-blur-md border-b border-black/10 px-4 sm:px-6 py-4">
+      <nav className="absolute top-0 left-0 right-0 z-10 bg-white/90 backdrop-blur-md border-b border-black/10 px-3 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-600">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-xs font-bold uppercase tracking-widest text-gray-600">
             {state.breadcrumb.map((item, index) => (
               <span key={index}>
-                {index > 0 && <span className="mx-2 text-gray-300">/</span>}
+                {index > 0 && <span className="mx-1.5 sm:mx-2 text-gray-300">/</span>}
                 <span className={index === state.breadcrumb.length - 1 ? "text-black" : ""}>
                   {item}
                 </span>
@@ -98,22 +98,22 @@ export function PortfolioMap() {
           </div>
 
           {/* Right Controls */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <button
               onClick={toggleViewMode}
-              className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest border border-black/15 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 hover:border-black hover:bg-black hover:text-white transition-all"
+              className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest border border-black/15 rounded-full px-2 sm:px-4 py-1 sm:py-2 hover:border-black hover:bg-black hover:text-white transition-all"
             >
-              {state.viewMode === "map" ? "List View" : "Map View"}
+              {state.viewMode === "map" ? "List" : "Map"}
             </button>
             <button
               onClick={handleHomeClick}
-              className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest bg-black text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-800 transition-all"
+              className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest bg-black text-white rounded-full px-2 sm:px-4 py-1 sm:py-2 hover:bg-gray-800 transition-all"
             >
               Home
             </button>
             <Link
               href="/portfolio"
-              className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors hidden sm:block"
+              className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors hidden sm:block"
             >
               Portfolio
             </Link>
@@ -134,6 +134,7 @@ export function PortfolioMap() {
             const isSelected = state.selectedNode === disciplineId;
             const isHovered = hoveredNode === disciplineId;
             const isCentralSelected = state.selectedNode === "central";
+            const isCentralHovered = hoveredNode === "central";
             
             return (
               <line
@@ -142,8 +143,8 @@ export function PortfolioMap() {
                 y1={centerY}
                 x2={pos.x}
                 y2={pos.y}
-                stroke={isSelected || isHovered ? "#000" : isCentralSelected ? "#666" : "#e5e5e5"}
-                strokeWidth={isSelected || isHovered ? "0.4" : isCentralSelected ? "0.25" : "0.15"}
+                stroke={isSelected || isHovered || isCentralHovered ? "#000" : isCentralSelected ? "#666" : "#e5e5e5"}
+                strokeWidth={isSelected || isHovered || isCentralHovered ? "0.5" : isCentralSelected ? "0.3" : "0.2"}
                 className="transition-all duration-300"
                 style={{ transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" }}
               />
@@ -161,32 +162,32 @@ export function PortfolioMap() {
             onMouseLeave={() => setHoveredNode(null)}
           >
             <path
-              d={createPentagonPath(centerX, centerY, 13)}
+              d={createPentagonPath(centerX, centerY, 15)}
               fill={state.selectedNode === "central" || hoveredNode === "central" ? "#000" : "#fff"}
               stroke="#000"
-              strokeWidth="0.35"
+              strokeWidth="0.4"
               className="transition-all duration-300"
               style={{ transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" }}
             />
             <text
               x={centerX}
-              y={centerY - 1.5}
+              y={centerY - 2}
               textAnchor="middle"
               dominantBaseline="middle"
-              className="text-[2px] font-black uppercase tracking-wider pointer-events-none"
+              className="font-black uppercase tracking-wider pointer-events-none"
               fill={state.selectedNode === "central" || hoveredNode === "central" ? "#fff" : "#000"}
-              style={{ fontSize: "2px" }}
+              style={{ fontSize: "2.5px" }}
             >
               RYUSEI
             </text>
             <text
               x={centerX}
-              y={centerY + 2}
+              y={centerY + 2.5}
               textAnchor="middle"
               dominantBaseline="middle"
-              className="text-[2px] font-black uppercase tracking-wider pointer-events-none"
+              className="font-black uppercase tracking-wider pointer-events-none"
               fill={state.selectedNode === "central" || hoveredNode === "central" ? "#fff" : "#000"}
-              style={{ fontSize: "2px" }}
+              style={{ fontSize: "2.5px" }}
             >
               TSUKAMOTO
             </text>
@@ -210,10 +211,10 @@ export function PortfolioMap() {
                 onMouseLeave={() => setHoveredNode(null)}
               >
                 <path
-                  d={createPentagonPath(pos.x, pos.y, 6.5)}
+                  d={createPentagonPath(pos.x, pos.y, 7)}
                   fill={isSelected || isHovered ? "#000" : "#fff"}
-                  stroke="#000"
-                  strokeWidth="0.25"
+                  stroke={isSelected || isHovered ? "#000" : discipline.color}
+                  strokeWidth={isSelected || isHovered ? "0.3" : "0.2"}
                   className="transition-all duration-300"
                   style={{ transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" }}
                 />
@@ -222,9 +223,9 @@ export function PortfolioMap() {
                   y={pos.y}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  className="text-[1.3px] font-black uppercase tracking-wider pointer-events-none"
+                  className="font-black uppercase tracking-wider pointer-events-none"
                   fill={isSelected || isHovered ? "#fff" : "#000"}
-                  style={{ fontSize: "1.3px" }}
+                  style={{ fontSize: "1.4px" }}
                 >
                   {discipline.label}
                 </text>
@@ -236,11 +237,11 @@ export function PortfolioMap() {
 
       {/* List View */}
       {state.viewMode === "list" && (
-        <div className="pt-24 px-4 sm:px-6 max-w-4xl mx-auto">
-          <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter mb-8 sm:mb-12">
+        <div className="pt-20 sm:pt-24 px-3 sm:px-6 max-w-4xl mx-auto">
+          <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tighter mb-6 sm:mb-12">
             All Disciplines
           </h1>
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-3 sm:space-y-6">
             {Object.entries(DISCIPLINES).map(([disciplineId, { label, color }]) => (
               <Link
                 key={disciplineId}
@@ -248,20 +249,20 @@ export function PortfolioMap() {
                 className="block"
               >
                 <div
-                  className="group border border-black/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:border-black/30 hover:shadow-xl transition-all cursor-pointer"
+                  className="group border border-black/10 rounded-xl sm:rounded-2xl p-3 sm:p-6 hover:border-black/30 hover:shadow-xl transition-all cursor-pointer"
                   onClick={() => handleNodeClick(disciplineId, disciplineId as DisciplineId)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div 
-                        className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full"
+                    <div className="flex items-center gap-2 sm:gap-4">
+                      <div
+                        className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
                         style={{ backgroundColor: color }}
                       />
-                      <h2 className="text-base sm:text-xl font-black uppercase tracking-tight group-hover:text-blue-600 transition-colors">
+                      <h2 className="text-sm sm:text-xl font-black uppercase tracking-tight group-hover:text-blue-600 transition-colors">
                         {label}
                       </h2>
                     </div>
-                    <span className="text-gray-300 text-lg sm:text-xl group-hover:text-black transition-colors">
+                    <span className="text-gray-300 text-base sm:text-xl group-hover:text-black transition-colors">
                       →
                     </span>
                   </div>

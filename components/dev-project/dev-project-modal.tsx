@@ -52,7 +52,7 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
         return (
           <h3
             key={block.id}
-            className="text-xl font-black mt-12 mb-4 text-black tracking-tight"
+            className="text-base sm:text-lg md:text-xl font-black mt-8 sm:mt-10 md:mt-12 mb-3 sm:mb-4 text-black tracking-tight uppercase"
           >
             {block.content}
           </h3>
@@ -61,15 +61,15 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
         return (
           <p
             key={block.id}
-            className="text-[15px] text-gray-700 leading-relaxed mb-6 whitespace-pre-wrap"
+            className="text-xs sm:text-sm md:text-[15px] text-gray-700 leading-relaxed mb-4 sm:mb-6 whitespace-pre-wrap"
           >
             {block.content}
           </p>
         );
       case "Image":
         return (
-          <figure key={block.id} className="mb-8">
-            <div className="rounded-xl overflow-hidden bg-gray-100 border border-black/5">
+          <figure key={block.id} className="mb-6 sm:mb-8">
+            <div className="rounded-lg sm:rounded-xl overflow-hidden bg-gray-100 border border-black/5">
               <img
                 src={block.imageUrl}
                 alt={block.imageCaption || ""}
@@ -77,7 +77,7 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
               />
             </div>
             {block.imageCaption && (
-              <figcaption className="text-xs text-gray-500 mt-2 text-center font-medium">
+              <figcaption className="text-[10px] sm:text-xs text-gray-500 mt-1.5 sm:mt-2 text-center font-medium">
                 {block.imageCaption}
               </figcaption>
             )}
@@ -87,18 +87,18 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
         return (
           <div
             key={block.id}
-            className="flex flex-col md:flex-row gap-6 mb-8 items-start"
+            className="flex flex-col md:flex-row gap-4 sm:gap-6 mb-6 sm:mb-8 items-start"
           >
-            <div className="md:w-1/2 w-full rounded-xl overflow-hidden bg-gray-100">
+            <div className="md:w-1/2 w-full rounded-lg sm:rounded-xl overflow-hidden bg-gray-100">
               <img
                 src={block.imageUrl}
                 alt=""
                 className="w-full h-full object-cover"
-                style={{ maxHeight: "280px" }}
+                style={{ maxHeight: "240px" }}
               />
             </div>
             <div className="md:w-1/2">
-              <p className="text-[15px] text-gray-700 leading-relaxed">{block.text}</p>
+              <p className="text-xs sm:text-sm md:text-[15px] text-gray-700 leading-relaxed">{block.text}</p>
             </div>
           </div>
         );
@@ -106,7 +106,7 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
         return (
           <div
             key={block.id}
-            className="bg-black text-white px-7 py-6 rounded-2xl my-8 font-semibold text-base leading-relaxed border-l-4 border-yellow-400"
+            className="bg-black text-white px-4 sm:px-5 md:px-7 py-4 sm:py-5 md:py-6 rounded-xl sm:rounded-2xl my-6 sm:my-8 font-semibold text-xs sm:text-sm md:text-base leading-relaxed border-l-4 border-yellow-400"
           >
             {block.content}
           </div>

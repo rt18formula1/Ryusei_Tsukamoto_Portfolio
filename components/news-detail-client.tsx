@@ -7,6 +7,7 @@ import { useLanguage } from "@/components/providers/language-provider";
 import { generateImageProps } from "@/lib/seo-utils";
 import type { DbNews, DbPortfolio } from "@/lib/supabase-queries";
 import { ShareButtons } from "@/components/share-buttons";
+import { RichContent } from "@/components/rich-content";
 
 export default function NewsDetailClient({ 
   newsItem, 
@@ -41,41 +42,6 @@ export default function NewsDetailClient({
   const title = language === "ja" ? newsItem.title_ja || newsItem.title_en : newsItem.title_en;
   const body = (language === "ja" ? newsItem.body_ja || newsItem.body_en : newsItem.body_en) || "";
 
-  // Helper to render body with embedded cards
-  const renderBody = (text: string) => {
-    if (!text) return null;
-    
-    const parts = text.split(/(\[portfolio:[a-f0-9-]+\])/g);
-    return parts.map((part, index) => {
-      const match = part.match(/\[portfolio:([a-f0-9-]+)\]/);
-      if (match) {
-        const id = match[1];
-        const item = embeddedPortfolio.find(p => p.id === id);
-        if (item) {
-          return (
-            <div key={index} className="my-8 border border-black/10 rounded-xl overflow-hidden bg-white shadow-sm max-w-sm mx-auto">
-              <Link href={`/portfolio/${item.id}`}>
-                <div className="aspect-square relative bg-black/5">
-                  {item.image_url && (() => {
-                        const imageProps = generateImageProps(item.image_url, item.title_en, "portfolio");
-                        return imageProps ? (
-                          <img {...imageProps} className="w-full h-full object-cover" />
-                        ) : null;
-                      })()}
-                </div>
-                <div className="p-4">
-                  <h4 className="font-bold text-sm">{item.title_en}</h4>
-                  <p className="text-xs text-blue-500 mt-2 font-bold">View Artwork →</p>
-                </div>
-              </Link>
-            </div>
-          );
-        }
-      }
-      return <span key={index} className="whitespace-pre-wrap">{part}</span>;
-    });
-  };
-
   return (
     <div className="min-h-screen bg-white text-black flex flex-col">
       <SiteHeader />
@@ -100,13 +66,11 @@ export default function NewsDetailClient({
           </header>
 
           <div className="prose prose-xl max-w-none text-black leading-relaxed font-medium mb-12">
-            {renderBody(body)}
+            <RichContent content={body} embeddedPortfolio={embeddedPortfolio} />
           </div>
 
-          {/* Share Section */}
           <ShareButtons title={title} />
 
-          {/* Navigation */}
           <div className="border-t border-black/10 pt-12 flex flex-col md:flex-row gap-8 justify-between items-center mb-12">
             {prev ? (
               <Link href={`/news/${prev.id}`} className="group flex-1 flex items-center gap-4 text-left w-full">

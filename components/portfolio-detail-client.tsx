@@ -5,6 +5,7 @@ import { useLanguage } from "@/components/providers/language-provider";
 import { generateImageProps } from "@/lib/seo-utils";
 import type { DbPortfolio } from "@/lib/supabase-queries";
 import Image from "next/image";
+import { RichContent } from "@/components/rich-content";
 
 export default function PortfolioDetailClient({ portfolioItem }: { portfolioItem: DbPortfolio }) {
   const { language } = useLanguage();
@@ -21,6 +22,11 @@ export default function PortfolioDetailClient({ portfolioItem }: { portfolioItem
       </div>
     );
   }
+
+  const body =
+    language === "ja"
+      ? portfolioItem.body_ja || portfolioItem.body_en
+      : portfolioItem.body_en || "";
 
   return (
     <div className="min-h-screen bg-white text-black">
@@ -48,12 +54,12 @@ export default function PortfolioDetailClient({ portfolioItem }: { portfolioItem
             <span>🎨</span>
           )}
         </div>
-        <div className="mt-8 max-w-none">
-          <p className="whitespace-pre-wrap">
-            {language === "ja" 
-              ? portfolioItem.body_ja || portfolioItem.body_en 
-              : portfolioItem.body_en || "No description yet."}
-          </p>
+        <div className="mt-8 max-w-none text-black leading-relaxed">
+          {body ? (
+            <RichContent content={body} />
+          ) : (
+            <p className="text-gray-500">No description yet.</p>
+          )}
         </div>
       </main>
     </div>

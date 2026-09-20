@@ -20,6 +20,35 @@ const NODE_META: Record<DisciplineId, { label: string; color: string }> = {
   investor: { label: "Investor", color: "#d97706" },
 };
 
+const SERVICE_LOGOS = [
+  { name: "GitHub", image: "/github-icon.webp" },
+  { name: "Vercel", image: "/vercel.svg" },
+  { name: "Instagram", image: "/instagram-icon.png" },
+  { name: "YouTube", image: "/youtube-logo.png" },
+  { name: "X", image: "/x-logo.png" },
+  { name: "TypeScript" },
+  { name: "Next.js" },
+  { name: "Supabase" },
+  { name: "Cloudflare" },
+  { name: "note" },
+];
+
+function ServiceMarquee() {
+  const logos = [...SERVICE_LOGOS, ...SERVICE_LOGOS];
+  return (
+    <div className="overflow-hidden border-y border-black/10 bg-[#fafaf8] py-5" aria-label="Services and tools">
+      <div className="flex w-max animate-marquee items-center gap-3">
+        {logos.map((service, index) => (
+          <div key={`${service.name}-${index}`} className="flex h-12 items-center gap-3 rounded-full border border-black/10 bg-white px-5 text-xs font-bold uppercase tracking-[.16em] text-black/55 shadow-sm">
+            {service.image ? <img src={service.image} alt="" className="h-5 w-5 object-contain" /> : <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-[9px] font-black text-white">{service.name.slice(0, 1)}</span>}
+            <span>{service.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function PortfolioMap() {
   const [state, setState] = useState<PortfolioMapState>({
     selectedNode: null,
@@ -98,7 +127,8 @@ export function PortfolioMap() {
   };
 
   return (
-    <div className="w-full h-screen bg-white overflow-hidden relative">
+    <div className="relative w-full overflow-x-hidden bg-white">
+      <section className="relative h-[100svh] min-h-[620px] overflow-hidden">
       <nav className="absolute top-0 left-0 right-0 z-10 bg-white/90 backdrop-blur-md border-b border-black/10 px-3 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <HierarchyBreadcrumb items={breadcrumbItems} />
@@ -116,12 +146,6 @@ export function PortfolioMap() {
             >
               Home
             </button>
-            <Link
-              href="/portfolio"
-              className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors hidden sm:block"
-            >
-              Portfolio
-            </Link>
           </div>
         </div>
       </nav>
@@ -129,7 +153,7 @@ export function PortfolioMap() {
       {state.viewMode === "map" && (
         <svg
           ref={svgRef}
-          className="w-full h-full"
+          className="h-full w-full"
           viewBox="0 0 100 100"
           preserveAspectRatio="xMidYMid slice"
         >
@@ -255,7 +279,7 @@ export function PortfolioMap() {
       )}
 
       {state.viewMode === "list" && (
-        <div className="pt-20 sm:pt-24 px-3 sm:px-6 max-w-4xl mx-auto h-full overflow-y-auto pb-12">
+        <div className="mx-auto h-full max-w-4xl overflow-y-auto px-3 pb-12 pt-20 sm:px-6 sm:pt-24">
           <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tighter mb-6 sm:mb-10">
             Portfolio
           </h1>
@@ -314,6 +338,30 @@ export function PortfolioMap() {
           </div>
         </div>
       )}
+      </section>
+
+      <section id="personal" className="border-t border-black/10 bg-white px-6 py-24 sm:px-10 lg:px-16">
+        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-24">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[.3em] text-black/35">Personal / About</p>
+            <h2 className="mt-5 text-4xl font-black uppercase tracking-[-.06em] sm:text-6xl">Beyond the<br />five points.</h2>
+          </div>
+          <div className="max-w-2xl">
+            <p className="text-xl leading-9 tracking-tight text-black/75 sm:text-2xl sm:leading-10">Ryusei Tsukamoto is a multi-disciplinary creator working across software, visual expression, music, writing, and research.</p>
+            <p className="mt-8 text-sm leading-7 text-black/50">この五角形は、活動領域をひとつの場所から眺めるためのホームです。Developerとしてサービスをつくり、Illustratorとして視覚化し、Musician・Blogger・Investorとして考えたことを外へ広げています。</p>
+            <div className="mt-10 flex flex-wrap gap-2">{["Tokyo / Japan", "Creative Technology", "Independent Work"].map((item) => <span key={item} className="rounded-full border border-black/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[.16em] text-black/50">{item}</span>)}</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="services" className="bg-[#f7f7f5] py-16">
+        <div className="mb-8 px-6 text-center sm:px-10"><p className="text-[10px] font-bold uppercase tracking-[.3em] text-black/35">Tools / Services / Platforms</p><h2 className="mt-3 text-2xl font-bold tracking-tight">Built with and around these services.</h2></div>
+        <ServiceMarquee />
+      </section>
+
+      <Link href="/admin" className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-3 py-2 text-[10px] font-bold uppercase tracking-[.16em] text-black/45 shadow-lg backdrop-blur transition hover:border-black hover:text-black" aria-label="Open Admin">
+        <span className="h-1.5 w-1.5 rounded-full bg-black/35" /> Admin
+      </Link>
     </div>
   );
 }

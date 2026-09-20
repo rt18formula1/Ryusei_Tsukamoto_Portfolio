@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   other: {
     'google-site-verification': 'G-7V8FYG7SDB',
   },
-  title: "Ryusei Tsukamoto — Multi-Discipline Portfolio",
+  title: "Ryusei Tsukamoto Portfolio",
   description:
     "Official Personal Portfolio of Ryusei Tsukamoto. Featuring Developer Projects, Illustrations, Music, Blog Articles, and Investment Research.",
   keywords: [
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "Next.js",
   ],
   openGraph: {
-    title: "Ryusei Tsukamoto — Multi-Discipline Portfolio",
+    title: "Ryusei Tsukamoto Portfolio",
     description:
       "Official Personal Portfolio of Ryusei Tsukamoto across Developer Projects, Art, Music, Writing, and Investment.",
     url: "/",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ryusei Tsukamoto — Multi-Discipline Portfolio",
+    title: "Ryusei Tsukamoto Portfolio",
     description: "Official Personal Portfolio of Ryusei Tsukamoto.",
     images: ["/icon.png"],
   },

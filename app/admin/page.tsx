@@ -1,1427 +1,267 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useState } from "react";
-import { SiteHeader } from "@/components/site-header";
+import { useEffect, useMemo, useState } from "react";
 import {
-  getNewsList,
-  getPortfolioList,
-  getAlbumsByType,
-  getAllAlbums,
-  getAlbumRelations,
-  getEvents,
-  uploadImageToStorage,
-  getProducts,
-  getOrders,
-  getCommissions,
-  getDevProjects,
-  type DbNews,
-  type DbPortfolio,
-  type DbAlbum,
-  type DbEvent,
-  type DbDevProject,
-} from "@/lib/supabase-queries";
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  BarChart3,
+  BookOpen,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  CircleHelp,
+  FileText,
+  FolderKanban,
+  Image as ImageIcon,
+  LayoutDashboard,
+  Link2,
+  LogOut,
+  MoreHorizontal,
+  Plus,
+  Save,
+  Search,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import {
-  createNewsAction,
-  createPortfolioAction,
-  createAlbumAction,
-  addNewsToAlbumAction,
-  addPortfolioToAlbumAction,
-  deleteNewsAction,
-  deletePortfolioAction,
-  deleteAlbumAction,
-  createEventAction,
-  deleteEventAction,
-  createProductAction,
-  deleteProductAction,
   createDevProjectAction,
-  updateDevProjectAction,
   deleteDevProjectAction,
-  uploadDevProjectImageAction,
+  updateDevProjectAction,
 } from "@/lib/admin-actions";
-import { createAlbumRelation } from "@/lib/supabase-queries";
-import { AdminImageCard } from "@/components/admin-image-card";
-import { AlbumNodeEditor } from "@/components/album-node-editor";
-import { ShopAdminTab } from "@/components/shop/shop-admin-tab";
+import { getDevProjects, type DbDevProject } from "@/lib/supabase-queries";
+import { NotionEditor } from "@/components/admin/notion-editor";
+import { PORTFOLIO_HIERARCHY } from "@/lib/portfolio-hierarchy/data";
+
+const disciplines = [
+  { id: "developer", label: "DEVELOPER", description: "Web applications, tools, and automation", color: "#2563eb" },
+  { id: "illustrator", label: "ILLUSTRATOR", description: "Illustration and visual work", color: "#7c3aed" },
+  { id: "musician", label: "MUSICIAN", description: "Music and sound projects", color: "#db2777" },
+  { id: "blogger", label: "BLOGGER", description: "Articles and development logs", color: "#059669" },
+  { id: "investor", label: "INVESTOR", description: "Research and investment activities", color: "#d97706" },
+];
+
+const defaultInformation = [
+  { category: "GENERAL", items: [
+    { label: "Status", value: "In Development", type: "Text" },
+    { label: "Type", value: "Web Application", type: "Text" },
+    { label: "Started", value: new Date().toISOString().slice(0, 10), type: "Text" },
+    { label: "Platform", value: ["Web"], type: "Multiple Values" },
+  ] },
+  { category: "TECHNOLOGY", items: [] },
+];
+
+const emptyProject = (): Partial<DbDevProject> => ({
+  project_name: "",
+  short_description: "",
+  main_visual_url: "",
+  main_visual_focal_point_x: 0.5,
+  main_visual_focal_point_y: 0.5,
+  information: defaultInformation,
+  details: [],
+  gallery: [],
+  links: [],
+  sort_order: 0,
+});
+
+function getGeneral(project: Partial<DbDevProject>, label: string, fallback = "") {
+  const category = (project.information as any[] | undefined)?.find((item) => item.category === "GENERAL");
+  const item = category?.items?.find((entry: any) => entry.label === label);
+  return Array.isArray(item?.value) ? item.value.join(", ") : item?.value || fallback;
+}
+
+function setGeneral(project: Partial<DbDevProject>, label: string, value: string | string[]) {
+  const information = Array.isArray(project.information) ? [...project.information] : [];
+  let index = information.findIndex((item: any) => item.category === "GENERAL");
+  if (index < 0) { information.unshift({ category: "GENERAL", items: [] }); index = 0; }
+  const items = [...(information[index].items || [])];
+  const itemIndex = items.findIndex((item: any) => item.label === label);
+  const next = { label, value, type: Array.isArray(value) ? "Multiple Values" : "Text" };
+  if (itemIndex < 0) items.push(next); else items[itemIndex] = { ...items[itemIndex], ...next };
+  information[index] = { ...information[index], items };
+  return information;
+}
+
+function formatDate(value?: string) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "short", day: "numeric" }).format(new Date(value));
+}
+
+function statusTone(value: string) {
+  if (value === "Public") return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (value === "Private") return "bg-slate-100 text-slate-600 border-slate-200";
+  if (value === "Archived") return "bg-amber-50 text-amber-700 border-amber-200";
+  return "bg-blue-50 text-blue-700 border-blue-200";
+}
+
+type Section = "dashboard" | "hierarchy" | "projects" | "disciplines" | "media" | "settings";
 
 export default function AdminPage() {
   const [sessionOk, setSessionOk] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [loginError, setLoginError] = useState("");
+  const [section, setSection] = useState<Section>("dashboard");
+  const [projects, setProjects] = useState<DbDevProject[]>([]);
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editor, setEditor] = useState<Partial<DbDevProject> | null>(null);
+  const [editorState, setEditorState] = useState<"draft" | "saved" | "published">("draft");
+  const [message, setMessage] = useState("");
+  const [openNodes, setOpenNodes] = useState<Record<string, boolean>>({ developer: true, "rt18-dev": true });
 
-  const [news, setNews] = useState<DbNews[]>([]);
-  const [portfolio, setPortfolio] = useState<DbPortfolio[]>([]);
-  const [albums, setAlbums] = useState<DbAlbum[]>([]);
-  const [albumRelations, setAlbumRelations] = useState<{ parent_id: string; child_id: string }[]>([]);
-  const [events, setEvents] = useState<DbEvent[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [commissions, setCommissions] = useState<any[]>([]);
-  const [devProjects, setDevProjects] = useState<DbDevProject[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  // Collapsible sections state
-  const [collapsedSections, setCollapsedSections] = useState({
-    portfolio: false,
-    news: false,
-    albums: false,
-    events: false,
-    shop: false,
-    devProjects: false
-  });
-
-  // Dev Project Modal State
-  const [activeModal, setActiveModal] = useState<"news" | "portfolio" | "album" | "event" | "product" | "devProject" | "edit" | null>(null);
-  const [albumType, setAlbumType] = useState<"backnumber" | "portfolio">("portfolio");
-  const [editingDevProject, setEditingDevProject] = useState<DbDevProject | null>(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    content: "",
-    file: null as File | null,
-    previewUrl: "",
-    albumId: "",
-    parentId: "" as string,
-    location: "",
-    startTime: "",
-    endTime: "",
-    // Product fields
-    price: "",
-    type: "digital" as "digital" | "physical" | "skill",
-    status: "draft" as "on_sale" | "sold_out" | "draft",
-    // Dev Project fields
-    shortDescription: "",
-    mainVisualUrl: "",
-    mainVisualFocalPointX: 0.5,
-    mainVisualFocalPointY: 0.5,
-    information: [] as any[],
-    details: [] as any[],
-    gallery: [] as any[],
-    links: [] as any[],
-    sortOrder: 0,
-  });
-
-  const resetForm = () => {
-    setFormData({ 
-      title: "", 
-      content: "", 
-      file: null, 
-      previewUrl: "", 
-      albumId: "", 
-      parentId: "", 
-      location: "", 
-      startTime: "", 
-      endTime: "",
-      price: "",
-      type: "digital",
-      status: "draft",
-      shortDescription: "",
-      mainVisualUrl: "",
-      mainVisualFocalPointX: 0.5,
-      mainVisualFocalPointY: 0.5,
-      information: [],
-      details: [],
-      gallery: [],
-      links: [],
-      sortOrder: 0,
-    });
-    setEditingDevProject(null);
+  const refresh = async () => {
+    const data = await getDevProjects();
+    setProjects(data);
   };
-
-  const buildAlbumOptions = (type: "backnumber" | "portfolio", parentId: string | null = null, depth = 0): DbAlbum[] => {
-    return albums
-      .filter((album) => album.type === type && album.parent_id === parentId)
-      .flatMap((album) => [
-        { ...album, name_en: `${"— ".repeat(depth)}${album.name_en}` },
-        ...buildAlbumOptions(type, album.id, depth + 1),
-      ]);
-  };
-
-  const parentAlbumOptions = buildAlbumOptions(albumType);
-  const assignmentAlbumOptions = activeModal === "news" ? buildAlbumOptions("backnumber") : buildAlbumOptions("portfolio");
 
   useEffect(() => {
     fetch("/api/admin/session", { credentials: "include" })
-      .then((r) => r.json())
-      .then((data) => {
-        setSessionOk(Boolean(data.ok));
-        if (data.ok) loadData();
-      })
+      .then((response) => response.json())
+      .then((data) => { setSessionOk(Boolean(data.ok)); if (data.ok) refresh(); })
       .catch(() => setSessionOk(false));
   }, []);
 
-  const loadData = async () => {
-    const [n, p, allAlbums, relations, e, prods, allOrders, allCommissions, dps] = await Promise.all([
-      getNewsList(),
-      getPortfolioList(),
-      getAllAlbums(),
-      getAlbumRelations(),
-      getEvents(),
-      getProducts(),
-      getOrders(),
-      getCommissions(),
-      getDevProjects(),
-    ]);
-    setNews(n);
-    setPortfolio(p);
-    setAlbums(allAlbums);
-    setAlbumRelations(relations);
-    setEvents(e);
-    setProducts(prods);
-    setOrders(allOrders);
-    setCommissions(allCommissions);
-    setDevProjects(dps);
+  const filteredProjects = useMemo(() => projects.filter((project) => {
+    const text = `${project.project_name} ${project.short_description}`.toLowerCase();
+    return text.includes(query.toLowerCase());
+  }), [projects, query]);
+
+  const counts = useMemo(() => ({
+    disciplines: disciplines.length,
+    activities: PORTFOLIO_HIERARCHY.disciplines.reduce((sum, item) => sum + item.activities.length, 0),
+    projects: projects.length,
+    published: projects.filter((project) => getGeneral(project, "Visibility", "Draft") === "Published").length,
+    development: projects.filter((project) => getGeneral(project, "Status", "In Development") === "In Development").length,
+    private: projects.filter((project) => getGeneral(project, "Status", "In Development") === "Private").length,
+  }), [projects]);
+
+  const openEditor = (project?: DbDevProject) => {
+    setSelectedId(project?.id || null);
+    setEditor(project ? { ...project, information: project.information || [], details: project.details || [], gallery: project.gallery || [], links: project.links || [] } : emptyProject());
+    setEditorState(project && getGeneral(project, "Visibility") === "Published" ? "published" : "draft");
+    setMessage("");
+  };
+
+  const closeEditor = () => { setEditor(null); setSelectedId(null); setMessage(""); };
+
+  const saveProject = async (publish = false) => {
+    if (!editor?.project_name?.trim()) { setMessage("Project name is required."); return; }
+    const information = setGeneral(editor, "Visibility", publish ? "Published" : "Draft");
+    setMessage(publish ? "Publishing…" : "Saving draft…");
+    try {
+      if (selectedId) await updateDevProjectAction(selectedId, { ...editor, information });
+      else await createDevProjectAction({ ...editor, information, sort_order: projects.length });
+      await refresh();
+      setEditorState(publish ? "published" : "saved");
+      setMessage(publish ? "Published to the portfolio." : "Draft saved.");
+      if (!selectedId) { setEditor(null); setSelectedId(null); }
+    } catch (error: any) {
+      setMessage(error?.message || "保存に失敗しました");
+    }
+  };
+
+  const removeProject = async (project: DbDevProject) => {
+    if (!window.confirm(`「${project.project_name}」を削除しますか？この操作は元に戻せません。`)) return;
+    await deleteDevProjectAction(project.id);
+    if (selectedId === project.id) closeEditor();
+    await refresh();
   };
 
   const login = async () => {
-    setError(null);
-    const res = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) {
-      const payload = await res.json().catch(() => null);
-      setError(payload?.error ?? "ログインに失敗しました");
-      return;
-    }
-    setSessionOk(true);
-    setPassword("");
-    loadData();
+    setLoginError("");
+    const response = await fetch("/api/admin/login", { method: "POST", headers: { "content-type": "application/json" }, credentials: "include", body: JSON.stringify({ email, password }) });
+    if (!response.ok) { const body = await response.json().catch(() => null); setLoginError(body?.error || "ログインに失敗しました"); return; }
+    setSessionOk(true); setPassword(""); refresh();
   };
 
-  const logout = async () => {
-    await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
-    setSessionOk(false);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData({
-        ...formData,
-        file,
-        previewUrl: URL.createObjectURL(file),
-      });
-    }
-  };
-
-  const handlePost = async () => {
-    if (!formData.title || (!formData.file && activeModal !== "album" && activeModal !== "devProject")) {
-      alert("Title and Image are required!");
-      return;
-    }
-    setLoading(true);
-    try {
-      if (activeModal === "news") {
-        const image_url = await uploadImageToStorage("news-images", formData.file!);
-        const item = await createNewsAction({
-          title_en: formData.title,
-          title_ja: formData.title,
-          body_en: formData.content,
-          body_ja: formData.content,
-          image_url,
-          published_at: new Date().toISOString(),
-        });
-        if (formData.albumId) {
-          await addNewsToAlbumAction(formData.albumId, item.id);
-        }
-      } else if (activeModal === "portfolio") {
-        const image_url = await uploadImageToStorage("portfolio-images", formData.file!);
-        const p = await createPortfolioAction({
-          title_en: formData.title,
-          title_ja: formData.title,
-          body_en: formData.content,
-          body_ja: formData.content,
-          image_url,
-          sort_order: portfolio.length,
-        });
-        if (formData.albumId) {
-          await addPortfolioToAlbumAction(formData.albumId, p.id);
-        }
-      } else if (activeModal === "album") {
-        let cover_image_url = null;
-        if (formData.file) {
-          const bucket = albumType === "backnumber" ? "bucknumber-covers" : "album-covers";
-          cover_image_url = await uploadImageToStorage(bucket, formData.file);
-        }
-        const newAlbum = await createAlbumAction({
-          name_en: formData.title,
-          name_ja: formData.title,
-          description_en: formData.content,
-          description_ja: formData.content,
-          type: albumType,
-          parent_id: null,
-          cover_image_url,
-          sort_order: albums.length,
-        });
-        
-        if (formData.parentId) {
-          await createAlbumRelation(formData.parentId, newAlbum.id);
-        }
-      } else if (activeModal === "event") {
-        await createEventAction({
-          title: formData.title,
-          description: formData.content,
-          location: formData.location,
-          start_time: formData.startTime,
-          end_time: formData.endTime || null,
-          is_all_day: false,
-          source: "manual",
-        });
-      } else if (activeModal === "product") {
-        let image_url = null;
-        if (formData.file) {
-          image_url = await uploadImageToStorage("portfolio-images", formData.file);
-        }
-        await createProductAction({
-          name_ja: formData.title,
-          name_en: formData.title,
-          description_ja: formData.content,
-          description_en: formData.content,
-          price: parseInt(formData.price) || 0,
-          type: formData.type,
-          status: formData.status,
-          image_url,
-          sort_order: products.length,
-        });
-      } else if (activeModal === "devProject") {
-        // Upload main visual if provided
-        let mainVisualUrl = formData.mainVisualUrl;
-        if (formData.file) {
-          mainVisualUrl = await uploadDevProjectImageAction("portfolio-images", formData.file);
-        }
-        
-        const projectData: Partial<DbDevProject> = {
-          project_name: formData.title,
-          short_description: formData.shortDescription,
-          main_visual_url: mainVisualUrl,
-          main_visual_focal_point_x: formData.mainVisualFocalPointX,
-          main_visual_focal_point_y: formData.mainVisualFocalPointY,
-          information: formData.information,
-          details: formData.details,
-          gallery: formData.gallery,
-          links: formData.links,
-          sort_order: formData.sortOrder,
-        };
-        
-        if (editingDevProject) {
-          await updateDevProjectAction(editingDevProject.id, projectData);
-        } else {
-          await createDevProjectAction(projectData);
-        }
-      }
-      await loadData();
-      setActiveModal(null);
-      resetForm();
-      alert("Success!");
-    } catch (err) {
-      console.error(err);
-      const message = err instanceof Error ? err.message : "Failed to post.";
-      alert(`❌ エラー:\n${message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteNews = async (id: string) => {
-    if (!confirm("Delete this news?")) return;
-    setLoading(true);
-    await deleteNewsAction(id);
-    await loadData();
-    setLoading(false);
-  };
-
-  const handleDeletePortfolio = async (id: string) => {
-    if (!confirm("Delete this portfolio item?")) return;
-    setLoading(true);
-    await deletePortfolioAction(id);
-    await loadData();
-    setLoading(false);
-  };
-
-  const handleDeleteEvent = async (id: string) => {
-    if (!confirm("Delete this event?")) return;
-    setLoading(true);
-    await deleteEventAction(id);
-    await loadData();
-    setLoading(false);
-  };
-
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm("Delete this product?")) return;
-    setLoading(true);
-    await deleteProductAction(id);
-    await loadData();
-    setLoading(false);
-  };
-
-  const handleDeleteDevProject = async (id: string) => {
-    if (!confirm("Delete this Developer Project?")) return;
-    setLoading(true);
-    await deleteDevProjectAction(id);
-    await loadData();
-    setLoading(false);
-  };
-
-  const handleEditDevProject = (project: DbDevProject) => {
-    setEditingDevProject(project);
-    setFormData({
-      title: project.project_name,
-      content: "",
-      file: null,
-      previewUrl: project.main_visual_url || "",
-      albumId: "",
-      parentId: "",
-      location: "",
-      startTime: "",
-      endTime: "",
-      price: "",
-      type: "digital",
-      status: "draft",
-      shortDescription: project.short_description,
-      mainVisualUrl: project.main_visual_url || "",
-      mainVisualFocalPointX: project.main_visual_focal_point_x || 0.5,
-      mainVisualFocalPointY: project.main_visual_focal_point_y || 0.5,
-      information: project.information || [],
-      details: project.details || [],
-      gallery: project.gallery || [],
-      links: project.links || [],
-      sortOrder: project.sort_order,
-    });
-    setActiveModal("devProject");
-  };
-
-  const toggleSection = (section: keyof typeof collapsedSections) => {
-    setCollapsedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-
-  const handleEdit = (item: { id: string; type: "news" | "portfolio"; title_en: string; title_ja: string; body_en?: string; body_ja?: string }) => {
-    alert(`Edit functionality for ${item.type} ID: ${item.id} will be implemented soon.`);
-  };
-
-  const handleAlbumCreate = (name: string, type: "backnumber" | "portfolio") => {
-    alert(`Album creation: ${name} (${type}) will be implemented soon.`);
-  };
-
-  if (!sessionOk) {
-    return (
-      <div className="min-h-screen bg-white text-black">
-        <SiteHeader />
-        <div className="container mx-auto px-4 py-12 max-w-md">
-          <h1 className="text-3xl font-black mb-6">Admin</h1>
-          <label className="block text-sm font-semibold mb-2">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border border-black/20 rounded-lg mb-4"
-            placeholder="admin@example.com"
-          />
-          <label className="block text-sm font-semibold mb-2">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && login()}
-            className="w-full px-4 py-2 border border-black/20 rounded-lg mb-4"
-          />
-          {error ? <p className="text-sm mb-4 text-red-500">{error}</p> : null}
-          <button type="button" onClick={login} className="w-full px-4 py-3 bg-black text-white font-semibold rounded-lg">
-            Login
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!sessionOk) return <LoginScreen email={email} password={password} error={loginError} setEmail={setEmail} setPassword={setPassword} onLogin={login} />;
+  if (editor) return <ProjectEditor editor={editor} setEditor={setEditor} state={editorState} message={message} onBack={closeEditor} onSave={() => saveProject(false)} onPublish={() => saveProject(true)} />;
 
   return (
-    <div className="min-h-screen bg-white text-black pb-24">
-      <SiteHeader />
-      <div className="container mx-auto px-4 py-10 max-w-6xl space-y-12">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-black">Dashboard</h1>
-          <div className="flex gap-4">
-            <button
-              onClick={() => { resetForm(); setActiveModal("portfolio"); }}
-              className="px-6 py-2 bg-black text-white font-bold rounded-full hover:bg-black/80 transition shadow-sm"
-            >
-              + Post Portfolio
-            </button>
-            <button
-              onClick={() => { resetForm(); setActiveModal("news"); }}
-              className="px-6 py-2 border-2 border-black font-bold rounded-full hover:bg-black/5 transition"
-            >
-              + Post News
-            </button>
-            <button
-              onClick={() => { resetForm(); setActiveModal("event"); }}
-              className="px-6 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition shadow-sm"
-            >
-              + Post Event
-            </button>
-            <button
-              onClick={() => { resetForm(); setActiveModal("product"); }}
-              className="px-6 py-2 bg-purple-600 text-white font-bold rounded-full hover:bg-purple-700 transition shadow-sm"
-            >
-              + Post Product
-            </button>
-            <button
-              onClick={() => { resetForm(); setActiveModal("devProject"); }}
-              className="px-6 py-2 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition shadow-sm"
-            >
-              + Post Dev Project
-            </button>
-            <button onClick={logout} className="text-sm underline">Logout</button>
-          </div>
-        </div>
-
-        {loading && <div className="fixed top-0 left-0 w-full h-1 bg-blue-500 animate-pulse z-[110]"></div>}
-
-        {/* Portfolio Section */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between border-b border-black/10 pb-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => toggleSection("portfolio")}
-                className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/5 rounded transition-colors"
-              >
-                <span className={`transform transition-transform ${collapsedSections.portfolio ? "rotate-90" : ""}`}>▶</span>
-              </button>
-              <h2 className="text-xl font-bold">Portfolio ({portfolio.length})</h2>
-            </div>
-            <button onClick={() => { resetForm(); setAlbumType("portfolio"); setActiveModal("album"); }} className="text-sm font-bold underline">+ New Album</button>
-          </div>
-          {!collapsedSections.portfolio && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {portfolio.map((p) => (
-                <AdminImageCard
-                  key={p.id}
-                  id={p.id}
-                  title={p.title_en}
-                  imageUrl={p.image_url}
-                  date={p.created_at}
-                  type="portfolio"
-                  onDelete={() => handleDeletePortfolio(p.id)}
-                  onAssign={() => {
-                    const aid = prompt("Album ID?");
-                    if (aid) addPortfolioToAlbumAction(aid, p.id).then(() => alert("Assigned!"));
-                  }}
-                  onCopyEmbed={() => {
-                    navigator.clipboard.writeText(`[portfolio:${p.id}]`);
-                    alert("Copied to clipboard!");
-                  }}
-                  onEdit={() => handleEdit({ id: p.id, type: "portfolio", title_en: p.title_en, title_ja: p.title_ja, body_en: p.body_en, body_ja: p.body_ja })}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* News Section */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between border-b border-black/10 pb-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => toggleSection("news")}
-                className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/5 rounded transition-colors"
-              >
-                <span className={`transform transition-transform ${collapsedSections.news ? "rotate-90" : ""}`}>▶</span>
-              </button>
-              <h2 className="text-xl font-bold">News ({news.length})</h2>
-            </div>
-            <button onClick={() => { resetForm(); setAlbumType("backnumber"); setActiveModal("album"); }} className="text-sm font-bold underline">+ New Backnumber</button>
-          </div>
-          {!collapsedSections.news && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {news.map((n) => (
-                <AdminImageCard
-                  key={n.id}
-                  id={n.id}
-                  title={n.title_en}
-                  imageUrl={n.image_url}
-                  date={n.published_at}
-                  type="news"
-                  onDelete={() => handleDeleteNews(n.id)}
-                  onAssign={() => {
-                    const aid = prompt("Album ID?");
-                    if (aid) addNewsToAlbumAction(aid, n.id).then(() => alert("Assigned!"));
-                  }}
-                  onCopyEmbed={() => {
-                    navigator.clipboard.writeText(`[news:${n.id}]`);
-                    alert("Copied to clipboard!");
-                  }}
-                  onEdit={() => handleEdit({ id: n.id, type: "news", title_en: n.title_en, title_ja: n.title_ja, body_en: n.body_en, body_ja: n.body_ja })}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Albums Section (Hierarchical Display) */}
-        <section className="space-y-6">
-          <div className="border-b border-black/10 pb-4">
-            <h2 className="text-xl font-bold">Albums & Backnumbers</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Portfolio Albums */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-black uppercase tracking-wider text-gray-400">Portfolio Albums</h3>
-              <div className="space-y-2">
-                {(() => {
-                  const childIds = new Set(albumRelations.map(r => r.child_id));
-                  const rootAlbums = albums.filter(a => a.type === "portfolio" && !childIds.has(a.id));
-                  return rootAlbums.map(parent => (
-                    <AlbumTree key={parent.id} album={parent} albums={albums} relations={albumRelations} depth={0} onDelete={loadData} />
-                  ));
-                })()}
-              </div>
-            </div>
-            {/* Backnumbers */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-black uppercase tracking-wider text-gray-400">Backnumbers</h3>
-              <div className="space-y-2">
-                {(() => {
-                  const childIds = new Set(albumRelations.map(r => r.child_id));
-                  const rootAlbums = albums.filter(a => a.type === "backnumber" && !childIds.has(a.id));
-                  return rootAlbums.map(parent => (
-                    <AlbumTree key={parent.id} album={parent} albums={albums} relations={albumRelations} depth={0} onDelete={loadData} />
-                  ));
-                })()}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Dev Projects Section */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between border-b border-black/10 pb-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => toggleSection("devProjects")}
-                className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/5 rounded transition-colors"
-              >
-                <span className={`transform transition-transform ${collapsedSections.devProjects ? "rotate-90" : ""}`}>▶</span>
-              </button>
-              <h2 className="text-xl font-bold">Developer Projects ({devProjects.length})</h2>
-            </div>
-            <button
-              onClick={() => { resetForm(); setActiveModal("devProject"); }}
-              className="px-4 py-2 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition shadow-sm text-sm"
-            >
-              + New Dev Project
-            </button>
-          </div>
-          {!collapsedSections.devProjects && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {devProjects.map((proj) => (
-                <div key={proj.id} className="border border-black/10 rounded-2xl p-5 bg-white hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-black text-sm">{proj.project_name}</p>
-                      <p className="text-xs text-gray-400 font-mono mt-1">ID: {proj.id}</p>
-                    </div>
-                    <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full">Active</span>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <a href={`/portfolio/dev/${proj.id}`} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs font-bold border border-black/20 rounded-lg py-2 hover:bg-black hover:text-white transition-colors">
-                      View Detail
-                    </a>
-                    <a href={`/portfolio/dev/${proj.id}/print`} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs font-bold border border-black/20 rounded-lg py-2 hover:bg-black hover:text-white transition-colors">
-                      Print / PDF
-                    </a>
-                    <button
-                      onClick={() => handleEditDevProject(proj)}
-                      className="flex-1 text-center text-xs font-bold bg-amber-600 text-white rounded-lg py-2 hover:bg-amber-700 transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteDevProject(proj.id)}
-                      className="flex-1 text-center text-xs font-bold bg-red-600 text-white rounded-lg py-2 hover:bg-red-700 transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Shop Management Section */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between border-b border-black/10 pb-4">
-            <div className="flex items-center gap-3">
-              <button onClick={() => toggleSection("shop")} className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/5 rounded transition-colors">
-                <span className={`transform transition-transform ${collapsedSections.shop ? "rotate-90" : ""}`}>Shop</span>
-              </button>
-              <h2 className="text-xl font-bold">Shop Management</h2>
-            </div>
-          </div>
-          {!collapsedSections.shop && <ShopAdminTab />}
-        </section>
-        {/* Events Section */}
-        <section className="space-y-6">
-          <div className="border-b border-black/10 pb-4">
-            <h2 className="text-xl font-bold">Upcoming Events (Manual)</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {events.filter(e => e.source === "manual").map((e) => (
-              <div key={e.id} className="p-4 border border-black/10 rounded-2xl bg-white flex justify-between items-center group">
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 mb-1">
-                    {new Date(e.start_time).toLocaleString()}
-                  </p>
-                  <h3 className="font-bold">{e.title}</h3>
-                  {e.location && <p className="text-xs text-gray-400">📍 {e.location}</p>}
-                </div>
-                <button onClick={() => handleDeleteEvent(e.id)} className="text-red-500 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
-              </div>
-            ))}
-            {events.filter(e => e.source === "manual").length === 0 && (
-              <p className="text-sm text-gray-400">No manual events created.</p>
-            )}
-          </div>
-        </section>
-
-        {/* Album Relations Node Editor */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between border-b border-black/10 pb-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold">Album Relations Editor</h2>
-              <button
-                onClick={() => handleAlbumCreate("New Album", "portfolio")}
-                className="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded hover:bg-blue-600 transition"
-              >
-                + New Album
-              </button>
-            </div>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-4">
-              Drag nodes to arrange, connect nodes to create parent-child relationships, double-click nodes to edit.
-            </p>
-            <AlbumNodeEditor />
-          </div>
-        </section>
-      </div>
-
-      {/* Shared Creation Modal (Instagram-style) */}
-      {activeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-10">
-          <div className="bg-white w-full max-w-5xl h-full max-h-[720px] rounded-[28px] overflow-hidden flex flex-col shadow-2xl">
-            <div className="h-14 border-b border-black/10 flex items-center justify-between px-6 shrink-0">
-              <button onClick={() => { setActiveModal(null); resetForm(); }} className="text-sm font-bold text-gray-400 hover:text-black">Cancel</button>
-              <div className="text-center">
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
-                  {activeModal === "album" ? "Collection Setup" : activeModal === "devProject" ? "Developer Project" : "Publisher"}
-                </p>
-                <h3 className="font-black text-lg">
-                  {activeModal === "album" ? `New ${albumType === "backnumber" ? "Backnumber" : "Album"}` : 
-                   activeModal === "devProject" ? (editingDevProject ? "Edit Developer Project" : "New Developer Project") :
-                   `New ${activeModal === "news" ? "News" : "Post"}`}
-                </h3>
-              </div>
-              <button
-                onClick={handlePost}
-                disabled={loading}
-                className="text-blue-500 font-black text-sm disabled:opacity-30"
-              >
-                {loading ? "Processing..." : (activeModal === "album" ? "Create" : (editingDevProject ? "Update" : "Share"))}
-              </button>
-            </div>
-            
-            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-              {/* Left Column: Image Preview / Upload */}
-              <div className="flex-1 bg-[#f6f4ef] flex flex-col items-center justify-center relative group min-h-[320px] border-r border-black/5">
-                {formData.previewUrl ? (
-                  <img src={formData.previewUrl} className="w-full h-full object-contain" alt="Preview" />
-                ) : (
-                  <div className="text-center p-10 max-w-sm">
-                    <div className="w-24 h-24 mx-auto bg-white rounded-full flex items-center justify-center text-4xl mb-6 shadow-sm">🖼️</div>
-                    <p className="text-sm font-bold text-gray-800 mb-2">Upload Thumbnail</p>
-                    <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-                      {activeModal === "album"
-                        ? "Choose a cover that makes this collection immediately recognizable."
-                        : activeModal === "devProject"
-                        ? "Upload the main visual for this developer project (16:9 recommended)."
-                        : "Drop in the hero image first so the preview and card layouts are easy to judge."}
-                    </p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="modal-file-input"
-                    />
-                    <label
-                      htmlFor="modal-file-input"
-                      className="px-6 py-2.5 bg-black text-white text-xs font-black rounded-lg cursor-pointer hover:bg-black/80 transition"
-                    >
-                      Choose from Computer
-                    </label>
-                  </div>
-                )}
-                {formData.previewUrl && (
-                  <button
-                    onClick={() => setFormData({ ...formData, file: null, previewUrl: "" })}
-                    className="absolute top-4 right-4 bg-black/60 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              {/* Right Column: Metadata Fields */}
-              <div className="w-full md:w-[420px] flex flex-col bg-white overflow-y-auto">
-                <div className="p-6 space-y-8">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-2xl bg-black/[0.03] p-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400 mb-2">Type</p>
-                      <p className="text-sm font-black capitalize">{activeModal === "album" ? albumType : activeModal}</p>
-                    </div>
-                    <div className="rounded-2xl bg-black/[0.03] p-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400 mb-2">Title</p>
-                      <p className="text-sm font-black">{formData.title.length}/80</p>
-                    </div>
-                    <div className="rounded-2xl bg-black/[0.03] p-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400 mb-2">Body</p>
-                      <p className="text-sm font-black">{formData.content.length} chars</p>
-                    </div>
-                  </div>
-
-                  {activeModal === "album" && (
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Parent Album (Optional)</label>
-                      <select
-                        value={formData.parentId}
-                        onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
-                        className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold appearance-none focus:outline-none focus:ring-2 ring-black/5"
-                      >
-                        <option value="">No parent (Root album)</option>
-                        {parentAlbumOptions.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name_en}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="space-y-6">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Title</label>
-                      <input
-                        type="text"
-                        placeholder="Enter title..."
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="w-full text-lg font-bold focus:outline-none border-b-2 border-black/5 pb-2 transition-colors focus:border-black"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Description</label>
-                      <textarea
-                        placeholder="Write a description..."
-                        rows={6}
-                        value={formData.content}
-                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                        className="w-full text-sm resize-none focus:outline-none leading-relaxed"
-                      />
-                    </div>
-                  </div>
-
-                  {activeModal === "event" && (
-                    <div className="space-y-4 pt-4 border-t border-black/5">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Start Time</label>
-                        <input
-                          type="datetime-local"
-                          value={formData.startTime}
-                          onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                          className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Location</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Suzuka Circuit, Online, etc."
-                          value={formData.location}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                          className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {activeModal === "product" && (
-                    <div className="space-y-4 pt-4 border-t border-black/5">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Price (JPY)</label>
-                          <input
-                            type="number"
-                            placeholder="e.g. 1500"
-                            value={formData.price}
-                            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                            className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</label>
-                          <select
-                            value={formData.type}
-                            onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                            className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold appearance-none"
-                          >
-                            <option value="digital">Digital</option>
-                            <option value="physical">Physical</option>
-                            <option value="skill">Skill</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</label>
-                        <select
-                          value={formData.status}
-                          onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                          className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold appearance-none"
-                        >
-                          <option value="draft">Draft</option>
-                          <option value="on_sale">On Sale</option>
-                          <option value="sold_out">Sold Out</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeModal === "devProject" && (
-                    <div className="space-y-6 pt-4 border-t border-black/5">
-                      {/* Short Description */}
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Short Description</label>
-                        <textarea
-                          placeholder="Brief description for cards and previews..."
-                          rows={3}
-                          value={formData.shortDescription}
-                          onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
-                          className="w-full text-sm resize-none focus:outline-none leading-relaxed"
-                        />
-                      </div>
-
-                      {/* Main Visual Focal Point */}
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Main Visual Focal Point (0-1)</label>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">X (Horizontal)</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              max="1"
-                              value={formData.mainVisualFocalPointX}
-                              onChange={(e) => setFormData({ ...formData, mainVisualFocalPointX: parseFloat(e.target.value) })}
-                              className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Y (Vertical)</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              max="1"
-                              value={formData.mainVisualFocalPointY}
-                              onChange={(e) => setFormData({ ...formData, mainVisualFocalPointY: parseFloat(e.target.value) })}
-                              className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Sort Order */}
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort Order</label>
-                        <input
-                          type="number"
-                          value={formData.sortOrder}
-                          onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                          className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold"
-                        />
-                      </div>
-
-                      {/* Information Categories */}
-                      <div className="space-y-4 pt-4 border-t border-black/5">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Project Information</label>
-                          <button
-                            onClick={() => setFormData({ ...formData, information: [...formData.information, { category: "GENERAL", items: [] }] })}
-                            className="text-xs font-bold text-blue-600 hover:underline"
-                          >
-                            + Add Category
-                          </button>
-                        </div>
-                        {formData.information.map((cat, catIdx) => (
-                          <div key={catIdx} className="border border-black/10 rounded-xl p-4 bg-gray-50 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <select
-                                value={cat.category}
-                                onChange={(e) => {
-                                  const newInfo = [...formData.information];
-                                  newInfo[catIdx] = { ...newInfo[catIdx], category: e.target.value };
-                                  setFormData({ ...formData, information: newInfo });
-                                }}
-                                className="w-full md:w-1/2 p-2 bg-white border border-black/10 rounded-lg text-sm font-bold appearance-none"
-                              >
-                                <option value="GENERAL">GENERAL</option>
-                                <option value="INFRASTRUCTURE">INFRASTRUCTURE</option>
-                                <option value="DATA">DATA</option>
-                                <option value="AUTHENTICATION">AUTHENTICATION</option>
-                                <option value="API / INTEGRATION">API / INTEGRATION</option>
-                                <option value="OTHER">OTHER</option>
-                              </select>
-                              <button
-                                onClick={() => {
-                                  const newInfo = formData.information.filter((_, i) => i !== catIdx);
-                                  setFormData({ ...formData, information: newInfo });
-                                }}
-                                className="text-red-500 text-xs font-bold hover:underline ml-2"
-                              >
-                                Remove Category
-                              </button>
-                            </div>
-                            <div className="space-y-2">
-                              {cat.items.map((item: any, itemIdx: number) => <div key={itemIdx} className="flex gap-2">
-                                <input type="text" placeholder="Label" value={item.label} onChange={(e) => { const information = [...formData.information]; information[catIdx] = { ...information[catIdx], items: information[catIdx].items.map((entry: any, index: number) => index === itemIdx ? { ...entry, label: e.target.value } : entry) }; setFormData({ ...formData, information }); }} className="w-1/3 rounded-lg border border-black/10 bg-white p-2 text-sm font-bold" />
-                                <input type="text" placeholder="Value" value={Array.isArray(item.value) ? item.value.join(", ") : item.value} onChange={(e) => { const information = [...formData.information]; const values = e.target.value.split(",").map((value) => value.trim()); information[catIdx] = { ...information[catIdx], items: information[catIdx].items.map((entry: any, index: number) => index === itemIdx ? { ...entry, value: values.length > 1 ? values : e.target.value } : entry) }; setFormData({ ...formData, information }); }} className="w-2/3 rounded-lg border border-black/10 bg-white p-2 text-sm" />
-                                <button onClick={() => { const information = [...formData.information]; information[catIdx] = { ...information[catIdx], items: information[catIdx].items.filter((_: any, index: number) => index !== itemIdx) }; setFormData({ ...formData, information }); }} className="text-xs font-bold text-red-500">✕</button>
-                              </div>)}
-                              <button
-                                onClick={() => {
-                                  const newInfo = [...formData.information];
-                                  newInfo[catIdx] = { ...newInfo[catIdx], items: [...newInfo[catIdx].items, { label: "", value: "", type: "Text" }] };
-                                  setFormData({ ...formData, information: newInfo });
-                                }}
-                                className="text-xs font-bold text-blue-600 hover:underline"
-                              >
-                                + Add Item
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Details Blocks */}
-                      <div className="space-y-4 pt-4 border-t border-black/5">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Project Details</label>
-                          <button
-                            onClick={() => setFormData({ ...formData, details: [...formData.details, { id: `d${Date.now()}`, type: "Text", content: "", order: formData.details.length }] })}
-                            className="text-xs font-bold text-blue-600 hover:underline"
-                          >
-                            + Add Block
-                          </button>
-                        </div>
-                        {formData.details.map((block: any, blockIdx: number) => (
-                          <div key={blockIdx} className="border border-black/10 rounded-xl p-4 bg-gray-50 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <select
-                                value={block.type}
-                                onChange={(e) => {
-                                  const newDetails = [...formData.details];
-                                  newDetails[blockIdx] = { ...newDetails[blockIdx], type: e.target.value };
-                                  setFormData({ ...formData, details: newDetails });
-                                }}
-                                className="w-full md:w-1/3 p-2 bg-white border border-black/10 rounded-lg text-sm font-bold appearance-none"
-                              >
-                                <option value="Section">Section</option>
-                                <option value="Text">Text</option>
-                                <option value="Image">Image</option>
-                                <option value="ImageText">Image + Text</option>
-                                <option value="Highlight">Highlight</option>
-                              </select>
-                              <button
-                                onClick={() => {
-                                  const newDetails = formData.details.filter((_: any, i: number) => i !== blockIdx);
-                                  setFormData({ ...formData, details: newDetails });
-                                }}
-                                className="text-red-500 text-xs font-bold hover:underline ml-2"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                            <div className="space-y-2">
-                              {block.type === "Section" && (
-                                <input
-                                  type="text"
-                                  placeholder="Section Title"
-                                  value={block.content || ""}
-                                  onChange={(e) => {
-                                    const newDetails = [...formData.details];
-                                    newDetails[blockIdx] = { ...newDetails[blockIdx], content: e.target.value };
-                                    setFormData({ ...formData, details: newDetails });
-                                  }}
-                                  className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm font-bold"
-                                />
-                              )}
-                              {block.type === "Text" && (
-                                <textarea
-                                  placeholder="Text content..."
-                                  rows={4}
-                                  value={block.content || ""}
-                                  onChange={(e) => {
-                                    const newDetails = [...formData.details];
-                                    newDetails[blockIdx] = { ...newDetails[blockIdx], content: e.target.value };
-                                    setFormData({ ...formData, details: newDetails });
-                                  }}
-                                  className="w-full text-sm resize-none focus:outline-none leading-relaxed"
-                                />
-                              )}
-                              {block.type === "Image" && (
-                                <div className="space-y-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Image URL"
-                                    value={block.imageUrl || ""}
-                                    onChange={(e) => {
-                                      const newDetails = [...formData.details];
-                                      newDetails[blockIdx] = { ...newDetails[blockIdx], imageUrl: e.target.value };
-                                      setFormData({ ...formData, details: newDetails });
-                                    }}
-                                    className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Caption (optional)"
-                                    value={block.imageCaption || ""}
-                                    onChange={(e) => {
-                                      const newDetails = [...formData.details];
-                                      newDetails[blockIdx] = { ...newDetails[blockIdx], imageCaption: e.target.value };
-                                      setFormData({ ...formData, details: newDetails });
-                                    }}
-                                    className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
-                                  />
-                                </div>
-                              )}
-                              {block.type === "ImageText" && (
-                                <div className="space-y-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Image URL"
-                                    value={block.imageUrl || ""}
-                                    onChange={(e) => {
-                                      const newDetails = [...formData.details];
-                                      newDetails[blockIdx] = { ...newDetails[blockIdx], imageUrl: e.target.value };
-                                      setFormData({ ...formData, details: newDetails });
-                                    }}
-                                    className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
-                                  />
-                                  <textarea
-                                    placeholder="Text content..."
-                                    rows={3}
-                                    value={block.text || ""}
-                                    onChange={(e) => {
-                                      const newDetails = [...formData.details];
-                                      newDetails[blockIdx] = { ...newDetails[blockIdx], text: e.target.value };
-                                      setFormData({ ...formData, details: newDetails });
-                                    }}
-                                    className="w-full text-sm resize-none focus:outline-none leading-relaxed"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Caption (optional)"
-                                    value={block.imageCaption || ""}
-                                    onChange={(e) => {
-                                      const newDetails = [...formData.details];
-                                      newDetails[blockIdx] = { ...newDetails[blockIdx], imageCaption: e.target.value };
-                                      setFormData({ ...formData, details: newDetails });
-                                    }}
-                                    className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
-                                  />
-                                </div>
-                              )}
-                              {block.type === "Highlight" && (
-                                <input
-                                  type="text"
-                                  placeholder="Highlight text"
-                                  value={block.content || ""}
-                                  onChange={(e) => {
-                                    const newDetails = [...formData.details];
-                                    newDetails[blockIdx] = { ...newDetails[blockIdx], content: e.target.value };
-                                    setFormData({ ...formData, details: newDetails });
-                                  }}
-                                  className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm font-bold"
-                                />
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Gallery */}
-                      <div className="space-y-4 pt-4 border-t border-black/5">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Gallery</label>
-                          <button
-                            onClick={() => setFormData({ ...formData, gallery: [...formData.gallery, { id: `g${Date.now()}`, imageUrl: "", caption: "", description: "", order: formData.gallery.length }] })}
-                            className="text-xs font-bold text-blue-600 hover:underline"
-                          >
-                            + Add Image
-                          </button>
-                        </div>
-                        {formData.gallery.map((item: any, itemIdx: number) => (
-                          <div key={itemIdx} className="border border-black/10 rounded-xl p-4 bg-gray-50 space-y-2 flex gap-4">
-                            <input
-                              type="text"
-                              placeholder="Image URL"
-                              value={item.imageUrl}
-                              onChange={(e) => {
-                                const newGallery = [...formData.gallery];
-                                newGallery[itemIdx] = { ...newGallery[itemIdx], imageUrl: e.target.value };
-                                setFormData({ ...formData, gallery: newGallery });
-                              }}
-                              className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Caption"
-                              value={item.caption || ""}
-                              onChange={(e) => {
-                                const newGallery = [...formData.gallery];
-                                newGallery[itemIdx] = { ...newGallery[itemIdx], caption: e.target.value };
-                                setFormData({ ...formData, gallery: newGallery });
-                              }}
-                              className="w-1/2 p-2 bg-white border border-black/10 rounded-lg text-sm"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Description (optional)"
-                              value={item.description || ""}
-                              onChange={(e) => {
-                                const newGallery = [...formData.gallery];
-                                newGallery[itemIdx] = { ...newGallery[itemIdx], description: e.target.value };
-                                setFormData({ ...formData, gallery: newGallery });
-                              }}
-                              className="w-1/2 p-2 bg-white border border-black/10 rounded-lg text-sm"
-                            />
-                            <input
-                              type="number"
-                              placeholder="Order"
-                              value={item.order}
-                              onChange={(e) => {
-                                const newGallery = [...formData.gallery];
-                                newGallery[itemIdx] = { ...newGallery[itemIdx], order: parseInt(e.target.value) || 0 };
-                                setFormData({ ...formData, gallery: newGallery });
-                              }}
-                              className="w-20 p-2 bg-white border border-black/10 rounded-lg text-sm"
-                            />
-                            <button
-                              onClick={() => {
-                                const newGallery = formData.gallery.filter((_: any, i: number) => i !== itemIdx);
-                                setFormData({ ...formData, gallery: newGallery });
-                              }}
-                              className="text-red-500 text-xs font-bold hover:underline"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Links */}
-                      <div className="space-y-4 pt-4 border-t border-black/5">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Links</label>
-                          <button
-                            onClick={() => setFormData({ ...formData, links: [...formData.links, { id: `l${Date.now()}`, title: "Website", description: "", url: "", displayUrl: "", buttonLabel: "Visit", order: formData.links.length }] })}
-                            className="text-xs font-bold text-blue-600 hover:underline"
-                          >
-                            + Add Link
-                          </button>
-                        </div>
-                        {formData.links.map((link: any, linkIdx: number) => (
-                          <div key={linkIdx} className="border border-black/10 rounded-xl p-4 bg-gray-50 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <select
-                                value={link.title}
-                                onChange={(e) => {
-                                  const newLinks = [...formData.links];
-                                  newLinks[linkIdx] = { ...newLinks[linkIdx], title: e.target.value };
-                                  setFormData({ ...formData, links: newLinks });
-                                }}
-                                className="w-full md:w-1/3 p-2 bg-white border border-black/10 rounded-lg text-sm font-bold appearance-none"
-                              >
-                                <option value="Website">Website</option>
-                                <option value="GitHub">GitHub</option>
-                                <option value="Documentation">Documentation</option>
-                                <option value="Demo">Demo</option>
-                                <option value="Other">Other</option>
-                              </select>
-                              <button
-                                onClick={() => {
-                                  const newLinks = formData.links.filter((_: any, i: number) => i !== linkIdx);
-                                  setFormData({ ...formData, links: newLinks });
-                                }}
-                                className="text-red-500 text-xs font-bold hover:underline ml-2"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                            <div className="space-y-2">
-                              <input
-                                type="text"
-                                placeholder="Description"
-                                value={link.description || ""}
-                                onChange={(e) => {
-                                  const newLinks = [...formData.links];
-                                  newLinks[linkIdx] = { ...newLinks[linkIdx], description: e.target.value };
-                                  setFormData({ ...formData, links: newLinks });
-                                }}
-                                className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
-                              />
-                              <input
-                                type="text"
-                                placeholder="Full URL"
-                                value={link.url || ""}
-                                onChange={(e) => {
-                                  const newLinks = [...formData.links];
-                                  newLinks[linkIdx] = { ...newLinks[linkIdx], url: e.target.value };
-                                  setFormData({ ...formData, links: newLinks });
-                                }}
-                                className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
-                              />
-                              <input
-                                type="text"
-                                placeholder="Display URL (shortened for UI)"
-                                value={link.displayUrl || ""}
-                                onChange={(e) => {
-                                  const newLinks = [...formData.links];
-                                  newLinks[linkIdx] = { ...newLinks[linkIdx], displayUrl: e.target.value };
-                                  setFormData({ ...formData, links: newLinks });
-                                }}
-                                className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
-                              />
-                              <input
-                                type="text"
-                                placeholder="Button Label"
-                                value={link.buttonLabel || "Visit"}
-                                onChange={(e) => {
-                                  const newLinks = [...formData.links];
-                                  newLinks[linkIdx] = { ...newLinks[linkIdx], buttonLabel: e.target.value };
-                                  setFormData({ ...formData, links: newLinks });
-                                }}
-                                className="w-full p-2 bg-white border border-black/10 rounded-lg text-sm"
-                              />
-                              <input
-                                type="number"
-                                placeholder="Order"
-                                value={link.order}
-                                onChange={(e) => {
-                                  const newLinks = [...formData.links];
-                                  newLinks[linkIdx] = { ...newLinks[linkIdx], order: parseInt(e.target.value) || 0 };
-                                  setFormData({ ...formData, links: newLinks });
-                                }}
-                                className="w-20 p-2 bg-white border border-black/10 rounded-lg text-sm"
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {(activeModal === "portfolio" || activeModal === "news") && (
-                    <div className="pt-6 border-t border-black/5">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">
-                        {activeModal === "news" ? "Assign to Backnumber" : "Add to Album"}
-                      </label>
-                      <select
-                        value={formData.albumId}
-                        onChange={(e) => setFormData({ ...formData, albumId: e.target.value })}
-                        className="w-full p-3 bg-black/5 rounded-xl text-sm font-bold appearance-none focus:outline-none focus:ring-2 ring-black/5"
-                      >
-                        <option value="">
-                          {activeModal === "news" ? "None (Standalone article)" : "None (Standalone work)"}
-                        </option>
-                        {assignmentAlbumOptions.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name_en}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="rounded-2xl border border-black/10 bg-[#fbfaf7] p-4 space-y-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Preview Notes</p>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {activeModal === "news"
-                        ? "News cards read best with a strong thumbnail, a short title, and the correct Backnumber selected before publishing."
-                        : activeModal === "portfolio"
-                          ? "Portfolio posts feel stronger when the cover image is clean and the album assignment already matches the collection structure."
-                          : activeModal === "devProject"
-                          ? "Fill in all sections for a complete developer project. Main visual, information categories, details blocks, gallery, and links will all appear in the detail view and print layout."
-                          : "Nested collections are easiest to scan when parent albums stay broad and child albums stay specific."}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="min-h-screen bg-[#f7f7f5] text-[#202020]">
+      <AdminSidebar section={section} setSection={setSection} onLogout={async () => { await fetch("/api/admin/logout", { method: "POST" }); setSessionOk(false); }} />
+      <main className="ml-64 min-h-screen">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-black/8 bg-[#f7f7f5]/90 px-10 backdrop-blur">
+          <div className="flex items-center gap-3 text-sm text-black/50"><span>Admin</span><ChevronRight size={14} /><span className="font-semibold text-black">{sectionLabel(section)}</span></div>
+          <div className="flex items-center gap-4"><div className="hidden items-center gap-2 text-xs text-black/40 md:flex"><ShieldCheck size={15} className="text-emerald-600" /> Supabase Auth secured</div><button className="rounded-full p-2 hover:bg-black/5"><CircleHelp size={18} /></button></div>
+        </header>
+        <div className="mx-auto max-w-[1400px] px-10 py-10">{section === "dashboard" && <Dashboard counts={counts} projects={projects} onProject={openEditor} onNavigate={setSection} />}{section === "hierarchy" && <Hierarchy projects={projects} openNodes={openNodes} setOpenNodes={setOpenNodes} onProject={openEditor} onNew={openEditor} />}{section === "projects" && <Projects projects={filteredProjects} query={query} setQuery={setQuery} onProject={openEditor} onNew={() => openEditor()} onDelete={removeProject} />}{section === "disciplines" && <Disciplines />}{section === "media" && <MediaNotice />}{section === "settings" && <SettingsPanel />}</div>
+      </main>
     </div>
   );
 }
 
-function AlbumListItem({ album, onDelete, isChild }: { album: DbAlbum, onDelete: () => void, isChild?: boolean }) {
+function sectionLabel(section: Section) { return ({ dashboard: "Dashboard", hierarchy: "Hierarchy", projects: "Projects", disciplines: "Disciplines", media: "Media Library", settings: "Settings" })[section]; }
+
+function AdminSidebar({ section, setSection, onLogout }: { section: Section; setSection: (section: Section) => void; onLogout: () => void }) {
+  const item = (id: Section, label: string, icon: React.ReactNode) => <button onClick={() => setSection(id)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${section === id ? "bg-black text-white" : "text-black/55 hover:bg-black/5 hover:text-black"}`}>{icon}<span>{label}</span></button>;
+  return <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-black/8 bg-white px-4 py-6"><div className="px-3"><p className="text-[10px] font-bold uppercase tracking-[.3em] text-black/35">RYUSEI TSUKAMOTO</p><h1 className="mt-1 text-xl font-semibold tracking-tight">Portfolio Admin</h1></div><div className="my-8 space-y-1">{item("dashboard", "Dashboard", <LayoutDashboard size={17} />)}<p className="px-3 pb-2 pt-7 text-[10px] font-bold uppercase tracking-[.22em] text-black/30">Portfolio</p>{item("hierarchy", "Hierarchy", <FolderKanban size={17} />)}{item("disciplines", "Disciplines", <BarChart3 size={17} />)}<p className="px-3 pb-2 pt-7 text-[10px] font-bold uppercase tracking-[.22em] text-black/30">Content</p>{item("projects", "Projects", <FileText size={17} />)}{item("media", "Media Library", <ImageIcon size={17} />)}</div><div className="mt-auto space-y-1 border-t border-black/8 pt-4">{item("settings", "Settings", <Settings size={17} />)}<button onClick={onLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-black/45 hover:bg-red-50 hover:text-red-700"><LogOut size={17} />Sign out</button></div></aside>;
+}
+
+function PageTitle({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: React.ReactNode }) { return <div className="mb-9 flex items-end justify-between gap-6"><div><p className="mb-3 text-[10px] font-bold uppercase tracking-[.25em] text-black/35">{eyebrow}</p><h2 className="text-4xl font-semibold tracking-[-.04em]">{title}</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-black/48">{description}</p></div>{action}</div>; }
+
+function Dashboard({ counts, projects, onProject, onNavigate }: { counts: any; projects: DbDevProject[]; onProject: (project: DbDevProject) => void; onNavigate: (section: Section) => void }) {
+  return <><PageTitle eyebrow="Portfolio Admin" title="Good evening, Ryusei." description="Portfolioの構造とコンテンツを、ここから一貫して管理できます。" action={<button onClick={() => onNavigate("projects")} className="flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white hover:bg-black/80"><Plus size={16} /> New project</button>} /><div className="grid grid-cols-3 gap-4 xl:grid-cols-6">{[["Disciplines", counts.disciplines, "5 fixed roots"], ["Activities", counts.activities, "brands / activities"], ["Projects", counts.projects, "developer contents"], ["Published", counts.published, "visible on portfolio"], ["In development", counts.development, "status"], ["Private", counts.private, "not public"]].map(([label, value, note]) => <div key={label} className="rounded-xl border border-black/8 bg-white p-5"><p className="text-xs text-black/45">{label}</p><p className="mt-3 text-3xl font-semibold tracking-tight">{value}</p><p className="mt-2 text-[11px] text-black/35">{note}</p></div>)}</div><div className="mt-8 grid grid-cols-[1.4fr_1fr] gap-6"><div className="rounded-xl border border-black/8 bg-white"><div className="flex items-center justify-between border-b border-black/8 px-6 py-5"><div><h3 className="font-semibold">Recent updates</h3><p className="mt-1 text-xs text-black/40">最後に編集されたProject</p></div><button onClick={() => onNavigate("projects")} className="text-xs font-semibold text-black/50 hover:text-black">View all →</button></div>{projects.slice(0, 5).map((project) => <button key={project.id} onClick={() => onProject(project)} className="flex w-full items-center justify-between border-b border-black/6 px-6 py-4 text-left last:border-0 hover:bg-black/[.02]"><div className="flex items-center gap-3"><div className="h-9 w-9 overflow-hidden rounded-lg bg-black/5">{project.main_visual_url && <img src={project.main_visual_url} alt="" className="h-full w-full object-cover" />}</div><div><p className="text-sm font-medium">{project.project_name}</p><p className="mt-1 text-xs text-black/40">rt18_dev · {formatDate(project.updated_at)}</p></div></div><ChevronRight size={16} className="text-black/30" /></button>)}{projects.length === 0 && <EmptyState text="まだProjectがありません" />}</div><div className="rounded-xl border border-black/8 bg-[#202020] p-6 text-white"><Sparkles size={18} className="text-yellow-300" /><h3 className="mt-10 text-2xl font-semibold tracking-tight">Write like a story.</h3><p className="mt-3 text-sm leading-6 text-white/60">noteのように、タイトル・概要・本文を順番に整えてから公開。途中の編集はDraftとして保存できます。</p><button onClick={() => onNavigate("hierarchy")} className="mt-8 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black">Open hierarchy</button></div></div></>;
+}
+
+function Hierarchy({ projects, openNodes, setOpenNodes, onProject, onNew }: { projects: DbDevProject[]; openNodes: Record<string, boolean>; setOpenNodes: (value: Record<string, boolean>) => void; onProject: (project: DbDevProject) => void; onNew: () => void }) {
+  const toggle = (id: string) => setOpenNodes({ ...openNodes, [id]: !openNodes[id] });
+  const developerProjects = projects;
+  return <><PageTitle eyebrow="Portfolio / Structure" title="Hierarchy" description="Discipline → Activity / Brand → Project の順に、Portfolioの全体像を確認します。" action={<button onClick={onNew} className="flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white"><Plus size={16} /> Add project</button>} /><div className="grid grid-cols-[1.1fr_.9fr] gap-6"><div className="rounded-xl border border-black/8 bg-white p-6"><div className="mb-5 flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-black/35">Portfolio</p><p className="mt-1 text-sm text-black/45">5 disciplines · {projects.length} projects</p></div><button className="rounded-md p-2 text-black/35 hover:bg-black/5"><MoreHorizontal size={18} /></button></div>{disciplines.map((discipline) => { const isOpen = openNodes[discipline.id]; const activity = PORTFOLIO_HIERARCHY.disciplines.find((item) => item.id === discipline.id)?.activities || []; return <div key={discipline.id} className="mb-1"><button onClick={() => toggle(discipline.id)} className="flex w-full items-center gap-2 rounded-lg px-2 py-3 text-left hover:bg-black/[.03]"><span className="text-black/35">{isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span><span className="h-2 w-2 rounded-full" style={{ backgroundColor: discipline.color }} /><span className="text-sm font-semibold tracking-wide">{discipline.label}</span><span className="ml-auto text-xs text-black/35">{discipline.id === "developer" ? projects.length : activity.length ? `${activity.length} activities` : "empty"}</span></button>{isOpen && <div className="ml-7 border-l border-black/10 pl-4">{activity.length ? activity.map((item) => <div key={item.id}><button onClick={() => toggle(item.id)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-left text-sm hover:bg-black/[.03]"><span className="text-black/35">{openNodes[item.id] ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</span><span className="font-medium">{item.name}</span><span className="ml-auto text-xs text-black/35">{projects.length} contents</span></button>{openNodes[item.id] && <div className="ml-6 border-l border-black/10 pl-4">{developerProjects.map((project) => <button key={project.id} onClick={() => onProject(project)} className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-black/65 hover:bg-blue-50 hover:text-blue-800"><FileText size={14} className="text-black/25 group-hover:text-blue-500" /><span className="truncate">{project.project_name}</span><ChevronRight size={14} className="ml-auto opacity-0 group-hover:opacity-100" /></button>)}<button onClick={onNew} className="mt-1 flex items-center gap-2 px-2 py-2 text-xs font-semibold text-blue-600"><Plus size={14} /> Add content</button></div>}</div>) : <button onClick={onNew} className="flex items-center gap-2 px-2 py-3 text-xs text-black/35 hover:text-black"><Plus size={14} /> Add activity</button>}</div>}</div>})}</div><div className="rounded-xl border border-black/8 bg-white p-6"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-black/35">Data flow</p><div className="mt-8 space-y-3">{["Admin data", "Hierarchy data", "Portfolio Map / List / Detail"].map((label, index) => <div key={label}><div className="rounded-lg border border-black/8 bg-[#fafaf8] px-4 py-4"><p className="text-xs font-bold uppercase tracking-widest text-black/35">0{index + 1}</p><p className="mt-2 font-semibold">{label}</p></div>{index < 2 && <div className="ml-8 h-7 border-l border-dashed border-black/20" />}</div>)}</div><div className="mt-8 rounded-lg bg-blue-50 p-4 text-sm leading-6 text-blue-900">ここで作成・編集したProjectは、既存のPortfolio本体が読む `dev_projects` データに反映されます。</div></div></div></>;
+}
+
+function Projects({ projects, query, setQuery, onProject, onNew, onDelete }: { projects: DbDevProject[]; query: string; setQuery: (value: string) => void; onProject: (project: DbDevProject) => void; onNew: () => void; onDelete: (project: DbDevProject) => void }) {
   return (
-    <div className={`p-3 border border-black/10 rounded-xl flex items-center justify-between bg-white shadow-sm hover:shadow-md transition-shadow ${isChild ? 'bg-gray-50' : ''}`}>
-      <div className="flex items-center gap-3 overflow-hidden">
-        <div className="w-10 h-10 shrink-0 bg-black/5 rounded-lg overflow-hidden relative border border-black/5">
-          {album.cover_image_url ? (
-            <img src={album.cover_image_url} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-xs">📁</div>
-          )}
-        </div>
-        <div className="min-w-0">
-          <p className="text-[9px] font-mono text-gray-400 truncate">{album.id}</p>
-          <p className="font-black text-sm truncate">{album.name_en}</p>
-        </div>
+    <>
+      <PageTitle eyebrow="Content / Projects" title="Projects" description="Projectの公開状態、概要、Detail、Gallery、Linksを一つの編集画面で管理します。" action={<button onClick={onNew} className="flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white"><Plus size={16} /> New project</button>} />
+      <div className="mb-5 flex items-center justify-between">
+        <div className="relative w-80"><Search size={16} className="absolute left-3 top-3 text-black/30" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search projects…" className="w-full rounded-lg border border-black/10 bg-white py-2.5 pl-10 pr-3 text-sm outline-none focus:border-black/30" /></div>
+        <p className="text-xs text-black/40">{projects.length} projects</p>
       </div>
-      <button onClick={(e) => { e.stopPropagation(); if (confirm("Delete?")) onDelete(); }} className="text-red-500 text-xs font-bold hover:underline ml-4">Delete</button>
-    </div>
+      <div className="overflow-hidden rounded-xl border border-black/8 bg-white">
+        <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr_42px] border-b border-black/8 bg-[#fafaf8] px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-black/35"><span>Project</span><span>Activity</span><span>Status</span><span>Updated</span><span /></div>
+        {projects.map((project) => {
+          const status = getGeneral(project, "Status", "In Development");
+          const visibility = getGeneral(project, "Visibility", "Draft");
+          return (
+            <div key={project.id} className="grid grid-cols-[1.6fr_1fr_1fr_1fr_42px] items-center border-b border-black/6 px-5 py-4 last:border-0 hover:bg-black/[.015]">
+              <button onClick={() => onProject(project)} className="flex min-w-0 items-center gap-3 text-left"><div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-black/5">{project.main_visual_url && <img src={project.main_visual_url} alt="" className="h-full w-full object-cover" />}</div><div className="min-w-0"><p className="truncate text-sm font-semibold">{project.project_name}</p><p className="mt-1 truncate text-xs text-black/40">{project.short_description || "No description"}</p></div></button>
+              <span className="text-sm text-black/55">rt18_dev</span>
+              <div><span className={`rounded-full border px-2 py-1 text-[11px] font-medium ${statusTone(status)}`}>{status}</span><span className="ml-2 text-[10px] uppercase tracking-wider text-black/35">{visibility}</span></div>
+              <span className="text-sm text-black/45">{formatDate(project.updated_at)}</span>
+              <button onClick={() => onDelete(project)} className="rounded-md p-2 text-black/25 hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button>
+            </div>
+          );
+        })}
+        {projects.length === 0 && <EmptyState text="該当するProjectがありません" />}
+      </div>
+    </>
   );
 }
 
-function AlbumTree({ album, albums, relations, depth, onDelete }: { album: DbAlbum, albums: DbAlbum[], relations: { parent_id: string; child_id: string }[], depth: number, onDelete: () => void }) {
-  const children = relations
-    .filter(r => r.parent_id === album.id)
-    .map(r => albums.find(a => a.id === r.child_id))
-    .filter((child): child is DbAlbum => child !== undefined);
-  
-  return (
-    <div key={album.id} className="space-y-2">
-      <div style={{ marginLeft: depth * 20 }}>
-        <AlbumListItem 
-          album={album} 
-          onDelete={() => deleteAlbumAction(album.id).then(onDelete)} 
-          isChild={depth > 0} 
-        />
-      </div>
-      {children.map(child => (
-        <AlbumTree 
-          key={child.id} 
-          album={child} 
-          albums={albums} 
-          relations={relations}
-          depth={depth + 1} 
-          onDelete={onDelete} 
-        />
-      ))}
-    </div>
-  );
+function ProjectEditor({ editor, setEditor, state, message, onBack, onSave, onPublish }: { editor: Partial<DbDevProject>; setEditor: (value: Partial<DbDevProject>) => void; state: string; message: string; onBack: () => void; onSave: () => void; onPublish: () => void }) {
+  const details = Array.isArray(editor.details) ? editor.details : [];
+  const gallery = Array.isArray(editor.gallery) ? editor.gallery : [];
+  const links = Array.isArray(editor.links) ? editor.links : [];
+  const update = (patch: Partial<DbDevProject>) => setEditor({ ...editor, ...patch });
+  const updateDetails = (next: any[]) => update({ details: next.map((block, index) => ({ ...block, order: index + 1 })) });
+  const updateGallery = (next: any[]) => update({ gallery: next.map((item, index) => ({ ...item, order: index + 1 })) });
+  const updateLinks = (next: any[]) => update({ links: next.map((item, index) => ({ ...item, order: index + 1 })) });
+  const addDetail = (type: string) => updateDetails([...details, { id: `d-${Date.now()}`, order: details.length + 1, type, content: "" }]);
+  const status = getGeneral(editor, "Status", "In Development");
+  const visibility = getGeneral(editor, "Visibility", "Draft");
+  return <div className="min-h-screen bg-[#fafaf8] text-[#202020]"><header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-black/8 bg-[#fafaf8]/95 px-8 backdrop-blur"><button onClick={onBack} className="flex items-center gap-2 text-sm text-black/55 hover:text-black"><ArrowLeft size={17} /> Back to projects</button><div className="flex items-center gap-3"><span className={`rounded-full px-3 py-1 text-xs ${state === "published" ? "bg-emerald-50 text-emerald-700" : "bg-black/5 text-black/50"}`}>{state === "published" ? "Published" : state === "saved" ? "Draft saved" : "Unsaved changes"}</span>{message && <span className="text-xs text-black/45">{message}</span>}<button onClick={onSave} className="flex items-center gap-2 rounded-lg border border-black/12 bg-white px-3.5 py-2 text-sm font-semibold hover:bg-black/[.03]"><Save size={15} /> Save draft</button><button onClick={onPublish} className="flex items-center gap-2 rounded-lg bg-black px-3.5 py-2 text-sm font-semibold text-white hover:bg-black/80"><Check size={15} /> Publish</button></div></header><main className="mx-auto max-w-6xl px-8 py-10"><div className="mb-10"><p className="mb-3 text-[10px] font-bold uppercase tracking-[.25em] text-black/35">Project editor</p><input value={editor.project_name || ""} onChange={(e) => update({ project_name: e.target.value })} placeholder="Project title" className="w-full bg-transparent text-5xl font-semibold tracking-[-.05em] outline-none placeholder:text-black/20" /><input value={editor.short_description || ""} onChange={(e) => update({ short_description: e.target.value })} placeholder="A short description that appears in the project card…" className="mt-4 w-full max-w-3xl bg-transparent text-lg text-black/50 outline-none placeholder:text-black/25" /></div><div className="grid grid-cols-[1fr_300px] gap-10"><div className="space-y-10"><section><SectionHeading icon={<FileText size={16} />} title="Project details" hint="noteのように本文をBlockで組み立てます" /><div className="space-y-3">{details.map((block: any, index: number) => <div key={block.id || index} className="group relative rounded-xl border border-black/8 bg-white p-3"><div className="mb-2 flex items-center justify-between"><div className="flex items-center gap-2"><span className="rounded bg-black/5 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-black/45">{block.type}</span><span className="text-[11px] text-black/30">Block {index + 1}</span></div><div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100"><button disabled={index === 0} onClick={() => { const next = [...details]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; updateDetails(next); }} className="rounded p-1.5 hover:bg-black/5 disabled:opacity-20"><ArrowUp size={14} /></button><button disabled={index === details.length - 1} onClick={() => { const next = [...details]; [next[index + 1], next[index]] = [next[index], next[index + 1]]; updateDetails(next); }} className="rounded p-1.5 hover:bg-black/5 disabled:opacity-20"><ArrowDown size={14} /></button><button onClick={() => updateDetails(details.filter((_: any, i: number) => i !== index))} className="rounded p-1.5 text-red-500 hover:bg-red-50"><Trash2 size={14} /></button></div></div>{block.type === "Section" ? <input value={block.content || ""} onChange={(e) => updateDetails(details.map((item: any, i: number) => i === index ? { ...item, content: e.target.value } : item))} placeholder="Section heading" className="w-full px-2 py-2 text-2xl font-semibold outline-none placeholder:text-black/20" /> : <NotionEditor value={block.content || ""} onChange={(html) => updateDetails(details.map((item: any, i: number) => i === index ? { ...item, content: html } : item))} placeholder="Start writing…" compact={block.type === "Highlight"} />}</div>)}{details.length === 0 && <div className="rounded-xl border border-dashed border-black/15 bg-white px-6 py-12 text-center text-sm text-black/40">Detail blocks will appear here. Add a section or start writing.</div>}<div className="flex flex-wrap gap-2"><button onClick={() => addDetail("Section")} className="flex items-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-xs font-semibold hover:bg-black/[.03]"><Plus size={14} /> Section</button><button onClick={() => addDetail("Text")} className="flex items-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-xs font-semibold hover:bg-black/[.03]"><Plus size={14} /> Text</button><button onClick={() => addDetail("Highlight")} className="flex items-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-xs font-semibold hover:bg-black/[.03]"><Plus size={14} /> Highlight</button><button onClick={() => addDetail("ImageText")} className="flex items-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-xs font-semibold hover:bg-black/[.03]"><Plus size={14} /> Image + Text</button></div></div></section><section><SectionHeading icon={<ImageIcon size={16} />} title="Gallery" hint="Main visualとは別のProject screenshots" /><div className="space-y-3">{gallery.map((item: any, index: number) => <div key={item.id || index} className="grid grid-cols-[80px_1fr_1fr_32px] gap-3 rounded-xl border border-black/8 bg-white p-3"><div className="h-16 overflow-hidden rounded-lg bg-black/5">{item.imageUrl && <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />}</div><input value={item.caption || ""} onChange={(e) => updateGallery(gallery.map((x: any, i: number) => i === index ? { ...x, caption: e.target.value } : x))} placeholder="Caption" className="rounded-lg bg-black/[.03] px-3 text-sm outline-none" /><input value={item.imageUrl || ""} onChange={(e) => updateGallery(gallery.map((x: any, i: number) => i === index ? { ...x, imageUrl: e.target.value } : x))} placeholder="Image URL" className="rounded-lg bg-black/[.03] px-3 text-sm outline-none" /><button onClick={() => updateGallery(gallery.filter((_: any, i: number) => i !== index))} className="text-black/25 hover:text-red-600"><X size={16} /></button></div>)}<button onClick={() => updateGallery([...gallery, { id: `g-${Date.now()}`, order: gallery.length + 1, imageUrl: "", caption: "", description: "" }])} className="flex items-center gap-2 rounded-lg border border-dashed border-black/15 px-3 py-2 text-xs font-semibold text-black/50 hover:border-black/30 hover:text-black"><Plus size={14} /> Add gallery image</button></div></section><section><SectionHeading icon={<Link2 size={16} />} title="Links" hint="Website → GitHub → Additional links" /><div className="space-y-3">{links.map((item: any, index: number) => <div key={item.id || index} className="grid grid-cols-[120px_1fr_1fr_32px] gap-3 rounded-xl border border-black/8 bg-white p-3"><select value={item.title || "Additional"} onChange={(e) => updateLinks(links.map((x: any, i: number) => i === index ? { ...x, title: e.target.value } : x))} className="rounded-lg bg-black/[.03] px-2 text-sm outline-none"><option>Website</option><option>GitHub</option><option>Additional</option></select><input value={item.description || ""} onChange={(e) => updateLinks(links.map((x: any, i: number) => i === index ? { ...x, description: e.target.value } : x))} placeholder="Description" className="rounded-lg bg-black/[.03] px-3 text-sm outline-none" /><input value={item.url || ""} onChange={(e) => updateLinks(links.map((x: any, i: number) => i === index ? { ...x, url: e.target.value } : x))} placeholder="https://" className="rounded-lg bg-black/[.03] px-3 text-sm outline-none" /><button onClick={() => updateLinks(links.filter((_: any, i: number) => i !== index))} className="text-black/25 hover:text-red-600"><X size={16} /></button></div>)}<button onClick={() => updateLinks([...links, { id: `l-${Date.now()}`, order: links.length + 1, title: "Additional", description: "", url: "", buttonLabel: "Open" }])} className="flex items-center gap-2 rounded-lg border border-dashed border-black/15 px-3 py-2 text-xs font-semibold text-black/50 hover:border-black/30 hover:text-black"><Plus size={14} /> Add link</button></div></section></div><aside className="space-y-5"><div className="rounded-xl border border-black/8 bg-white p-5"><p className="mb-4 text-[10px] font-bold uppercase tracking-[.2em] text-black/35">Publishing</p><label className="mb-2 block text-xs font-semibold text-black/60">Status</label><select value={status} onChange={(e) => update({ information: setGeneral(editor, "Status", e.target.value) })} className="mb-4 w-full rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm outline-none"><option>Public</option><option>In Development</option><option>Private</option><option>Archived</option></select><label className="mb-2 block text-xs font-semibold text-black/60">Visibility</label><select value={visibility} onChange={(e) => update({ information: setGeneral(editor, "Visibility", e.target.value) })} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm outline-none"><option>Published</option><option>Draft</option><option>Hidden</option></select><div className="mt-5 border-t border-black/8 pt-4 text-xs leading-5 text-black/45">StatusはProjectの状態、VisibilityはPortfolioへの表示状態です。別々に管理できます。</div></div><div className="rounded-xl border border-black/8 bg-white p-5"><p className="mb-4 text-[10px] font-bold uppercase tracking-[.2em] text-black/35">Main visual</p><div className="mb-3 aspect-[16/9] overflow-hidden rounded-lg bg-black/5">{editor.main_visual_url ? <img src={editor.main_visual_url} alt="" className="h-full w-full object-cover" style={{ objectPosition: `${Number(editor.main_visual_focal_point_x || .5) * 100}% ${Number(editor.main_visual_focal_point_y || .5) * 100}%` }} /> : <div className="flex h-full items-center justify-center text-xs text-black/30"><Upload size={16} className="mr-2" />Add cover image</div>}</div><input value={editor.main_visual_url || ""} onChange={(e) => update({ main_visual_url: e.target.value })} placeholder="Image URL" className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm outline-none" /><p className="mt-3 text-[11px] leading-5 text-black/40">画像URLを入力するとPreviewに反映されます。</p></div><div className="rounded-xl border border-black/8 bg-white p-5"><p className="mb-4 text-[10px] font-bold uppercase tracking-[.2em] text-black/35">Project information</p><div className="space-y-3">{["Type", "Started", "Platform"].map((label) => <label key={label} className="block"><span className="mb-1 block text-xs font-semibold text-black/60">{label}</span><input value={getGeneral(editor, label)} onChange={(e) => update({ information: setGeneral(editor, label, label === "Platform" ? e.target.value.split(",").map((x) => x.trim()).filter(Boolean) : e.target.value) })} className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none" /></label>)}</div></div></aside></div></main></div>;
 }
+
+function SectionHeading({ icon, title, hint }: { icon: React.ReactNode; title: string; hint: string }) { return <div className="mb-4 flex items-center gap-3"><div className="rounded-lg bg-black p-2 text-white">{icon}</div><div><h3 className="font-semibold">{title}</h3><p className="mt-1 text-xs text-black/40">{hint}</p></div></div>; }
+function EmptyState({ text }: { text: string }) { return <div className="px-6 py-16 text-center text-sm text-black/40">{text}</div>; }
+function Disciplines() { return <><PageTitle eyebrow="Portfolio / Roots" title="Disciplines" description="Portfolioの最上位にある5つの領域。現段階では既存Hierarchyを基準に表示しています。" /><div className="grid grid-cols-2 gap-4 xl:grid-cols-3">{disciplines.map((discipline) => { const data = PORTFOLIO_HIERARCHY.disciplines.find((x) => x.id === discipline.id); return <div key={discipline.id} className="rounded-xl border border-black/8 bg-white p-6"><div className="flex items-center justify-between"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: discipline.color }} /><MoreHorizontal size={18} className="text-black/25" /></div><h3 className="mt-8 text-xl font-semibold">{discipline.label}</h3><p className="mt-2 text-sm leading-6 text-black/45">{discipline.description}</p><div className="mt-6 flex gap-6 border-t border-black/8 pt-4 text-xs text-black/45"><span>{data?.activities.length || 0} Activities</span><span>{data?.activities.reduce((sum, a) => sum + a.contents.length, 0) || 0} Contents</span></div></div>})}</div></>; }
+function MediaNotice() { return <><PageTitle eyebrow="Media" title="Media Library" description="GalleryとMain visualをまとめて管理するための領域です。現在はProject Editor内から画像URLを登録できます。" /><div className="rounded-xl border border-dashed border-black/15 bg-white px-6 py-20 text-center"><ImageIcon size={28} className="mx-auto text-black/25" /><h3 className="mt-5 font-semibold">Media Library is coming next</h3><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/45">既存のStorage構成を壊さず、次の段階でアップロード・alt text・caption・並び替えをここへ集約できます。</p></div></>; }
+function SettingsPanel() { return <><PageTitle eyebrow="System" title="Settings" description="認証と公開フローに関する現在の設定を確認できます。" /><div className="max-w-2xl space-y-4"><div className="rounded-xl border border-black/8 bg-white p-6"><div className="flex items-start gap-4"><ShieldCheck className="mt-1 text-emerald-600" size={20} /><div><h3 className="font-semibold">Admin authentication</h3><p className="mt-2 text-sm leading-6 text-black/50">Supabase Authのセッションを使い、`ADMIN_EMAIL` と一致するユーザーだけがこの画面へアクセスできます。</p></div></div></div><div className="rounded-xl border border-black/8 bg-white p-6"><div className="flex items-start gap-4"><BookOpen className="mt-1 text-blue-600" size={20} /><div><h3 className="font-semibold">Content model</h3><p className="mt-2 text-sm leading-6 text-black/50">既存の `dev_projects` を利用しています。新しいCMSや不要なDB migrationは追加していません。</p></div></div></div></div></>; }
+function LoginScreen({ email, password, error, setEmail, setPassword, onLogin }: { email: string; password: string; error: string; setEmail: (value: string) => void; setPassword: (value: string) => void; onLogin: () => void }) { return <div className="flex min-h-screen items-center justify-center bg-[#f7f7f5] px-5"><div className="w-full max-w-sm"><div className="mb-10"><p className="text-[10px] font-bold uppercase tracking-[.3em] text-black/35">RYUSEI TSUKAMOTO</p><h1 className="mt-3 text-3xl font-semibold tracking-tight">Portfolio Admin</h1><p className="mt-3 text-sm leading-6 text-black/45">Supabase Authでログインしてコンテンツを管理します。</p></div><div className="rounded-2xl border border-black/8 bg-white p-7 shadow-sm"><label className="mb-2 block text-xs font-semibold text-black/60">Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mb-4 w-full rounded-lg border border-black/10 px-3 py-3 text-sm outline-none focus:border-black/30" placeholder="admin@example.com" /><label className="mb-2 block text-xs font-semibold text-black/60">Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && onLogin()} className="w-full rounded-lg border border-black/10 px-3 py-3 text-sm outline-none focus:border-black/30" placeholder="••••••••" />{error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}<button onClick={onLogin} className="mt-6 w-full rounded-lg bg-black py-3 text-sm font-semibold text-white hover:bg-black/80">Sign in</button></div><p className="mt-6 text-center text-xs text-black/35">Private workspace · Supabase Auth</p></div></div>; }

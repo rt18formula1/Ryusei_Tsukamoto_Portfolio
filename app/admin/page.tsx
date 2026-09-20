@@ -60,7 +60,13 @@ export default function DashboardPage() {
         <h2 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Recent Updates</h2>
         <div className="border border-black/10 rounded-xl divide-y divide-black/5">
           {recent.length === 0 && (
-            <p className="p-5 text-sm text-gray-400">No projects yet.</p>
+            <div className="p-5">
+              <p className="text-sm text-gray-400 mb-2">No projects found.</p>
+              <p className="text-xs text-gray-300">
+                Supabase未接続、またはプロジェクトが存在しません。
+                <Link href="/admin/projects/new" className="text-blue-600 hover:underline ml-1">新規プロジェクト作成 →</Link>
+              </p>
+            </div>
           )}
           {recent.map((p) => (
             <Link

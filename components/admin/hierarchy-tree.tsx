@@ -23,8 +23,30 @@ function ContentNode({ content }: { content: HierarchyContent }) {
   );
 }
 
-function ActivityNode({ activity }: { activity: Activity }) {
+function ActivityNode({ activity, devProjects }: { activity: Activity; devProjects: DbDevProject[] }) {
   const [expanded, setExpanded] = useState(true);
+
+  // Merge static contents with DB projects
+  const allContents: HierarchyContent[] = [...activity.contents];
+
+  // For developer activities, add DB projects that aren't already in static contents
+  if (activity.disciplineId === "developer") {
+    const existingIds = new Set(allContents.map((c) => c.projectId || c.id));
+    devProjects.forEach((p) => {
+      if (!existingIds.has(p.id)) {
+        allContents.push({
+          id: p.id,
+          name: p.project_name,
+          slug: p.id,
+          type: "project",
+          description: p.short_description,
+          mainVisualUrl: p.main_visual_url || undefined,
+          projectId: p.id,
+        });
+      }
+    });
+  }
+
   return (
     <div>
       <button
@@ -34,15 +56,15 @@ function ActivityNode({ activity }: { activity: Activity }) {
         <span className="text-xs text-gray-400 w-4">{expanded ? "▼" : "▶"}</span>
         <span className="text-sm font-bold">{activity.name}</span>
         <span className="text-[10px] text-gray-400">
-          {activity.contents.length} content{activity.contents.length !== 1 ? "s" : ""}
+          {allContents.length} content{allContents.length !== 1 ? "s" : ""}
         </span>
       </button>
       {expanded && (
         <div>
-          {activity.contents.map((c) => (
+          {allContents.map((c) => (
             <ContentNode key={c.id} content={c} />
           ))}
-          {activity.contents.length === 0 && (
+          {allContents.length === 0 && (
             <p className="pl-16 py-1 text-xs text-gray-300">No content</p>
           )}
         </div>
@@ -78,7 +100,7 @@ function DisciplineNode({
       {expanded && (
         <div className="pb-3">
           {discipline.activities.map((a) => (
-            <ActivityNode key={a.id} activity={a} />
+            <ActivityNode key={a.id} activity={a} devProjects={devProjects} />
           ))}
           {discipline.activities.length === 0 && (
             <p className="pl-12 py-2 text-xs text-gray-300">No activities</p>
@@ -92,10 +114,18 @@ function DisciplineNode({
 export function HierarchyTree() {
   const disciplines = getDisciplines();
   const [devProjects, setDevProjects] = useState<DbDevProject[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getDevProjects().then(setDevProjects);
+    getDevProjects().then((data) => {
+      setDevProjects(data);
+      setLoading(false);
+    });
   }, []);
+
+  if (loading) {
+    return <p className="text-sm text-gray-400">Loading…</p>;
+  }
 
   return (
     <div>

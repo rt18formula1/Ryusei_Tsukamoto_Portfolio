@@ -22,7 +22,7 @@ const NAV: NavItem[] = [
     section: "Content",
     items: [
       { label: "Projects", href: "/admin/projects" },
-      { label: "Other Contents", href: "/admin/legacy" },
+      { label: "Legacy Content", href: "/admin/legacy" },
     ],
   },
   { label: "Media", href: "/admin/media" },

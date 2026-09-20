@@ -393,15 +393,24 @@ export function ProjectEditor({ project }: { project?: DbDevProject }) {
           <Link href="/admin/projects" className="text-xs text-gray-400 hover:text-black">← Projects</Link>
           <h1 className="text-2xl font-black mt-1">{project ? "Edit Project" : "New Project"}</h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           {project && (
-            <button
-              onClick={handleDelete}
-              disabled={saving}
-              className="px-4 py-2 border-2 border-red-500 text-red-500 text-sm font-bold rounded-lg hover:bg-red-50 transition disabled:opacity-40"
-            >
-              Delete
-            </button>
+            <>
+              <Link
+                href={`/portfolio/dev/${project.id}`}
+                target="_blank"
+                className="px-4 py-2 border border-black/15 text-sm font-bold rounded-lg hover:bg-black/5 transition"
+              >
+                View ↗
+              </Link>
+              <button
+                onClick={handleDelete}
+                disabled={saving}
+                className="px-4 py-2 border-2 border-red-500 text-red-500 text-sm font-bold rounded-lg hover:bg-red-50 transition disabled:opacity-40"
+              >
+                Delete
+              </button>
+            </>
           )}
           <button
             onClick={handleSave}

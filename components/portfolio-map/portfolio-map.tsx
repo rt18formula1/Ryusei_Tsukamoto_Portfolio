@@ -166,7 +166,7 @@ export function PortfolioMap() {
   useEffect(() => {
     setIsMounted(true);
     // Text fade-in after pentagons start expanding
-    const textTimer = setTimeout(() => setTextVisible(true), 700);
+    const textTimer = setTimeout(() => setTextVisible(true), 800);
     return () => clearTimeout(textTimer);
   }, []);
 
@@ -288,11 +288,11 @@ export function PortfolioMap() {
                       ? "0.3"
                       : "0.2"
                 }
-                className="transition-all ease-out"
+                className="transition-all"
                 style={{
-                  transitionDuration: isMounted ? "1500ms" : "0ms",
-                  transitionDelay: isMounted ? "300ms" : "0ms",
-                  transitionTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                  transitionDuration: isMounted ? "1200ms" : "0ms",
+                  transitionDelay: isMounted ? "100ms" : "0ms",
+                  transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
               />
             );
@@ -338,10 +338,10 @@ export function PortfolioMap() {
                   style={{
                     transform: `translate(${isMounted ? pos.x : initialPos.x}px, ${isMounted ? pos.y : initialPos.y}px) rotate(${rotation}deg)`,
                     transformOrigin: "center",
-                    transition: "transform ease-out",
-                    transitionDuration: isMounted ? "1500ms" : "0ms",
-                    transitionDelay: isMounted ? "300ms" : "0ms",
-                    transitionTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                    transition: "transform",
+                    transitionDuration: isMounted ? "1200ms" : "0ms",
+                    transitionDelay: isMounted ? "100ms" : "0ms",
+                    transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
                 >
                   <path
@@ -350,10 +350,10 @@ export function PortfolioMap() {
                     stroke={isSelected || isHovered ? "#000" : meta.color}
                     strokeWidth={isSelected || isHovered ? "0.3" : "0.2"}
                     style={{
-                      transition: "d ease-out",
-                      transitionDuration: isMounted ? "1500ms" : "0ms",
-                      transitionDelay: isMounted ? "300ms" : "0ms",
-                      transitionTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                      transition: "d",
+                      transitionDuration: isMounted ? "1200ms" : "0ms",
+                      transitionDelay: isMounted ? "100ms" : "0ms",
+                      transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
                     }}
                   />
                 </g>
@@ -367,9 +367,9 @@ export function PortfolioMap() {
                   style={{ 
                     fontSize: isMounted ? "1.4px" : "2px",
                     opacity: textVisible ? 1 : 0,
-                    transition: "font-size 1500ms cubic-bezier(0.25, 0.46, 0.45, 0.94), x 1500ms cubic-bezier(0.25, 0.46, 0.45, 0.94), y 1500ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 300ms ease-out",
-                    transitionDelay: isMounted ? "300ms" : "0ms",
-                    transitionTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                    transition: "font-size 1200ms, x 1200ms, y 1200ms, opacity 400ms",
+                    transitionDelay: isMounted ? "100ms" : "0ms",
+                    transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
                 >
                   {meta.label}

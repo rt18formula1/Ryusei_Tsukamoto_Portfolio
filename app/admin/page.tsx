@@ -420,7 +420,7 @@ function DisciplinesView({ disciplines, onNavigate }: { disciplines: import("@/t
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-black/40">{d.id}</p>
-                <h3 className="mt-1 text-lg font-bold">{d.label}</h3>
+                <h3 className="mt-1 text-lg font-bold">{d.name}</h3>
               </div>
               <span className="rounded-lg bg-black/5 px-2.5 py-1 text-[10px] font-bold text-black/50">
                 {d.activities?.length ?? 0} activities
@@ -465,7 +465,7 @@ function ActivitiesView({
   onCloseEditor: () => void;
 }) {
   const allActivities = disciplines.flatMap((d) =>
-    (d.activities || []).map((a) => ({ ...a, disciplineId: d.id, disciplineLabel: d.label }))
+    (d.activities || []).map((a) => ({ ...a, disciplineId: d.id, disciplineLabel: d.name }))
   );
 
   const handleSave = (_data: Activity) => {

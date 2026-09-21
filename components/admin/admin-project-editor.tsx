@@ -18,6 +18,7 @@ import {
   MoreHorizontal,
   ArrowUp,
   ArrowDown,
+  LoaderCircle,
   ExternalLink,
 } from "lucide-react";
 import type { DbDevProject } from "@/lib/supabase-queries";

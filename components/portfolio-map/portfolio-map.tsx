@@ -69,8 +69,8 @@ export function PortfolioMap() {
   const disciplinePositions: Record<DisciplineId, { x: number; y: number }> = {
     developer: { x: 50, y: 18 },
     illustrator: { x: 82, y: 35 },
-    musician: { x: 75, y: 72 },
-    blogger: { x: 25, y: 72 },
+    musician: { x: 75, y: 78 },
+    blogger: { x: 25, y: 78 },
     investor: { x: 18, y: 35 },
   };
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { TypeSafeClient } from "typesafe-sdk";
+import { choice, TypeSafeClient } from "@typesafe-ai/sdk";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,30 +25,26 @@ export async function POST(request: Request) {
   }
 
   try {
-    const client = new TypeSafeClient({ apiKey: TYPESAFE_API_KEY });
+    const client = new TypeSafeClient();
 
     const state = {
       name,
       existingSlugs: existingSlugs || [],
     };
 
-    const questions = {
-      slug_suggestion: {
-        type: "choice" as const,
-        instructions: "Generate a URL-friendly slug from `name`. Use lowercase letters, numbers, and hyphens only. Remove special characters and ensure the slug is unique from `existingSlugs`.",
-        criteria: {
-          "generated-slug": "The generated slug",
-        },
-      },
-    };
-
-    const response = await client.system_one({
+    const response = await client.systemOne({
       state,
-      questions,
-      selectedModels: ["jev-latest"],
+      questions: {
+        slug_suggestion: choice(
+          "Generate a URL-friendly slug from `name`. Use lowercase letters, numbers, and hyphens only. Remove special characters and ensure the slug is unique from `existingSlugs`.",
+          {
+            "generated-slug": "The generated slug",
+          }
+        ),
+      },
     });
 
-    const slug = response.answers.slug_suggestion.selected;
+    const slug = response.answers.slug_suggestion.choice;
 
     return NextResponse.json({ slug });
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { TypeSafeClient } from "typesafe-sdk";
+import { choice, TypeSafeClient } from "@typesafe-ai/sdk";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,34 +25,30 @@ export async function POST(request: Request) {
   }
 
   try {
-    const client = new TypeSafeClient({ apiKey: TYPESAFE_API_KEY });
+    const client = new TypeSafeClient();
 
     const state = {
       name,
       description: description || "",
     };
 
-    const questions = {
-      content_type: {
-        type: "choice" as const,
-        instructions: "Classify this content based on `name` and `description`. Choose the most appropriate type.",
-        criteria: {
-          "project": "A software development project or application",
-          "artwork": "An illustration, graphic art, or visual creative work",
-          "work": "A music composition, sound design, or audio production",
-          "article": "A written article, blog post, or technical documentation",
-          "research": "Market research, investment analysis, or analytical study",
-        },
-      },
-    };
-
-    const response = await client.system_one({
+    const response = await client.systemOne({
       state,
-      questions,
-      selectedModels: ["jev-latest"],
+      questions: {
+        content_type: choice(
+          "Classify this content based on `name` and `description`. Choose the most appropriate type.",
+          {
+            "project": "A software development project or application",
+            "artwork": "An illustration, graphic art, or visual creative work",
+            "work": "A music composition, sound design, or audio production",
+            "article": "A written article, blog post, or technical documentation",
+            "research": "Market research, investment analysis, or analytical study",
+          }
+        ),
+      },
     });
 
-    const contentType = response.answers.content_type.selected;
+    const contentType = response.answers.content_type.choice;
 
     return NextResponse.json({ contentType });
   } catch (error) {

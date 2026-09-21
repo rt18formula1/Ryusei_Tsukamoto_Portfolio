@@ -13,7 +13,6 @@ interface ClassifyResponse {
 
 interface CompletenessResponse {
   score: number;
-  confidence: number;
   error?: string;
 }
 
@@ -72,7 +71,7 @@ export async function scoreContentCompleteness(content: {
   hasDetails: boolean;
   hasGallery: boolean;
   hasLinks: boolean;
-}): Promise<{ score: number; confidence: number }> {
+}): Promise<{ score: number }> {
   try {
     const response = await fetch("/api/admin/jev/completeness", {
       method: "POST",
@@ -86,14 +85,14 @@ export async function scoreContentCompleteness(content: {
       console.error("Completeness scoring error:", data.error);
       // Fallback to simple calculation
       const score = Object.values(content).filter(Boolean).length / 5;
-      return { score, confidence: 1 };
+      return { score };
     }
 
-    return { score: data.score, confidence: data.confidence };
+    return { score: data.score };
   } catch (error) {
     console.error("Completeness scoring failed:", error);
     // Fallback to simple calculation
     const score = Object.values(content).filter(Boolean).length / 5;
-    return { score, confidence: 1 };
+    return { score };
   }
 }

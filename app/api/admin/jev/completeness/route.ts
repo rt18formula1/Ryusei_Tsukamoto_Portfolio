@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { TypeSafeClient } from "typesafe-sdk";
+import { score, TypeSafeClient } from "@typesafe-ai/sdk";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const { hasMainVisual, hasInformation, hasDetails, hasGallery, hasLinks } = body;
 
   try {
-    const client = new TypeSafeClient({ apiKey: TYPESAFE_API_KEY });
+    const client = new TypeSafeClient();
 
     const state = {
       hasMainVisual,
@@ -28,30 +28,25 @@ export async function POST(request: Request) {
       hasLinks,
     };
 
-    const questions = {
-      completeness_score: {
-        type: "score" as const,
-        instructions: "Assess the completeness of this content based on the provided flags. Consider how many sections are present.",
-        criteria: [
-          "incomplete",
-          "minimal",
-          "basic",
-          "complete",
-          "comprehensive",
-        ],
-      },
-    };
-
-    const response = await client.system_one({
+    const response = await client.systemOne({
       state,
-      questions,
-      selectedModels: ["jev-latest"],
+      questions: {
+        completeness_score: score(
+          "Assess the completeness of this content based on the provided flags. Consider how many sections are present.",
+          [
+            "incomplete",
+            "minimal",
+            "basic",
+            "complete",
+            "comprehensive",
+          ]
+        ),
+      },
     });
 
-    const score = response.answers.completeness_score.score;
-    const confidence = response.answers.completeness_score.confidence;
+    const completenessScore = response.answers.completeness_score.score;
 
-    return NextResponse.json({ score, confidence });
+    return NextResponse.json({ score: completenessScore });
   } catch (error) {
     console.error("TypeSafe API error:", error);
     return NextResponse.json(

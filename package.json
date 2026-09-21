@@ -20,6 +20,7 @@
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
     "@types/jsdom": "^28.0.1",
+    "@typesafe-ai/sdk": "^0.6.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "@xyflow/react": "^12.10.2",
@@ -38,8 +39,7 @@
     "react-qr-code": "^2.2.0",
     "resend": "^6.12.3",
     "stripe": "^22.1.1",
-    "tailwindcss": "3.4.1",
-    "typesafe-sdk": "^0.0.0"
+    "tailwindcss": "3.4.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

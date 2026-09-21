@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { PortfolioMapState, DisciplineId } from "@/types/portfolio-map";
 import {
@@ -57,6 +57,7 @@ export function PortfolioMap() {
   });
 
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const disciplines = getDisciplines();
@@ -71,6 +72,99 @@ export function PortfolioMap() {
     blogger: { x: 25, y: 72 },
     investor: { x: 18, y: 35 },
   };
+
+  // Calculate pentagon vertices
+  const getPentagonVertices = (cx: number, cy: number, size: number) => {
+    const vertices = [];
+    for (let i = 0; i < 5; i++) {
+      const angle = (i * 72 - 90) * (Math.PI / 180);
+      const x = cx + size * Math.cos(angle);
+      const y = cy + size * Math.sin(angle);
+      vertices.push({ x, y });
+    }
+    return vertices;
+  };
+
+  // Calculate edge midpoints and outward normals
+  const getEdgeData = (vertices: Array<{ x: number; y: number }>) => {
+    const edges = [];
+    for (let i = 0; i < 5; i++) {
+      const v1 = vertices[i];
+      const v2 = vertices[(i + 1) % 5];
+      
+      // Midpoint
+      const midX = (v1.x + v2.x) / 2;
+      const midY = (v1.y + v2.y) / 2;
+      
+      // Edge vector
+      const edgeX = v2.x - v1.x;
+      const edgeY = v2.y - v1.y;
+      
+      // Outward normal (perpendicular to edge, pointing outward from center)
+      const normalX = -edgeY;
+      const normalY = edgeX;
+      const length = Math.sqrt(normalX * normalX + normalY * normalY);
+      const normalizedNormalX = normalX / length;
+      const normalizedNormalY = normalY / length;
+      
+      // Edge length
+      const edgeLength = Math.sqrt(edgeX * edgeX + edgeY * edgeY);
+      
+      edges.push({
+        index: i,
+        midpoint: { x: midX, y: midY },
+        normal: { x: normalizedNormalX, y: normalizedNormalY },
+        length: edgeLength,
+      });
+    }
+    return edges;
+  };
+
+  // Calculate initial position for surrounding pentagon (edge-to-edge contact)
+  const getInitialPosition = (edgeIndex: number) => {
+    const centralVertices = getPentagonVertices(centerX, centerY, 15);
+    const edges = getEdgeData(centralVertices);
+    const edge = edges[edgeIndex];
+    
+    // For edge-to-edge contact, the surrounding pentagon's center should be positioned
+    // such that its corresponding edge aligns with the central pentagon's edge
+    // The distance from center to edge midpoint (apothem) for a regular pentagon with edge length L is:
+    // apothem = L / (2 * tan(π/5))
+    // But we're using circumradius (size parameter), so we need to calculate the apothem from that
+    
+    // Apothem = size * cos(π/5) for regular pentagon
+    const centralApothem = 15 * Math.cos(Math.PI / 5);
+    
+    // Initial position: edge midpoint + (apothem * normal)
+    // This places the surrounding pentagon's center at the correct distance for edge-to-edge contact
+    const initialX = edge.midpoint.x + centralApothem * edge.normal.x;
+    const initialY = edge.midpoint.y + centralApothem * edge.normal.y;
+    
+    return { x: initialX, y: initialY };
+  };
+
+  // Map discipline IDs to edge indices (top, top-right, bottom-right, bottom-left, top-left)
+  const disciplineEdgeMap: Record<DisciplineId, number> = {
+    developer: 0,    // top edge
+    illustrator: 1,  // top-right edge
+    musician: 2,    // bottom-right edge
+    blogger: 3,     // bottom-left edge
+    investor: 4,    // top-left edge
+  };
+
+  // Calculate initial positions for all disciplines
+  const initialPositions: Record<DisciplineId, { x: number; y: number }> = {
+    developer: getInitialPosition(0),
+    illustrator: getInitialPosition(1),
+    musician: getInitialPosition(2),
+    blogger: getInitialPosition(3),
+    investor: getInitialPosition(4),
+  };
+
+  // Animation trigger on mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const breadcrumbItems: BreadcrumbItem[] = state.breadcrumb.map((label, index) => {
     if (index === 0) return { label: "HOME", href: "/" };
@@ -166,14 +260,15 @@ export function PortfolioMap() {
             const isHovered = hoveredNode === disciplineId;
             const isCentralSelected = state.selectedNode === "central";
             const isCentralHovered = hoveredNode === "central";
+            const initialPos = initialPositions[disciplineId as DisciplineId];
 
             return (
               <line
                 key={disciplineId}
                 x1={centerX}
                 y1={centerY}
-                x2={pos.x}
-                y2={pos.y}
+                x2={isMounted ? pos.x : initialPos.x}
+                y2={isMounted ? pos.y : initialPos.y}
                 stroke={
                   isSelected || isHovered || isCentralHovered
                     ? "#000"
@@ -188,8 +283,11 @@ export function PortfolioMap() {
                       ? "0.3"
                       : "0.2"
                 }
-                className="transition-all duration-300"
-                style={{ transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" }}
+                className="transition-all duration-500 ease-out"
+                style={{
+                  transitionDelay: isMounted ? "100ms" : "0ms",
+                  transitionTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                }}
               />
             );
           })}
@@ -255,6 +353,15 @@ export function PortfolioMap() {
             const isSelected = state.selectedNode === disciplineId;
             const isHovered = hoveredNode === disciplineId;
             const meta = NODE_META[disciplineId as DisciplineId];
+            const initialPos = initialPositions[disciplineId as DisciplineId];
+            const edgeIndex = disciplineEdgeMap[disciplineId as DisciplineId];
+            
+            // Calculate rotation for animation (±5-15 degrees based on edge index)
+            const rotation = isMounted ? 0 : (edgeIndex % 2 === 0 ? 10 : -10);
+            
+            // Initial size matches central pentagon for edge-to-edge contact
+            const initialSize = 15;
+            const finalSize = 7;
 
             return (
               <g
@@ -277,22 +384,37 @@ export function PortfolioMap() {
                 onMouseEnter={() => setHoveredNode(disciplineId)}
                 onMouseLeave={() => setHoveredNode(null)}
               >
-                <path
-                  d={createPentagonPath(pos.x, pos.y, 7)}
-                  fill={isSelected || isHovered ? "#000" : "#fff"}
-                  stroke={isSelected || isHovered ? "#000" : meta.color}
-                  strokeWidth={isSelected || isHovered ? "0.3" : "0.2"}
-                  className="transition-all duration-300"
-                  style={{ transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" }}
-                />
+                <g
+                  style={{
+                    transform: `translate(${isMounted ? pos.x : initialPos.x}px, ${isMounted ? pos.y : initialPos.y}px) rotate(${rotation}deg)`,
+                    transformOrigin: "center",
+                    transition: "transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                    transitionDelay: isMounted ? "50ms" : "0ms",
+                  }}
+                >
+                  <path
+                    d={createPentagonPath(0, 0, isMounted ? finalSize : initialSize)}
+                    fill={isSelected || isHovered ? "#000" : "#fff"}
+                    stroke={isSelected || isHovered ? "#000" : meta.color}
+                    strokeWidth={isSelected || isHovered ? "0.3" : "0.2"}
+                    style={{
+                      transition: "d 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                      transitionDelay: isMounted ? "50ms" : "0ms",
+                    }}
+                  />
+                </g>
                 <text
-                  x={pos.x}
-                  y={pos.y}
+                  x={isMounted ? pos.x : initialPos.x}
+                  y={isMounted ? pos.y : initialPos.y}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   className="font-black uppercase tracking-wider pointer-events-none"
                   fill={isSelected || isHovered ? "#fff" : "#000"}
-                  style={{ fontSize: "1.4px" }}
+                  style={{ 
+                    fontSize: isMounted ? "1.4px" : "2px",
+                    transition: "font-size 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94), x 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94), y 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                    transitionDelay: isMounted ? "50ms" : "0ms",
+                  }}
                 >
                   {meta.label}
                 </text>

@@ -45,6 +45,7 @@ import { AdminActivityEditor } from "@/components/admin/admin-activity-editor";
 import { PORTFOLIO_HIERARCHY } from "@/lib/portfolio-hierarchy/data";
 import { computeHierarchyStats } from "@/lib/admin-hierarchy-service";
 import type { Activity, Discipline } from "@/types/portfolio-hierarchy";
+import type { DisciplineId } from "@/types/portfolio-map";
 
 // ─── Types & helpers ────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ type SaveState = "saved" | "dirty" | "saving" | "published" | "error";
 
 const newId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-function emptyProject(): ProjectDraft {
+function emptyProject(disciplineId: DisciplineId = "developer"): ProjectDraft {
   return {
     project_name: "",
     short_description: "",
@@ -82,6 +83,7 @@ function emptyProject(): ProjectDraft {
     details: [],
     gallery: [],
     links: [],
+    discipline_id: disciplineId,
     sort_order: 0,
   };
 }
@@ -168,6 +170,7 @@ export default function AdminPage() {
 
   // Projects data
   const [projects, setProjects] = useState<DbDevProject[]>([]);
+  const [selectedDiscipline, setSelectedDiscipline] = useState<DisciplineId | null>(null);
 
   // Admin Console state
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -183,7 +186,7 @@ export default function AdminPage() {
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [editingActivityDisciplineId, setEditingActivityDisciplineId] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => setProjects(await getDevProjects()), []);
+  const refresh = useCallback(async () => setProjects(await getDevProjects(selectedDiscipline || undefined)), [selectedDiscipline]);
 
   useEffect(() => {
     fetch("/api/admin/session", { credentials: "include" })
@@ -197,7 +200,7 @@ export default function AdminPage() {
   const openProject = (project?: DbDevProject) => {
     const next = project
       ? { ...project, information: project.information || [], details: project.details || [], gallery: project.gallery || [], links: project.links || [] }
-      : emptyProject();
+      : emptyProject(selectedDiscipline || "developer");
     setSelectedId(project?.id || null);
     setDraft(next);
     setSaveState(project && generalValue(project, "Visibility", "Published") === "Published" ? "published" : "saved");
@@ -369,6 +372,8 @@ export default function AdminPage() {
           {currentTab === "projects" && (
             <ProjectsView
               projects={projects}
+              selectedDiscipline={selectedDiscipline}
+              onDisciplineChange={setSelectedDiscipline}
               onOpenProject={openProject}
               onRemove={remove}
             />
@@ -542,10 +547,14 @@ function ActivitiesView({
 
 function ProjectsView({
   projects,
+  selectedDiscipline,
+  onDisciplineChange,
   onOpenProject,
   onRemove,
 }: {
   projects: DbDevProject[];
+  selectedDiscipline: DisciplineId | null;
+  onDisciplineChange: (discipline: DisciplineId | null) => void;
   onOpenProject: (project?: DbDevProject) => void;
   onRemove: (project: DbDevProject) => Promise<void>;
 }) {
@@ -560,7 +569,7 @@ function ProjectsView({
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[.28em] text-black/35">Content</p>
           <h1 className="mt-1.5 text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="mt-1 text-xs text-black/50">Developer Portfolioのプロジェクト一覧</p>
+          <p className="mt-1 text-xs text-black/50">Portfolioのプロジェクト一覧</p>
         </div>
         <button
           onClick={() => onOpenProject()}
@@ -569,6 +578,33 @@ function ProjectsView({
           <Plus size={15} />
           <span>New Project</span>
         </button>
+      </div>
+
+      {/* Discipline Filter */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => onDisciplineChange(null)}
+          className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+            selectedDiscipline === null
+              ? "border-black bg-black text-white"
+              : "border-black/10 bg-white text-black/60 hover:border-black/30"
+          }`}
+        >
+          All
+        </button>
+        {["developer", "illustrator", "musician", "blogger", "investor"].map((discipline) => (
+          <button
+            key={discipline}
+            onClick={() => onDisciplineChange(discipline as DisciplineId)}
+            className={`rounded-full border px-3 py-1.5 text-xs font-bold capitalize transition ${
+              selectedDiscipline === discipline
+                ? "border-black bg-black text-white"
+                : "border-black/10 bg-white text-black/60 hover:border-black/30"
+            }`}
+          >
+            {discipline}
+          </button>
+        ))}
       </div>
 
       {/* Search */}

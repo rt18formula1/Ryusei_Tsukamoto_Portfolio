@@ -57,6 +57,7 @@ import type {
   DevProjectGalleryItem,
   DevProjectLink,
 } from "@/types/dev-project";
+import type { DisciplineId } from "@/types/portfolio-map";
 
 export type DbDevProject = {
   id: string;
@@ -69,6 +70,7 @@ export type DbDevProject = {
   details: DevProjectDetailBlock[];
   gallery: DevProjectGalleryItem[];
   links: DevProjectLink[];
+  discipline_id: DisciplineId;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -502,13 +504,19 @@ export async function getCommissions() {
 // Developer Projects CRUD
 // ----------------------------------------------------------------------
 
-export async function getDevProjects() {
+export async function getDevProjects(disciplineId?: DisciplineId) {
   if (!supabase) return [];
-  const { data, error } = await supabase
+  let query = supabase
     .from("dev_projects")
     .select("*")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
+  
+  if (disciplineId) {
+    query = query.eq("discipline_id", disciplineId);
+  }
+  
+  const { data, error } = await query;
   if (error) {
     console.error("Error fetching dev projects:", error);
     return [];

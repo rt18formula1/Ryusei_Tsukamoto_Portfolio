@@ -58,6 +58,7 @@ export function PortfolioMap() {
 
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [textVisible, setTextVisible] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const disciplines = getDisciplines();
@@ -164,6 +165,9 @@ export function PortfolioMap() {
   // Animation trigger on mount
   useEffect(() => {
     setIsMounted(true);
+    // Text fade-in after pentagons start expanding
+    const textTimer = setTimeout(() => setTextVisible(true), 700);
+    return () => clearTimeout(textTimer);
   }, []);
 
   const breadcrumbItems: BreadcrumbItem[] = state.breadcrumb.map((label, index) => {
@@ -255,6 +259,7 @@ export function PortfolioMap() {
           role="img"
           aria-label="Interactive portfolio five-point discipline map"
         >
+          {/* Connection lines - rendered first (bottom layer) */}
           {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
             const isSelected = state.selectedNode === disciplineId;
             const isHovered = hoveredNode === disciplineId;
@@ -264,7 +269,7 @@ export function PortfolioMap() {
 
             return (
               <line
-                key={disciplineId}
+                key={`line-${disciplineId}`}
                 x1={centerX}
                 y1={centerY}
                 x2={isMounted ? pos.x : initialPos.x}
@@ -283,15 +288,97 @@ export function PortfolioMap() {
                       ? "0.3"
                       : "0.2"
                 }
-                className="transition-all duration-500 ease-out"
+                className="transition-all ease-out"
                 style={{
-                  transitionDelay: isMounted ? "100ms" : "0ms",
+                  transitionDuration: isMounted ? "1500ms" : "0ms",
+                  transitionDelay: isMounted ? "300ms" : "0ms",
                   transitionTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                 }}
               />
             );
           })}
 
+          {/* Surrounding pentagons - rendered before central (behind layer) */}
+          {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
+            const isSelected = state.selectedNode === disciplineId;
+            const isHovered = hoveredNode === disciplineId;
+            const meta = NODE_META[disciplineId as DisciplineId];
+            const initialPos = initialPositions[disciplineId as DisciplineId];
+            const edgeIndex = disciplineEdgeMap[disciplineId as DisciplineId];
+            
+            // Calculate rotation for animation (±5-15 degrees based on edge index)
+            const rotation = isMounted ? 0 : (edgeIndex % 2 === 0 ? 10 : -10);
+            
+            // Initial size matches central pentagon for edge-to-edge contact
+            const initialSize = 15;
+            const finalSize = 7;
+
+            return (
+              <g
+                key={`pentagon-${disciplineId}`}
+                className="cursor-pointer focus:outline-none"
+                role="button"
+                tabIndex={0}
+                aria-label={`View ${meta.label} discipline projects`}
+                onClick={() => {
+                  handleNodeClick(disciplineId, disciplineId as DisciplineId);
+                  handleDisciplineClick(disciplineId as DisciplineId);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleNodeClick(disciplineId, disciplineId as DisciplineId);
+                    handleDisciplineClick(disciplineId as DisciplineId);
+                  }
+                }}
+                onMouseEnter={() => setHoveredNode(disciplineId)}
+                onMouseLeave={() => setHoveredNode(null)}
+              >
+                <g
+                  style={{
+                    transform: `translate(${isMounted ? pos.x : initialPos.x}px, ${isMounted ? pos.y : initialPos.y}px) rotate(${rotation}deg)`,
+                    transformOrigin: "center",
+                    transition: "transform ease-out",
+                    transitionDuration: isMounted ? "1500ms" : "0ms",
+                    transitionDelay: isMounted ? "300ms" : "0ms",
+                    transitionTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                  }}
+                >
+                  <path
+                    d={createPentagonPath(0, 0, isMounted ? finalSize : initialSize)}
+                    fill={isSelected || isHovered ? "#000" : "#fff"}
+                    stroke={isSelected || isHovered ? "#000" : meta.color}
+                    strokeWidth={isSelected || isHovered ? "0.3" : "0.2"}
+                    style={{
+                      transition: "d ease-out",
+                      transitionDuration: isMounted ? "1500ms" : "0ms",
+                      transitionDelay: isMounted ? "300ms" : "0ms",
+                      transitionTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                    }}
+                  />
+                </g>
+                <text
+                  x={isMounted ? pos.x : initialPos.x}
+                  y={isMounted ? pos.y : initialPos.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="font-black uppercase tracking-wider pointer-events-none"
+                  fill={isSelected || isHovered ? "#fff" : "#000"}
+                  style={{ 
+                    fontSize: isMounted ? "1.4px" : "2px",
+                    opacity: textVisible ? 1 : 0,
+                    transition: "font-size 1500ms cubic-bezier(0.25, 0.46, 0.45, 0.94), x 1500ms cubic-bezier(0.25, 0.46, 0.45, 0.94), y 1500ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 300ms ease-out",
+                    transitionDelay: isMounted ? "300ms" : "0ms",
+                    transitionTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                  }}
+                >
+                  {meta.label}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Central pentagon - rendered last (top layer, in front) */}
           <g
             className="cursor-pointer focus:outline-none"
             role="button"
@@ -318,8 +405,11 @@ export function PortfolioMap() {
               }
               stroke="#000"
               strokeWidth="0.4"
-              className="transition-all duration-300"
-              style={{ transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" }}
+              className="transition-all"
+              style={{ 
+                transitionDuration: "300ms",
+                transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" 
+              }}
             />
             <text
               x={centerX}
@@ -348,79 +438,6 @@ export function PortfolioMap() {
               TSUKAMOTO
             </text>
           </g>
-
-          {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
-            const isSelected = state.selectedNode === disciplineId;
-            const isHovered = hoveredNode === disciplineId;
-            const meta = NODE_META[disciplineId as DisciplineId];
-            const initialPos = initialPositions[disciplineId as DisciplineId];
-            const edgeIndex = disciplineEdgeMap[disciplineId as DisciplineId];
-            
-            // Calculate rotation for animation (±5-15 degrees based on edge index)
-            const rotation = isMounted ? 0 : (edgeIndex % 2 === 0 ? 10 : -10);
-            
-            // Initial size matches central pentagon for edge-to-edge contact
-            const initialSize = 15;
-            const finalSize = 7;
-
-            return (
-              <g
-                key={disciplineId}
-                className="cursor-pointer focus:outline-none"
-                role="button"
-                tabIndex={0}
-                aria-label={`View ${meta.label} discipline projects`}
-                onClick={() => {
-                  handleNodeClick(disciplineId, disciplineId as DisciplineId);
-                  handleDisciplineClick(disciplineId as DisciplineId);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleNodeClick(disciplineId, disciplineId as DisciplineId);
-                    handleDisciplineClick(disciplineId as DisciplineId);
-                  }
-                }}
-                onMouseEnter={() => setHoveredNode(disciplineId)}
-                onMouseLeave={() => setHoveredNode(null)}
-              >
-                <g
-                  style={{
-                    transform: `translate(${isMounted ? pos.x : initialPos.x}px, ${isMounted ? pos.y : initialPos.y}px) rotate(${rotation}deg)`,
-                    transformOrigin: "center",
-                    transition: "transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                    transitionDelay: isMounted ? "50ms" : "0ms",
-                  }}
-                >
-                  <path
-                    d={createPentagonPath(0, 0, isMounted ? finalSize : initialSize)}
-                    fill={isSelected || isHovered ? "#000" : "#fff"}
-                    stroke={isSelected || isHovered ? "#000" : meta.color}
-                    strokeWidth={isSelected || isHovered ? "0.3" : "0.2"}
-                    style={{
-                      transition: "d 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                      transitionDelay: isMounted ? "50ms" : "0ms",
-                    }}
-                  />
-                </g>
-                <text
-                  x={isMounted ? pos.x : initialPos.x}
-                  y={isMounted ? pos.y : initialPos.y}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  className="font-black uppercase tracking-wider pointer-events-none"
-                  fill={isSelected || isHovered ? "#fff" : "#000"}
-                  style={{ 
-                    fontSize: isMounted ? "1.4px" : "2px",
-                    transition: "font-size 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94), x 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94), y 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                    transitionDelay: isMounted ? "50ms" : "0ms",
-                  }}
-                >
-                  {meta.label}
-                </text>
-              </g>
-            );
-          })}
         </svg>
       )}
 

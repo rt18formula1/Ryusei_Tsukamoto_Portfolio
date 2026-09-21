@@ -51,6 +51,13 @@ export type DbEvent = {
   created_at: string;
 };
 
+import type {
+  DevProjectInformation,
+  DevProjectDetailBlock,
+  DevProjectGalleryItem,
+  DevProjectLink,
+} from "@/types/dev-project";
+
 export type DbDevProject = {
   id: string;
   project_name: string;
@@ -58,10 +65,10 @@ export type DbDevProject = {
   main_visual_url: string | null;
   main_visual_focal_point_x: number | null;
   main_visual_focal_point_y: number | null;
-  information: any; // JSON
-  details: any; // JSON
-  gallery: any; // JSON
-  links: any; // JSON
+  information: DevProjectInformation[];
+  details: DevProjectDetailBlock[];
+  gallery: DevProjectGalleryItem[];
+  links: DevProjectLink[];
   sort_order: number;
   created_at: string;
   updated_at: string;

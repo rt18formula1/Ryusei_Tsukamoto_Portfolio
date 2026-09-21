@@ -77,7 +77,7 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
   const orderedLinks = [...(websiteLink ? [websiteLink] : []), ...(githubLink ? [githubLink] : []), ...otherLinks];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center md:p-6 bg-black/70 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-label={project.projectName}>
+    <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center md:p-6 bg-black/70 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-project-title">
       <div className="bg-white w-full h-full md:h-auto md:max-h-[92vh] md:rounded-3xl overflow-y-auto shadow-2xl relative" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "1100px" }}>
         <div className="sticky top-0 z-10 flex items-center justify-between px-4 md:px-6 py-3 md:py-4 bg-white/95 backdrop-blur-sm border-b border-black/5">
           <div />
@@ -85,7 +85,7 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
             <Link href={`/portfolio/dev/${project.id}/print`} target="_blank" rel="noopener noreferrer" className="hidden sm:flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-black border border-black/10 hover:border-black/30 rounded-full px-4 py-2 transition-colors" onClick={(e) => e.stopPropagation()}>
               <Printer size={13} /> Print / PDF
             </Link>
-            <button onClick={onClose} className="p-2 hover:bg-black hover:text-white rounded-full transition-colors text-gray-500" aria-label="Close"><X size={20} /></button>
+            <button onClick={onClose} className="p-2 hover:bg-black hover:text-white rounded-full transition-colors text-gray-500 focus:outline-none focus:ring-2 focus:ring-black" aria-label="Close modal"><X size={20} /></button>
           </div>
         </div>
         <div className="w-full bg-gray-100" style={{ aspectRatio: "16/9" }}>
@@ -94,7 +94,7 @@ export function DevProjectModal({ project, isOpen, onClose }: DevProjectModalPro
         <div className="flex flex-col lg:flex-row">
           <div className="flex-1 min-w-0 px-4 md:px-6 lg:px-12 py-6 md:py-10 lg:py-12">
             <header className="mb-8 md:mb-12">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight mb-3 md:mb-4 leading-tight">{project.projectName}</h1>
+              <h1 id="modal-project-title" className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight mb-3 md:mb-4 leading-tight">{project.projectName}</h1>
               <p className="text-sm md:text-base lg:text-lg text-gray-600 font-medium leading-relaxed">{project.shortDescription}</p>
             </header>
             {project.information.length > 0 && (

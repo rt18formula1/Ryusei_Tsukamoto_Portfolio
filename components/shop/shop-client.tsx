@@ -28,30 +28,39 @@ const TYPE_LABELS: Record<string, string> = {
   skill: "Skill",
 };
 
+import type { User } from "@supabase/supabase-js";
+
 export function ShopClient() {
   const { totalCount } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const { language: lang } = useLanguage();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     if (supabase) {
-      supabase.auth.getUser().then(({ data }) => setUser(data.user));
+      supabase.auth.getUser().then(({ data }) => setUser(data.user || null));
     }
   }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
       if (!supabase) { setLoading(false); return; }
-      let query: any = supabase.from("products").select("*").eq("status", "on_sale");
-      if (filter !== "all") query = query.eq("type", filter);
-      const { data, error } = await query.order("sort_order", { ascending: true });
-      if (!error && data) setProducts(data);
-      setLoading(false);
+      try {
+        let req = supabase.from("products").select("*").eq("status", "on_sale");
+        if (filter !== "all") {
+          req = req.eq("type", filter);
+        }
+        const { data, error } = await req.order("sort_order", { ascending: true });
+        if (!error && data) setProducts(data as Product[]);
+      } catch (err) {
+        console.warn("Failed to fetch shop products:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchProducts();
   }, [filter]);

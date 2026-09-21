@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -31,22 +30,32 @@ import {
   updateDevProjectAction,
 } from "@/lib/admin-actions";
 import { getDevProjects, uploadImageToStorage, type DbDevProject } from "@/lib/supabase-queries";
+import type {
+  DevProjectInformation,
+  DevProjectDetailBlock,
+  DevProjectGalleryItem,
+  DevProjectLink,
+  DevProjectDetailBlockType,
+} from "@/types/dev-project";
 
-const defaultInformation = [
-  { category: "GENERAL", items: [
-    { label: "Status", value: "In Development", type: "Text" },
-    { label: "Type", value: "Web Application", type: "Text" },
-    { label: "Started", value: new Date().toISOString().slice(0, 10), type: "Text" },
-    { label: "Platform", value: ["Web"], type: "Multiple Values" },
-    { label: "Visibility", value: "Draft", type: "Text" },
-  ] },
+const defaultInformation: DevProjectInformation[] = [
+  {
+    category: "GENERAL",
+    items: [
+      { label: "Status", value: "In Development", type: "Text" },
+      { label: "Type", value: "Web Application", type: "Text" },
+      { label: "Started", value: new Date().toISOString().slice(0, 10), type: "Text" },
+      { label: "Platform", value: ["Web"], type: "Multiple Values" },
+      { label: "Visibility", value: "Draft", type: "Text" },
+    ],
+  },
   { category: "TECHNOLOGY", items: [] },
 ];
 
-type BlockType = "Text" | "Section" | "Highlight" | "Image" | "ImageText";
-type Block = { id: string; order: number; type: BlockType; content?: string; text?: string; imageUrl?: string; imageCaption?: string };
-type LinkItem = { id: string; order: number; title: string; description: string; url: string; buttonLabel: string };
-type GalleryItem = { id: string; order: number; imageUrl: string; caption: string; description: string };
+type BlockType = DevProjectDetailBlockType;
+type Block = DevProjectDetailBlock;
+type LinkItem = DevProjectLink;
+type GalleryItem = DevProjectGalleryItem;
 type ProjectDraft = Partial<DbDevProject>;
 type SaveState = "saved" | "dirty" | "saving" | "published" | "error";
 
@@ -67,30 +76,46 @@ function emptyProject(): ProjectDraft {
   };
 }
 
-function generalValue(project: ProjectDraft, label: string, fallback = "") {
-  const category = (project.information as any[] | undefined)?.find((item) => item?.category === "GENERAL");
-  const item = category?.items?.find((entry: any) => entry?.label === label);
-  return Array.isArray(item?.value) ? item.value.join(", ") : item?.value || fallback;
+function generalValue(project: ProjectDraft, label: string, fallback = ""): string {
+  const category = (project.information as DevProjectInformation[] | undefined)?.find(
+    (item) => item?.category === "GENERAL"
+  );
+  const item = category?.items?.find((entry) => entry?.label === label);
+  if (!item) return fallback;
+  return Array.isArray(item.value) ? item.value.join(", ") : String(item.value || fallback);
 }
 
-function setGeneral(project: ProjectDraft, label: string, value: string | string[]) {
-  const information = Array.isArray(project.information) ? [...project.information] : [];
-  let index = information.findIndex((item: any) => item?.category === "GENERAL");
-  if (index < 0) { information.unshift({ category: "GENERAL", items: [] }); index = 0; }
+function setGeneral(project: ProjectDraft, label: string, value: string | string[]): DevProjectInformation[] {
+  const information: DevProjectInformation[] = Array.isArray(project.information)
+    ? [...project.information]
+    : [];
+  let index = information.findIndex((item) => item?.category === "GENERAL");
+  if (index < 0) {
+    information.unshift({ category: "GENERAL", items: [] });
+    index = 0;
+  }
   const items = [...(information[index].items || [])];
-  const next = { label, value, type: Array.isArray(value) ? "Multiple Values" : "Text" };
-  const itemIndex = items.findIndex((item: any) => item?.label === label);
-  if (itemIndex < 0) items.push(next); else items[itemIndex] = { ...items[itemIndex], ...next };
+  const next = {
+    label,
+    value,
+    type: Array.isArray(value) ? ("Multiple Values" as const) : ("Text" as const),
+  };
+  const itemIndex = items.findIndex((item) => item?.label === label);
+  if (itemIndex < 0) {
+    items.push(next);
+  } else {
+    items[itemIndex] = { ...items[itemIndex], ...next };
+  }
   information[index] = { ...information[index], items };
   return information;
 }
 
 function normaliseBlocks(value: unknown): Block[] {
   if (!Array.isArray(value)) return [];
-  return value.map((item: any, index) => ({
+  return value.map((item: Partial<Block>, index) => ({
     id: item?.id || newId("block"),
     order: index + 1,
-    type: item?.type || "Text",
+    type: (item?.type || "Text") as BlockType,
     content: item?.type === "ImageText" ? item?.content || "" : item?.content || item?.text || "",
     text: item?.text || item?.content || "",
     imageUrl: item?.imageUrl || "",
@@ -100,12 +125,25 @@ function normaliseBlocks(value: unknown): Block[] {
 
 function normaliseLinks(value: unknown): LinkItem[] {
   if (!Array.isArray(value)) return [];
-  return value.map((item: any, index) => ({ id: item?.id || newId("link"), order: index + 1, title: item?.title || "Additional", description: item?.description || "", url: item?.url || "", buttonLabel: item?.buttonLabel || "Open" }));
+  return value.map((item: Partial<LinkItem>, index) => ({
+    id: item?.id || newId("link"),
+    order: index + 1,
+    title: item?.title || "Additional",
+    description: item?.description || "",
+    url: item?.url || "",
+    buttonLabel: item?.buttonLabel || "Open",
+  }));
 }
 
 function normaliseGallery(value: unknown): GalleryItem[] {
   if (!Array.isArray(value)) return [];
-  return value.map((item: any, index) => ({ id: item?.id || newId("gallery"), order: index + 1, imageUrl: item?.imageUrl || "", caption: item?.caption || "", description: item?.description || "" }));
+  return value.map((item: Partial<GalleryItem>, index) => ({
+    id: item?.id || newId("gallery"),
+    order: index + 1,
+    imageUrl: item?.imageUrl || "",
+    caption: item?.caption || "",
+    description: item?.description || "",
+  }));
 }
 
 function projectSlug(id: string) { return `/portfolio/dev/${id}`; }
@@ -162,9 +200,10 @@ export default function AdminPage() {
       setSaveState(publish ? "published" : "saved");
       setNotice(publish ? "Published to the portfolio" : automatic ? "Saved" : "Draft saved");
       await refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "保存に失敗しました";
       setSaveState("error");
-      setNotice(error?.message || "保存に失敗しました");
+      setNotice(msg);
     }
   }, [draft, selectedId, projects.length, refresh]);
 
@@ -209,7 +248,10 @@ function NotionWorkspace({ draft, setDraft, state, notice, onBack, onSave, onPub
       const url = await uploadImageToStorage("portfolio-images", file);
       if (target === "cover") update({ main_visual_url: url });
       else updateBlocks([...blocks, { id: newId("block"), order: blocks.length + 1, type: "Image", imageUrl: url, imageCaption: "" }]);
-    } catch (error: any) { window.alert(error?.message || "画像アップロードに失敗しました"); }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "画像アップロードに失敗しました";
+      window.alert(msg);
+    }
     finally { setUploading(false); }
   };
   const updateLinks = (next: LinkItem[]) => update({ links: next.map((item, index) => ({ ...item, order: index + 1 })) });

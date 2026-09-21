@@ -128,21 +128,23 @@ export function PortfolioMap() {
 
   return (
     <div className="relative w-full overflow-x-hidden bg-white">
-      <section className="relative h-[100svh] min-h-[560px] max-h-[900px] overflow-hidden">
-      <nav className="absolute left-0 right-0 top-0 z-10 border-b border-black/10 bg-white/90 px-4 py-3 backdrop-blur-md sm:px-8 sm:py-4 lg:px-12">
+      <section className="relative h-[100svh] min-h-[560px] max-h-[900px] overflow-hidden" role="region" aria-label="Portfolio Map Explorer">
+      <nav className="absolute left-0 right-0 top-0 z-10 border-b border-black/10 bg-white/90 px-4 py-3 backdrop-blur-md sm:px-8 sm:py-4 lg:px-12" aria-label="Portfolio Navigation">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <HierarchyBreadcrumb items={breadcrumbItems} />
 
           <div className="flex items-center gap-1.5 sm:gap-3">
             <button
               onClick={toggleViewMode}
-              className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest border border-black/15 rounded-full px-2 sm:px-4 py-1 sm:py-2 hover:border-black hover:bg-black hover:text-white transition-all"
+              aria-label={`Switch to ${state.viewMode === "map" ? "List" : "Map"} view`}
+              className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest border border-black/15 rounded-full px-2 sm:px-4 py-1 sm:py-2 hover:border-black hover:bg-black hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-black"
             >
               {state.viewMode === "map" ? "List" : "Map"}
             </button>
             <button
               onClick={handleHomeClick}
-              className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest bg-black text-white rounded-full px-2 sm:px-4 py-1 sm:py-2 hover:bg-gray-800 transition-all"
+              aria-label="Reset view to portfolio home"
+              className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest bg-black text-white rounded-full px-2 sm:px-4 py-1 sm:py-2 hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-black"
             >
               Home
             </button>
@@ -156,6 +158,8 @@ export function PortfolioMap() {
           className="h-full w-full"
           viewBox="0 0 100 100"
           preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label="Interactive portfolio five-point discipline map"
         >
           {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
             const isSelected = state.selectedNode === disciplineId;
@@ -191,10 +195,20 @@ export function PortfolioMap() {
           })}
 
           <g
-            className="cursor-pointer"
+            className="cursor-pointer focus:outline-none"
+            role="button"
+            tabIndex={0}
+            aria-label="Ryusei Tsukamoto Profile Page"
             onClick={() => {
               handleNodeClick("central");
               handleCentralNodeClick();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleNodeClick("central");
+                handleCentralNodeClick();
+              }
             }}
             onMouseEnter={() => setHoveredNode("central")}
             onMouseLeave={() => setHoveredNode(null)}
@@ -245,10 +259,20 @@ export function PortfolioMap() {
             return (
               <g
                 key={disciplineId}
-                className="cursor-pointer"
+                className="cursor-pointer focus:outline-none"
+                role="button"
+                tabIndex={0}
+                aria-label={`View ${meta.label} discipline projects`}
                 onClick={() => {
                   handleNodeClick(disciplineId, disciplineId as DisciplineId);
                   handleDisciplineClick(disciplineId as DisciplineId);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleNodeClick(disciplineId, disciplineId as DisciplineId);
+                    handleDisciplineClick(disciplineId as DisciplineId);
+                  }
                 }}
                 onMouseEnter={() => setHoveredNode(disciplineId)}
                 onMouseLeave={() => setHoveredNode(null)}

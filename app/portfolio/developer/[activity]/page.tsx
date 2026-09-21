@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { ActivityContentsClient } from "@/components/discipline/activity-contents-client";
 import { getActivity, getDiscipline } from "@/lib/portfolio-hierarchy";
 import { MOCK_DEV_PROJECT, MOCK_DEV_PROJECT_2 } from "@/lib/dev-project/mock";
-import { getDevProjects } from "@/lib/supabase-queries";
+import { getDevProjects, type DbDevProject } from "@/lib/supabase-queries";
 import { mapDbToDevProject } from "@/lib/dev-project/mapper";
 import { projectContent, projectIsPublished } from "@/lib/portfolio-projects";
 import type { DeveloperProject } from "@/types/dev-project";
@@ -20,7 +20,13 @@ export default async function DeveloperActivityPage({ params }: PageProps) {
 
   if (!discipline || !baseActivity) notFound();
 
-  const dbProjects = await getDevProjects();
+  let dbProjects: DbDevProject[] = [];
+  try {
+    dbProjects = await getDevProjects();
+  } catch (error) {
+    console.warn("Failed to fetch database projects:", error);
+  }
+
   const publishedProjects = dbProjects.filter(projectIsPublished);
 
   const projectsById: Record<string, DeveloperProject> = {
@@ -29,7 +35,11 @@ export default async function DeveloperActivityPage({ params }: PageProps) {
   };
 
   for (const project of publishedProjects) {
-    projectsById[project.id] = mapDbToDevProject(project);
+    try {
+      projectsById[project.id] = mapDbToDevProject(project);
+    } catch (e) {
+      console.warn(`Failed to map project ${project.id}:`, e);
+    }
   }
 
   const dbContents = activitySlug === "rt18-dev" ? publishedProjects.map(projectContent) : [];

@@ -519,8 +519,6 @@ function ActivitiesView({
         <div className="lg:sticky lg:top-6 lg:h-fit">
           <AdminActivityEditor
             activity={editingActivity}
-            disciplineId={editingActivity.id}
-            disciplines={disciplines}
             onSave={handleSave}
             onCancel={onCloseEditor}
           />
@@ -528,9 +526,7 @@ function ActivitiesView({
       ) : defaultDisciplineId ? (
         <div className="lg:sticky lg:top-6 lg:h-fit">
           <AdminActivityEditor
-            activity={null}
-            disciplineId={defaultDisciplineId}
-            disciplines={disciplines}
+            activity={{ disciplineId: defaultDisciplineId as any }}
             onSave={handleSave}
             onCancel={onCloseEditor}
           />

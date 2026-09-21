@@ -39,7 +39,7 @@ function ServiceMarquee() {
     <div className="overflow-hidden border-y border-black/10 bg-[#fafaf8] py-5" aria-label="Services and tools">
       <div className="flex w-max animate-marquee items-center gap-3">
         {logos.map((service, index) => (
-          <div key={`${service.name}-${index}`} className="flex h-12 items-center gap-3 rounded-full border border-black/10 bg-white px-5 text-xs font-bold uppercase tracking-[.16em] text-black/55 shadow-sm">
+          <div key={`${service.name}-${index}`} className="flex h-10 items-center gap-2 rounded-full border border-black/10 bg-white px-4 text-[10px] font-bold uppercase tracking-[.14em] text-black/55 shadow-sm sm:h-12 sm:gap-3 sm:px-5 sm:text-xs sm:tracking-[.16em]">
             {service.image ? <img src={service.image} alt="" className="h-5 w-5 object-contain" /> : <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-[9px] font-black text-white">{service.name.slice(0, 1)}</span>}
             <span>{service.name}</span>
           </div>
@@ -128,9 +128,9 @@ export function PortfolioMap() {
 
   return (
     <div className="relative w-full overflow-x-hidden bg-white">
-      <section className="relative h-[100svh] min-h-[620px] overflow-hidden">
-      <nav className="absolute top-0 left-0 right-0 z-10 bg-white/90 backdrop-blur-md border-b border-black/10 px-3 sm:px-6 py-3 sm:py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <section className="relative h-[100svh] min-h-[560px] max-h-[900px] overflow-hidden">
+      <nav className="absolute left-0 right-0 top-0 z-10 border-b border-black/10 bg-white/90 px-4 py-3 backdrop-blur-md sm:px-8 sm:py-4 lg:px-12">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <HierarchyBreadcrumb items={breadcrumbItems} />
 
           <div className="flex items-center gap-1.5 sm:gap-3">
@@ -155,7 +155,7 @@ export function PortfolioMap() {
           ref={svgRef}
           className="h-full w-full"
           viewBox="0 0 100 100"
-          preserveAspectRatio="xMidYMid slice"
+          preserveAspectRatio="xMidYMid meet"
         >
           {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
             const isSelected = state.selectedNode === disciplineId;
@@ -340,11 +340,11 @@ export function PortfolioMap() {
       )}
       </section>
 
-      <section id="personal" className="border-t border-black/10 bg-white px-6 py-24 sm:px-10 lg:px-16">
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-24">
+      <section id="personal" className="border-t border-black/10 bg-white px-5 py-16 sm:px-10 sm:py-24 lg:px-16 lg:py-28">
+        <div className="mx-auto grid max-w-7xl gap-10 sm:gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-24">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[.3em] text-black/35">Personal / About</p>
-            <h2 className="mt-5 text-4xl font-black uppercase tracking-[-.06em] sm:text-6xl">Beyond the<br />five points.</h2>
+            <h2 className="mt-5 text-4xl font-black uppercase tracking-[-.06em] sm:text-5xl lg:text-6xl">Beyond the<br />five points.</h2>
           </div>
           <div className="max-w-2xl">
             <p className="text-xl leading-9 tracking-tight text-black/75 sm:text-2xl sm:leading-10">Ryusei Tsukamoto is a multi-disciplinary creator working across software, visual expression, music, writing, and research.</p>
@@ -354,12 +354,12 @@ export function PortfolioMap() {
         </div>
       </section>
 
-      <section id="services" className="bg-[#f7f7f5] py-16">
-        <div className="mb-8 px-6 text-center sm:px-10"><p className="text-[10px] font-bold uppercase tracking-[.3em] text-black/35">Tools / Services / Platforms</p><h2 className="mt-3 text-2xl font-bold tracking-tight">Built with and around these services.</h2></div>
+      <section id="services" className="bg-[#f7f7f5] py-12 sm:py-16">
+        <div className="mb-7 px-5 text-center sm:mb-8 sm:px-10"><p className="text-[10px] font-bold uppercase tracking-[.3em] text-black/35">Tools / Services / Platforms</p><h2 className="mt-3 text-xl font-bold tracking-tight sm:text-2xl">Built with and around these services.</h2></div>
         <ServiceMarquee />
       </section>
 
-      <Link href="/admin" className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-3 py-2 text-[10px] font-bold uppercase tracking-[.16em] text-black/45 shadow-lg backdrop-blur transition hover:border-black hover:text-black" aria-label="Open Admin">
+      <Link href="/admin" className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-3 py-2 text-[10px] font-bold uppercase tracking-[.16em] text-black/45 shadow-lg backdrop-blur transition hover:border-black hover:text-black sm:bottom-6 sm:right-6" aria-label="Open Admin">
         <span className="h-1.5 w-1.5 rounded-full bg-black/35" /> Admin
       </Link>
     </div>

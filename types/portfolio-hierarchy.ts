@@ -38,6 +38,8 @@ export interface HierarchyContent {
   mainVisualUrl?: string;
   /** When type is "project", links to DeveloperProject.id */
   projectId?: string;
+  displayOrder?: number;
+  visible?: boolean;
 }
 
 /** L2: Activity / Brand — groups multiple projects/contents */
@@ -51,6 +53,8 @@ export interface Activity {
   links?: ActivityLink[];
   contentType?: ContentType;
   contents: HierarchyContent[];
+  displayOrder?: number;
+  visible?: boolean;
 }
 
 /** L1: Discipline */
@@ -61,6 +65,8 @@ export interface Discipline {
   description: string;
   color: string;
   activities: Activity[];
+  displayOrder?: number;
+  visible?: boolean;
 }
 
 /** L0: Portfolio root */

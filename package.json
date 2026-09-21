@@ -38,7 +38,8 @@
     "react-qr-code": "^2.2.0",
     "resend": "^6.12.3",
     "stripe": "^22.1.1",
-    "tailwindcss": "3.4.1"
+    "tailwindcss": "3.4.1",
+    "typesafe-sdk": "^0.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -13,13 +13,10 @@ import {
   X,
   Type,
   ImageIcon,
-  Sparkles,
   Link2,
   MoreHorizontal,
-  Layers,
   ArrowUp,
   ArrowDown,
-  LoaderCircle,
   ExternalLink,
 } from "lucide-react";
 import type { DbDevProject } from "@/lib/supabase-queries";
@@ -33,7 +30,6 @@ import type {
   DevProjectVisibility,
 } from "@/types/dev-project";
 import { uploadImageToStorage } from "@/lib/supabase-queries";
-import { classifyContentType, scoreContentCompleteness } from "@/lib/admin/jev-client";
 
 interface AdminProjectEditorProps {
   initialProject?: DbDevProject | null;
@@ -102,9 +98,6 @@ export function AdminProjectEditor({
   const [uploading, setUploading] = useState(false);
   const [addBlockMenu, setAddBlockMenu] = useState(false);
   const [activeTab, setActiveTab] = useState<"content" | "info" | "gallery" | "links">("content");
-  const [isClassifying, setIsClassifying] = useState(false);
-  const [isScoring, setIsScoring] = useState(false);
-  const [completenessScore, setCompletenessScore] = useState<number | null>(null);
 
   const getGeneralItem = (label: string, fallback = "") => {
     const general = information.find((c) => c.category === "GENERAL");

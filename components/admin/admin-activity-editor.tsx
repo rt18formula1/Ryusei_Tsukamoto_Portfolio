@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowLeft, Save, Sparkles, Plus, Trash2, X, Upload, LoaderCircle } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, X, Upload } from "lucide-react";
 import type { Activity, DisciplineId } from "@/types/portfolio-hierarchy";
-import { generateSlug } from "@/lib/admin/jev-client";
 
 interface AdminActivityEditorProps {
   activity: Partial<Activity>;
@@ -34,7 +33,6 @@ export function AdminActivityEditor({
   const [links, setLinks] = useState(activity.links || []);
   const [displayOrder, setDisplayOrder] = useState(activity.displayOrder || 1);
   const [visible, setVisible] = useState(activity.visible ?? true);
-  const [isGeneratingSlug, setIsGeneratingSlug] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +59,7 @@ export function AdminActivityEditor({
   };
 
   const addLink = () => {
-    setLinks([...links, { label: "Website", url: "https://" }]);
+    setLinks([...links, { label: "", url: "" }]);
   };
 
   const updateLink = (index: number, key: "label" | "url", value: string) => {
@@ -72,24 +70,6 @@ export function AdminActivityEditor({
 
   const removeLink = (index: number) => {
     setLinks(links.filter((_, i) => i !== index));
-  };
-
-  const handleGenerateSlug = async () => {
-    if (!name.trim()) {
-      alert("Please enter a name first.");
-      return;
-    }
-
-    setIsGeneratingSlug(true);
-    try {
-      const generatedSlug = await generateSlug(name, []);
-      setSlug(generatedSlug);
-    } catch (error) {
-      console.error("Failed to generate slug:", error);
-      alert("Failed to generate slug. Please try again.");
-    } finally {
-      setIsGeneratingSlug(false);
-    }
   };
 
   return (
@@ -143,29 +123,14 @@ export function AdminActivityEditor({
 
           <div>
             <label className="mb-1.5 block text-xs font-bold text-black/60">Slug</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="e.g. rt18-dev"
-                required
-                className="flex-1 rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-black/30"
-              />
-              <button
-                type="button"
-                onClick={handleGenerateSlug}
-                disabled={isGeneratingSlug || !name.trim()}
-                className="flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-2.5 text-xs font-bold text-black/60 hover:border-black/30 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGeneratingSlug ? (
-                  <LoaderCircle size={14} className="animate-spin" />
-                ) : (
-                  <Sparkles size={14} />
-                )}
-                <span className="hidden sm:inline">Generate</span>
-              </button>
-            </div>
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="e.g. rt18-dev"
+              required
+              className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-black/30"
+            />
           </div>
         </div>
 

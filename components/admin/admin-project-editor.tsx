@@ -14,6 +14,7 @@ import {
   Type,
   ImageIcon,
   Link2,
+  Layers,
   MoreHorizontal,
   ArrowUp,
   ArrowDown,
@@ -224,46 +225,6 @@ export function AdminProjectEditor({
     const next = [...details];
     [next[index], next[target]] = [next[target], next[index]];
     setDetails(next);
-  };
-
-  const handleClassifyType = async () => {
-    if (!projectName.trim()) {
-      alert("プロジェクト名を入力してください。");
-      return;
-    }
-
-    setIsClassifying(true);
-    try {
-      const contentType = await classifyContentType(projectName, shortDescription);
-      setGeneralItem("Type", contentType === "project" ? "Web Application" : 
-                      contentType === "artwork" ? "Artwork" :
-                      contentType === "work" ? "Music Work" :
-                      contentType === "article" ? "Article" : "Research");
-    } catch (error) {
-      console.error("Classification failed:", error);
-      alert("分類に失敗しました。");
-    } finally {
-      setIsClassifying(false);
-    }
-  };
-
-  const handleScoreCompleteness = async () => {
-    setIsScoring(true);
-    try {
-      const { score } = await scoreContentCompleteness({
-        hasMainVisual: !!mainVisualUrl,
-        hasInformation: information.some(c => c.items.length > 0),
-        hasDetails: details.length > 0,
-        hasGallery: gallery.length > 0,
-        hasLinks: links.length > 0,
-      });
-      setCompletenessScore(score);
-    } catch (error) {
-      console.error("Scoring failed:", error);
-      alert("スコアリングに失敗しました。");
-    } finally {
-      setIsScoring(false);
-    }
   };
 
   return (
@@ -582,7 +543,7 @@ export function AdminProjectEditor({
                       onClick={() => addBlock("Highlight")}
                       className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 text-xs font-bold text-black hover:bg-black/5"
                     >
-                      <Sparkles size={16} /> Highlight
+                      Highlight
                     </button>
                     <button
                       onClick={() => addBlock("Image")}

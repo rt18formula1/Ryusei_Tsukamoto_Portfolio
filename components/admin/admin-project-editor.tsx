@@ -567,49 +567,6 @@ export function AdminProjectEditor({
           {/* Tab 2: Project Information (Structured Categories) */}
           {activeTab === "info" && (
             <div className="space-y-5">
-              {/* AI Assistant Bar */}
-              <div className="flex items-center justify-between rounded-2xl border border-black/8 bg-purple-50/50 p-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-purple-600" />
-                  <span className="text-xs font-bold text-black">AI Assistant</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleClassifyType}
-                    disabled={isClassifying || !projectName.trim()}
-                    className="flex items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-bold text-black hover:border-black/30 disabled:opacity-50"
-                  >
-                    {isClassifying ? <LoaderCircle size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                    <span>分類</span>
-                  </button>
-                  <button
-                    onClick={handleScoreCompleteness}
-                    disabled={isScoring}
-                    className="flex items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-bold text-black hover:border-black/30 disabled:opacity-50"
-                  >
-                    {isScoring ? <LoaderCircle size={12} className="animate-spin" /> : <Layers size={12} />}
-                    <span>完成度</span>
-                  </button>
-                </div>
-              </div>
-
-              {completenessScore !== null && (
-                <div className="rounded-xl border border-black/8 bg-white p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-black/60">コンテンツ完成度スコア</span>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-24 rounded-full bg-black/5 overflow-hidden">
-                        <div 
-                          className="h-full bg-emerald-500 transition-all"
-                          style={{ width: `${completenessScore * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-black text-black">{Math.round(completenessScore * 100)}%</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {information.map((cat, catIdx) => (
                 <div
                   key={cat.category}

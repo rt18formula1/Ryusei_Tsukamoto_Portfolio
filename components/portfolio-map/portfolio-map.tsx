@@ -277,10 +277,6 @@ export function PortfolioMap() {
             // The edge that connects to central pentagon is opposite to edgeIndex
             // For a pentagon, the connecting edge is (edgeIndex + 2) % 5
             const connectingEdgeIndex = (edgeIndex + 2) % 5;
-            const surroundingVerticesInitial = getPentagonVertices(initialPos.x, initialPos.y, 15);
-            const surroundingEdgesInitial = getEdgeData(surroundingVerticesInitial);
-            const surroundingEdgeMidpointInitial = surroundingEdgesInitial[connectingEdgeIndex].midpoint;
-            
             const surroundingVerticesFinal = getPentagonVertices(pos.x, pos.y, 7);
             const surroundingEdgesFinal = getEdgeData(surroundingVerticesFinal);
             const surroundingEdgeMidpointFinal = surroundingEdgesFinal[connectingEdgeIndex].midpoint;
@@ -290,8 +286,8 @@ export function PortfolioMap() {
                 key={`line-${disciplineId}`}
                 x1={edgeMidpoint.x}
                 y1={edgeMidpoint.y}
-                x2={isMounted ? surroundingEdgeMidpointFinal.x : surroundingEdgeMidpointInitial.x}
-                y2={isMounted ? surroundingEdgeMidpointFinal.y : surroundingEdgeMidpointInitial.y}
+                x2={isMounted ? surroundingEdgeMidpointFinal.x : edgeMidpoint.x}
+                y2={isMounted ? surroundingEdgeMidpointFinal.y : edgeMidpoint.y}
                 stroke={
                   isSelected || isHovered || isCentralHovered
                     ? "#000"

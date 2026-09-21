@@ -266,12 +266,18 @@ export function PortfolioMap() {
             const isCentralSelected = state.selectedNode === "central";
             const isCentralHovered = hoveredNode === "central";
             const initialPos = initialPositions[disciplineId as DisciplineId];
+            const edgeIndex = disciplineEdgeMap[disciplineId as DisciplineId];
+            
+            // Calculate edge midpoint for line start (from central pentagon edge)
+            const centralVertices = getPentagonVertices(centerX, centerY, 15);
+            const edges = getEdgeData(centralVertices);
+            const edgeMidpoint = edges[edgeIndex].midpoint;
 
             return (
               <line
                 key={`line-${disciplineId}`}
-                x1={centerX}
-                y1={centerY}
+                x1={edgeMidpoint.x}
+                y1={edgeMidpoint.y}
                 x2={isMounted ? pos.x : initialPos.x}
                 y2={isMounted ? pos.y : initialPos.y}
                 stroke={

@@ -39,7 +39,7 @@ import type {
 import { AdminSidebar, type AdminTab } from "@/components/admin/admin-sidebar";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { AdminHierarchyTree } from "@/components/admin/admin-hierarchy-tree";
-import { AdminActivityEditor, type ActivityFormData } from "@/components/admin/admin-activity-editor";
+import { AdminActivityEditor } from "@/components/admin/admin-activity-editor";
 
 // Hierarchy data & service
 import { PORTFOLIO_HIERARCHY } from "@/lib/portfolio-hierarchy/data";
@@ -468,7 +468,7 @@ function ActivitiesView({
     (d.activities || []).map((a) => ({ ...a, disciplineId: d.id, disciplineLabel: d.label }))
   );
 
-  const handleSave = (_data: ActivityFormData) => {
+  const handleSave = (_data: Activity) => {
     // Activity data is static (in portfolio-hierarchy/data.ts).
     // In a future iteration this would write to a DB table.
     alert("Activity管理はstatic定義のため、現在はコードから変更してください。（将来的にはDB管理に移行予定）");

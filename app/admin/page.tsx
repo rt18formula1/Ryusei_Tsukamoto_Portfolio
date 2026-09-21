@@ -431,7 +431,7 @@ function DisciplinesView({ disciplines, onNavigate }: { disciplines: import("@/t
                 {d.activities.map((a) => (
                   <li key={a.id} className="flex items-center gap-2 text-xs text-black/60">
                     <span className="h-1.5 w-1.5 rounded-full bg-black/25 shrink-0" />
-                    <span className="font-semibold">{a.label}</span>
+                    <span className="font-semibold">{a.name}</span>
                     <span className="text-black/35">/ {a.id}</span>
                   </li>
                 ))}
@@ -497,7 +497,7 @@ function ActivitiesView({
                 className={`flex w-full items-center justify-between px-5 py-3.5 text-left transition hover:bg-black/[.02] ${editingActivity?.id === a.id ? "bg-black/[.03]" : ""}`}
               >
                 <div>
-                  <p className="text-sm font-bold">{a.label}</p>
+                  <p className="text-sm font-bold">{a.name}</p>
                   <p className="text-xs text-black/45">
                     <span className="font-mono text-[10px]">{a.id}</span>
                     {" · "}

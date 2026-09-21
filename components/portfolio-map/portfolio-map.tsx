@@ -272,22 +272,14 @@ export function PortfolioMap() {
             const centralVertices = getPentagonVertices(centerX, centerY, 15);
             const edges = getEdgeData(centralVertices);
             const edgeMidpoint = edges[edgeIndex].midpoint;
-            
-            // Calculate surrounding pentagon edge midpoint for line end
-            // The edge that connects to central pentagon is opposite to edgeIndex
-            // For a pentagon, the connecting edge is (edgeIndex + 2) % 5
-            const connectingEdgeIndex = (edgeIndex + 2) % 5;
-            const surroundingVerticesFinal = getPentagonVertices(pos.x, pos.y, 7);
-            const surroundingEdgesFinal = getEdgeData(surroundingVerticesFinal);
-            const surroundingEdgeMidpointFinal = surroundingEdgesFinal[connectingEdgeIndex].midpoint;
 
             return (
               <line
                 key={`line-${disciplineId}`}
                 x1={edgeMidpoint.x}
                 y1={edgeMidpoint.y}
-                x2={isMounted ? surroundingEdgeMidpointFinal.x : edgeMidpoint.x}
-                y2={isMounted ? surroundingEdgeMidpointFinal.y : edgeMidpoint.y}
+                x2={isMounted ? pos.x : edgeMidpoint.x}
+                y2={isMounted ? pos.y : edgeMidpoint.y}
                 stroke={
                   isSelected || isHovered || isCentralHovered
                     ? "#000"

@@ -33,6 +33,7 @@ import type {
   DevProjectVisibility,
 } from "@/types/dev-project";
 import { uploadImageToStorage } from "@/lib/supabase-queries";
+import { classifyContentType, scoreContentCompleteness } from "@/lib/admin/jev-client";
 
 interface AdminProjectEditorProps {
   initialProject?: DbDevProject | null;
@@ -101,6 +102,9 @@ export function AdminProjectEditor({
   const [uploading, setUploading] = useState(false);
   const [addBlockMenu, setAddBlockMenu] = useState(false);
   const [activeTab, setActiveTab] = useState<"content" | "info" | "gallery" | "links">("content");
+  const [isClassifying, setIsClassifying] = useState(false);
+  const [isScoring, setIsScoring] = useState(false);
+  const [completenessScore, setCompletenessScore] = useState<number | null>(null);
 
   const getGeneralItem = (label: string, fallback = "") => {
     const general = information.find((c) => c.category === "GENERAL");
@@ -227,6 +231,46 @@ export function AdminProjectEditor({
     const next = [...details];
     [next[index], next[target]] = [next[target], next[index]];
     setDetails(next);
+  };
+
+  const handleClassifyType = async () => {
+    if (!projectName.trim()) {
+      alert("プロジェクト名を入力してください。");
+      return;
+    }
+
+    setIsClassifying(true);
+    try {
+      const contentType = await classifyContentType(projectName, shortDescription);
+      setGeneralItem("Type", contentType === "project" ? "Web Application" : 
+                      contentType === "artwork" ? "Artwork" :
+                      contentType === "work" ? "Music Work" :
+                      contentType === "article" ? "Article" : "Research");
+    } catch (error) {
+      console.error("Classification failed:", error);
+      alert("分類に失敗しました。");
+    } finally {
+      setIsClassifying(false);
+    }
+  };
+
+  const handleScoreCompleteness = async () => {
+    setIsScoring(true);
+    try {
+      const { score } = await scoreContentCompleteness({
+        hasMainVisual: !!mainVisualUrl,
+        hasInformation: information.some(c => c.items.length > 0),
+        hasDetails: details.length > 0,
+        hasGallery: gallery.length > 0,
+        hasLinks: links.length > 0,
+      });
+      setCompletenessScore(score);
+    } catch (error) {
+      console.error("Scoring failed:", error);
+      alert("スコアリングに失敗しました。");
+    } finally {
+      setIsScoring(false);
+    }
   };
 
   return (
@@ -568,6 +612,49 @@ export function AdminProjectEditor({
           {/* Tab 2: Project Information (Structured Categories) */}
           {activeTab === "info" && (
             <div className="space-y-5">
+              {/* AI Assistant Bar */}
+              <div className="flex items-center justify-between rounded-2xl border border-black/8 bg-purple-50/50 p-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-purple-600" />
+                  <span className="text-xs font-bold text-black">AI Assistant</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleClassifyType}
+                    disabled={isClassifying || !projectName.trim()}
+                    className="flex items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-bold text-black hover:border-black/30 disabled:opacity-50"
+                  >
+                    {isClassifying ? <LoaderCircle size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    <span>分類</span>
+                  </button>
+                  <button
+                    onClick={handleScoreCompleteness}
+                    disabled={isScoring}
+                    className="flex items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-bold text-black hover:border-black/30 disabled:opacity-50"
+                  >
+                    {isScoring ? <LoaderCircle size={12} className="animate-spin" /> : <Layers size={12} />}
+                    <span>完成度</span>
+                  </button>
+                </div>
+              </div>
+
+              {completenessScore !== null && (
+                <div className="rounded-xl border border-black/8 bg-white p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-black/60">コンテンツ完成度スコア</span>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-24 rounded-full bg-black/5 overflow-hidden">
+                        <div 
+                          className="h-full bg-emerald-500 transition-all"
+                          style={{ width: `${completenessScore * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-black text-black">{Math.round(completenessScore * 100)}%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {information.map((cat, catIdx) => (
                 <div
                   key={cat.category}

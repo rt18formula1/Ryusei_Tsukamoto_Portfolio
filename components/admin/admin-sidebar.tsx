@@ -11,7 +11,6 @@ import {
   Image as ImageIcon,
   Settings,
   LogOut,
-  ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
@@ -119,7 +118,7 @@ export function AdminSidebar({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-black/8 bg-white transition-all duration-300 ${
+      className={`fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-black/8 bg-white transition-all duration-300 lg:flex ${
         open ? "w-64" : "w-16"
       }`}
     >

@@ -44,7 +44,7 @@ import { AdminActivityEditor } from "@/components/admin/admin-activity-editor";
 // Hierarchy data & service
 import { PORTFOLIO_HIERARCHY } from "@/lib/portfolio-hierarchy/data";
 import { computeHierarchyStats } from "@/lib/admin-hierarchy-service";
-import type { Activity, Discipline } from "@/types/portfolio-hierarchy";
+import type { Activity } from "@/types/portfolio-hierarchy";
 import type { DisciplineId } from "@/types/portfolio-map";
 
 // ─── Types & helpers ────────────────────────────────────────────────────────
@@ -306,6 +306,24 @@ export default function AdminPage() {
       <main
         className={`transition-all duration-300 min-h-screen ${sidebarOpen ? "lg:ml-64" : "lg:ml-16"}`}
       >
+        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-black/8 bg-[#f7f7f5]/95 px-4 py-3 backdrop-blur lg:hidden">
+          <span className="text-xs font-bold tracking-tight">Portfolio Admin</span>
+          <select
+            value={currentTab}
+            onChange={(e) => setCurrentTab(e.target.value as AdminTab)}
+            className="rounded-lg border border-black/10 bg-white px-3 py-2 text-xs font-semibold outline-none"
+            aria-label="Admin section"
+          >
+            <option value="dashboard">Dashboard</option>
+            <option value="hierarchy">Hierarchy Tree</option>
+            <option value="disciplines">Disciplines</option>
+            <option value="activities">Activities</option>
+            <option value="projects">Projects</option>
+            <option value="other-contents">Other Contents</option>
+            <option value="media">Media Library</option>
+            <option value="settings">Settings</option>
+          </select>
+        </div>
         <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
 
           {/* ── Dashboard ── */}
@@ -329,7 +347,7 @@ export default function AdminPage() {
                 setEditingActivityDisciplineId(null);
                 setCurrentTab("activities");
               }}
-              onEditDiscipline={(_discipline: Discipline) => {
+              onEditDiscipline={() => {
                 // Discipline editing is read-only for now (static hierarchy)
                 alert("Disciplineはstatic定義のため、コードから変更してください。");
               }}
@@ -339,7 +357,7 @@ export default function AdminPage() {
                 setEditingActivity(null);
                 setCurrentTab("activities");
               }}
-              onAddProjectToActivity={(_activityId) => {
+              onAddProjectToActivity={() => {
                 openProject();
               }}
               onDeleteProject={async (projectId) => {
@@ -389,18 +407,12 @@ export default function AdminPage() {
 
           {/* ── Media Library ── */}
           {currentTab === "media" && (
-            <PlaceholderView
-              title="Media Library"
-              description="Supabase Storageのファイル一覧・アップロード・削除（今後実装）"
-            />
+            <MediaLibraryView />
           )}
 
           {/* ── Settings ── */}
           {currentTab === "settings" && (
-            <PlaceholderView
-              title="Settings"
-              description="Admin設定・API Key・キャッシュ管理（今後実装）"
-            />
+            <SettingsView />
           )}
 
         </div>
@@ -473,7 +485,7 @@ function ActivitiesView({
     (d.activities || []).map((a) => ({ ...a, disciplineId: d.id, disciplineLabel: d.name }))
   );
 
-  const handleSave = (_data: Activity) => {
+  const handleSave = () => {
     // Activity data is static (in portfolio-hierarchy/data.ts).
     // In a future iteration this would write to a DB table.
     alert("Activity管理はstatic定義のため、現在はコードから変更してください。（将来的にはDB管理に移行予定）");
@@ -531,7 +543,7 @@ function ActivitiesView({
       ) : defaultDisciplineId ? (
         <div className="lg:sticky lg:top-6 lg:h-fit">
           <AdminActivityEditor
-            activity={{ disciplineId: defaultDisciplineId as any }}
+            activity={{ disciplineId: defaultDisciplineId as DisciplineId }}
             onSave={handleSave}
             onCancel={onCloseEditor}
           />
@@ -697,7 +709,36 @@ function PlaceholderView({ title, description }: { title: string; description: s
   );
 }
 
-// ─── Notion-Style Editor (unchanged) ─────────────────────────────────────────
+function MediaLibraryView() {
+  const [assets, setAssets] = useState<Array<{ url: string; name: string }>>([]);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const upload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    setMessage("");
+    try {
+      const uploaded: Array<{ url: string; name: string }> = [];
+      for (const file of Array.from(files)) {
+        const url = await uploadImageToStorage("portfolio-images", file);
+        uploaded.push({ url, name: file.name });
+      }
+      setAssets((current) => [...uploaded, ...current]);
+      setMessage(`${uploaded.length}件アップロードしました。URLをコピーしてページで利用できます。`);
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : "アップロードに失敗しました");
+    } finally { setUploading(false); }
+  };
+
+  return <div className="space-y-6"><div><p className="text-[10px] font-bold uppercase tracking-[.28em] text-black/35">Assets</p><h1 className="mt-1.5 text-3xl font-bold tracking-tight">Media Library</h1><p className="mt-1 text-xs text-black/50">Portfolio画像をR2へアップロードし、URLをページで再利用できます。</p></div><label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-black/15 bg-white px-6 py-14 text-center transition hover:border-black/30 hover:bg-black/[.02]"><Upload size={24} className="text-black/35" /><span className="mt-3 text-sm font-bold">{uploading ? "Uploading…" : "Drop files here or choose files"}</span><span className="mt-1 text-xs text-black/40">複数画像を選択できます。PNG / JPG / WebP</span><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple className="hidden" disabled={uploading} onChange={(e) => { void upload(e.currentTarget.files); e.currentTarget.value = ""; }} /></label>{message && <p className="rounded-xl bg-black/[.04] px-4 py-3 text-xs text-black/60">{message}</p>}<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{assets.map((asset) => <div key={asset.url} className="overflow-hidden rounded-2xl border border-black/8 bg-white"><div className="aspect-video bg-black/[.04]"><img src={asset.url} alt={asset.name} className="h-full w-full object-cover" /></div><div className="p-3"><p className="truncate text-xs font-bold">{asset.name}</p><button onClick={() => void navigator.clipboard?.writeText(asset.url)} className="mt-2 text-[11px] font-semibold text-black/50 hover:text-black">Copy public URL</button></div></div>)}</div><div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-800"><strong>Note:</strong> 現在は安全なアップロードとURL再利用に対応しています。既存R2ファイルの一覧・削除は、誤削除防止のため次の段階で追加します。</div></div>;
+}
+
+function SettingsView() {
+  return <div className="space-y-6"><div><p className="text-[10px] font-bold uppercase tracking-[.28em] text-black/35">System</p><h1 className="mt-1.5 text-3xl font-bold tracking-tight">Settings</h1><p className="mt-1 text-xs text-black/50">Admin Studioの接続状態と運用ルール。</p></div><div className="grid gap-4 sm:grid-cols-2"><div className="rounded-2xl border border-black/8 bg-white p-5"><p className="text-[10px] font-bold uppercase tracking-widest text-black/35">Authentication</p><h2 className="mt-3 font-bold">Supabase Auth</h2><p className="mt-2 text-xs leading-5 text-black/50">Admin APIは認証済みセッションを要求します。Service Role Keyはブラウザへ公開されません。</p><span className="mt-4 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">Protected</span></div><div className="rounded-2xl border border-black/8 bg-white p-5"><p className="text-[10px] font-bold uppercase tracking-widest text-black/35">Storage</p><h2 className="mt-3 font-bold">Cloudflare R2</h2><p className="mt-2 text-xs leading-5 text-black/50">画像アップロードは署名付きURLを使うため、大きな画像もサーバーを経由せず安全に保存できます。</p><span className="mt-4 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">Presigned upload</span></div></div><div className="rounded-2xl border border-black/8 bg-white p-5"><h2 className="font-bold">Publishing workflow</h2><div className="mt-4 grid gap-3 text-xs text-black/60 sm:grid-cols-3"><div className="rounded-xl bg-black/[.03] p-4"><strong className="block text-black">1. Draft</strong><span className="mt-1 block leading-5">編集内容を保存します。</span></div><div className="rounded-xl bg-black/[.03] p-4"><strong className="block text-black">2. Preview</strong><span className="mt-1 block leading-5">公開ページを別タブで確認します。</span></div><div className="rounded-xl bg-black/[.03] p-4"><strong className="block text-black">3. Publish</strong><span className="mt-1 block leading-5">VisibilityをPublishedにして公開します。</span></div></div></div></div>;
+}
+
+// ─── Notion-Style Editor ─────────────────────────────────────────────────────
 
 function NotionWorkspace({ draft, setDraft, state, notice, onBack, onSave, onPublish }: { draft: ProjectDraft; setDraft: (value: ProjectDraft) => void; state: SaveState; notice: string; onBack: () => void; onSave: () => void; onPublish: () => void }) {
   const [propertiesOpen, setPropertiesOpen] = useState(true);
@@ -720,6 +761,15 @@ function NotionWorkspace({ draft, setDraft, state, notice, onBack, onSave, onPub
       window.alert(msg);
     }
     finally { setUploading(false); }
+  };
+  const uploadBlockImage = async (file: File, blockId: string) => {
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage("portfolio-images", file);
+      updateBlocks(blocks.map((block) => block.id === blockId ? { ...block, imageUrl: url } : block));
+    } catch (error: unknown) {
+      window.alert(error instanceof Error ? error.message : "画像アップロードに失敗しました");
+    } finally { setUploading(false); }
   };
   const updateLinks = (next: LinkItem[]) => update({ links: next.map((item, index) => ({ ...item, order: index + 1 })) });
 
@@ -774,6 +824,7 @@ function NotionWorkspace({ draft, setDraft, state, notice, onBack, onSave, onPub
                   updateBlocks(next);
                 }}
                 onDelete={() => updateBlocks(blocks.filter((item) => item.id !== block.id))}
+                onUpload={(file) => void uploadBlockImage(file, block.id)}
               />
             ))}
           </div>
@@ -819,7 +870,7 @@ function AddBlockButton({ icon, label, onClick }: { icon: React.ReactNode; label
   return <button onClick={onClick} className="flex flex-col items-center gap-2 rounded-lg px-2 py-3 text-xs font-semibold text-black/55 hover:bg-black/[.05] hover:text-black">{icon}<span>{label}</span></button>;
 }
 
-function NotionBlock({ block, index, total, onChange, onMove, onDelete }: { block: Block; index: number; total: number; onChange: (block: Block) => void; onMove: (direction: "up" | "down") => void; onDelete: () => void }) {
+function NotionBlock({ block, index, total, onChange, onMove, onDelete, onUpload }: { block: Block; index: number; total: number; onChange: (block: Block) => void; onMove: (direction: "up" | "down") => void; onDelete: () => void; onUpload: (file: File) => void }) {
   const [focused, setFocused] = useState(false);
   const content = block.type === "ImageText" ? block.text || block.content || "" : block.content || "";
   return (
@@ -840,14 +891,23 @@ function NotionBlock({ block, index, total, onChange, onMove, onDelete }: { bloc
       ) : block.type === "Image" ? (
         <div className="p-3">
           <div className="overflow-hidden rounded-lg bg-black/[.04]">{block.imageUrl ? <img src={block.imageUrl} alt="" className="max-h-[420px] w-full object-contain" /> : <div className="p-8 text-center text-sm text-black/35">Image URLを入力してください。</div>}</div>
-          <input value={block.imageUrl || ""} onChange={(e) => onChange({ ...block, imageUrl: e.target.value })} placeholder="Image URL" className="mt-2 w-full rounded-lg bg-black/[.04] px-3 py-2 text-xs outline-none" />
+          <div className="mt-2 flex gap-2">
+            <input value={block.imageUrl || ""} onChange={(e) => onChange({ ...block, imageUrl: e.target.value })} placeholder="Image URL" className="min-w-0 flex-1 rounded-lg bg-black/[.04] px-3 py-2 text-xs outline-none" />
+            <label className="flex cursor-pointer items-center gap-1 rounded-lg border border-black/10 px-2.5 text-[11px] font-semibold text-black/55 hover:bg-black/[.03]">
+              <Upload size={13} /> Upload
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) onUpload(file); e.currentTarget.value = ""; }} />
+            </label>
+          </div>
           <input value={block.imageCaption || ""} onChange={(e) => onChange({ ...block, imageCaption: e.target.value })} placeholder="Caption (optional)" className="mt-2 w-full rounded-lg bg-black/[.04] px-3 py-2 text-xs outline-none" />
         </div>
       ) : block.type === "ImageText" ? (
         <div className="grid gap-3 p-3 md:grid-cols-2">
           <div>
             <div className="aspect-video overflow-hidden rounded-lg bg-black/[.04]">{block.imageUrl && <img src={block.imageUrl} alt="" className="h-full w-full object-cover" />}</div>
-            <input value={block.imageUrl || ""} onChange={(e) => onChange({ ...block, imageUrl: e.target.value })} placeholder="Image URL" className="mt-2 w-full rounded-lg bg-black/[.04] px-3 py-2 text-xs outline-none" />
+            <div className="mt-2 flex gap-2">
+              <input value={block.imageUrl || ""} onChange={(e) => onChange({ ...block, imageUrl: e.target.value })} placeholder="Image URL" className="min-w-0 flex-1 rounded-lg bg-black/[.04] px-3 py-2 text-xs outline-none" />
+              <label className="flex cursor-pointer items-center gap-1 rounded-lg border border-black/10 px-2.5 text-[11px] font-semibold text-black/55 hover:bg-black/[.03]"><Upload size={13} /> Upload<input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) onUpload(file); e.currentTarget.value = ""; }} /></label>
+            </div>
           </div>
           <textarea value={content} onChange={(e) => onChange({ ...block, text: e.target.value, content: e.target.value })} placeholder="Write beside the image…" rows={7} className="w-full resize-none rounded-lg bg-black/[.04] px-3 py-3 text-sm leading-6 outline-none" />
         </div>

@@ -383,6 +383,90 @@ export function PortfolioMap() {
             );
           })}
 
+          {/* Activity nodes — fade in on discipline hover */}
+          {Object.entries(disciplinePositions).flatMap(([disciplineId, pos]) => {
+            const discipline = disciplines.find((d) => d.id === disciplineId);
+            if (!discipline || discipline.activities.length === 0) return [];
+            const isHovered = hoveredNode === disciplineId;
+            const meta = NODE_META[disciplineId as DisciplineId];
+            const dx = pos.x - centerX;
+            const dy = pos.y - centerY;
+            const baseAngle = Math.atan2(dy, dx);
+            const distance = 8;
+            const spread = Math.PI * 0.55;
+            const n = discipline.activities.length;
+
+            return discipline.activities.map((activity, i) => {
+              const angle = n === 1
+                ? baseAngle
+                : baseAngle - spread / 2 + (i / (n - 1)) * spread;
+              const ax = pos.x + distance * Math.cos(angle);
+              const ay = pos.y + distance * Math.sin(angle);
+
+              return (
+                <g key={`activity-${activity.id}`}>
+                  {/* Connection line from discipline to activity */}
+                  <line
+                    x1={pos.x}
+                    y1={pos.y}
+                    x2={ax}
+                    y2={ay}
+                    stroke={meta.color}
+                    strokeWidth="0.15"
+                    style={{
+                      opacity: isHovered ? 0.5 : 0,
+                      transition: "opacity 300ms ease-out",
+                      transitionDelay: `${i * 60}ms`,
+                    }}
+                  />
+                  {/* Activity pentagon */}
+                  <g
+                    className="cursor-pointer"
+                    onClick={() => {
+                      window.location.href = activityHref(
+                        disciplineId as DisciplineId,
+                        activity.slug
+                      );
+                    }}
+                    onMouseEnter={() => setHoveredNode(disciplineId)}
+                    onMouseLeave={() => setHoveredNode(null)}
+                  >
+                    <path
+                      d={createPentagonPath(ax, ay, 3)}
+                      fill={isHovered ? meta.color : "#fff"}
+                      stroke={meta.color}
+                      strokeWidth="0.2"
+                      style={{
+                        opacity: isHovered ? 1 : 0,
+                        transition: "opacity 300ms ease-out",
+                        transitionDelay: `${i * 60}ms`,
+                        pointerEvents: isHovered ? "auto" : "none",
+                      }}
+                    />
+                    <text
+                      x={ax}
+                      y={ay}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      className="font-bold pointer-events-none"
+                      fill={isHovered ? "#fff" : "#000"}
+                      style={{
+                        fontSize: "0.9px",
+                        opacity: isHovered ? 1 : 0,
+                        transition: "opacity 300ms ease-out",
+                        transitionDelay: `${i * 60 + 100}ms`,
+                      }}
+                    >
+                      {activity.name.length > 12
+                        ? activity.name.slice(0, 10) + "…"
+                        : activity.name}
+                    </text>
+                  </g>
+                </g>
+              );
+            });
+          })}
+
           {/* Central pentagon - rendered last (top layer, in front) */}
           <g
             className="cursor-pointer focus:outline-none"

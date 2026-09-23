@@ -1,9 +1,35 @@
+export type DevProjectStatus = "Public" | "In Development" | "Private" | "Archived";
+export type DevProjectVisibility = "Published" | "Draft" | "Hidden";
+
+export type DevProjectPlatform = 
+  | "Web"
+  | "iOS"
+  | "iPadOS"
+  | "macOS"
+  | "Android"
+  | "Windows"
+  | "Desktop"
+  | "API"
+  | "Other"
+  | string;
+
+export type DevProjectType =
+  | "Web Application"
+  | "Website"
+  | "Tool"
+  | "Fullstack System"
+  | "Data / AI Pipeline"
+  | "Design & Creative"
+  | "Open Source Tool"
+  | string;
+
 export type DevProjectInfoCategory = 
   | "GENERAL"
   | "INFRASTRUCTURE"
   | "DATA"
   | "AUTHENTICATION"
   | "API / INTEGRATION"
+  | "TECHNOLOGY"
   | "OTHER"
   | string;
 
@@ -43,6 +69,7 @@ export interface DevProjectGalleryItem {
   id: string;
   imageUrl: string;
   caption?: string;
+  altText?: string;
   description?: string;
   order: number;
 }
@@ -60,9 +87,13 @@ export interface DevProjectLink {
 export interface DeveloperProject {
   id: string;
   projectName: string;
+  slug?: string;
   shortDescription: string;
   mainVisualUrl: string;
-  mainVisualFocalPoint?: { x: number; y: number }; // 0-1 range for future focal point support
+  mainVisualFocalPoint?: { x: number; y: number }; // 0-1 range for focal point support
+  status?: DevProjectStatus;
+  visibility?: DevProjectVisibility;
+  activityId?: string;
   information: DevProjectInformation[];
   details: DevProjectDetailBlock[];
   gallery: DevProjectGalleryItem[];

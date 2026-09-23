@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminAuthGate } from "@/components/admin/admin-auth-gate";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -34,9 +33,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex min-h-screen bg-white text-black">
-      <AdminSidebar />
-      <main className="flex-1 overflow-auto">{children}</main>
+    <div className="min-h-screen bg-white text-black">
+      {children}
     </div>
   );
 }

@@ -107,13 +107,6 @@ export function SiteHeader() {
                 <span className="text-gray-300 text-base">→</span>
               </Link>
             ))}
-            <Link
-              href="/admin"
-              onClick={closeMenu}
-              className="py-4 text-xs font-bold text-gray-400 hover:text-black transition-colors mt-6 uppercase tracking-widest"
-            >
-              Admin Dashboard
-            </Link>
           </nav>
         </div>
       )}

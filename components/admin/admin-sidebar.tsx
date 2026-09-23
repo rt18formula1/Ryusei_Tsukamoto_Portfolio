@@ -1,153 +1,217 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import React from "react";
+import {
+  LayoutDashboard,
+  GitFork,
+  Layers,
+  Sparkles,
+  FolderGit2,
+  FileText,
+  Image as ImageIcon,
+  Settings,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 
-type NavLeaf = { label: string; href: string };
-type NavGroup = { section: string; items: NavLeaf[] };
-type NavItem = NavLeaf | NavGroup;
+export type AdminTab =
+  | "dashboard"
+  | "hierarchy"
+  | "disciplines"
+  | "activities"
+  | "projects"
+  | "other-contents"
+  | "media"
+  | "settings";
 
-const NAV: NavItem[] = [
-  { label: "Dashboard", href: "/admin" },
-  {
-    section: "Portfolio",
-    items: [
-      { label: "Hierarchy", href: "/admin/hierarchy" },
-      { label: "Disciplines", href: "/admin/disciplines" },
-      { label: "Activities", href: "/admin/activities" },
-    ],
-  },
-  {
-    section: "Content",
-    items: [
-      { label: "Projects", href: "/admin/projects" },
-      { label: "Legacy Content", href: "/admin/legacy" },
-    ],
-  },
-  { label: "Media", href: "/admin/media" },
-  { label: "Settings", href: "/admin/settings" },
-];
-
-function isGroup(item: NavItem): item is NavGroup {
-  return "section" in item;
+interface AdminSidebarProps {
+  currentTab: AdminTab;
+  onSelectTab: (tab: AdminTab) => void;
+  open: boolean;
+  onToggleOpen: () => void;
+  projectCount: number;
+  onSignOut: () => void;
 }
 
-function isActive(pathname: string, href: string): boolean {
-  if (href === "/admin") return pathname === "/admin";
-  return pathname.startsWith(href);
-}
-
-export function AdminSidebar() {
-  const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  const handleLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
-    window.location.href = "/admin";
-  };
-
-  const sidebarContent = (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="px-5 py-5 border-b border-black/10 shrink-0">
-        <Link href="/admin" className="text-lg font-black tracking-tight">
-          RT18 <span className="text-gray-400 font-bold">Admin</span>
-        </Link>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {NAV.map((item, i) => {
-          if (isGroup(item)) {
-            return (
-              <div key={i} className="pt-3">
-                <p className="px-3 pb-1 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                  {item.section}
-                </p>
-                {item.items.map((leaf) => {
-                  const active = isActive(pathname, leaf.href);
-                  return (
-                    <Link
-                      key={leaf.href}
-                      href={leaf.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={`block px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
-                        active
-                          ? "bg-black text-white"
-                          : "text-gray-600 hover:bg-black/5 hover:text-black"
-                      }`}
-                    >
-                      {leaf.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            );
-          }
-          const active = isActive(pathname, item.href);
-          return (
-            <Link
-              key={i}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`block px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
-                active
-                  ? "bg-black text-white"
-                  : "text-gray-600 hover:bg-black/5 hover:text-black"
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Footer */}
-      <div className="px-3 py-4 border-t border-black/10 shrink-0 space-y-1">
-        <Link
-          href="/"
-          className="block px-3 py-2 rounded-lg text-sm font-bold text-gray-600 hover:bg-black/5 hover:text-black transition-colors"
-        >
-          ← View Portfolio
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="w-full text-left px-3 py-2 rounded-lg text-sm font-bold text-gray-600 hover:bg-black/5 hover:text-black transition-colors"
-        >
-          Logout
-        </button>
-      </div>
-    </div>
-  );
+export function AdminSidebar({
+  currentTab,
+  onSelectTab,
+  open,
+  onToggleOpen,
+  projectCount,
+  onSignOut,
+}: AdminSidebarProps) {
+  const navItems: Array<{
+    group: string;
+    items: Array<{
+      id: AdminTab;
+      label: string;
+      icon: React.ReactNode;
+      badge?: number | string;
+    }>;
+  }> = [
+    {
+      group: "Overview",
+      items: [
+        {
+          id: "dashboard",
+          label: "Dashboard",
+          icon: <LayoutDashboard size={16} />,
+        },
+      ],
+    },
+    {
+      group: "Portfolio",
+      items: [
+        {
+          id: "hierarchy",
+          label: "Hierarchy Tree",
+          icon: <GitFork size={16} />,
+        },
+        {
+          id: "disciplines",
+          label: "Disciplines",
+          icon: <Layers size={16} />,
+          badge: "5",
+        },
+        {
+          id: "activities",
+          label: "Activities",
+          icon: <Sparkles size={16} />,
+          badge: "4",
+        },
+      ],
+    },
+    {
+      group: "Content",
+      items: [
+        {
+          id: "projects",
+          label: "Projects",
+          icon: <FolderGit2 size={16} />,
+          badge: projectCount,
+        },
+        {
+          id: "other-contents",
+          label: "Other Contents",
+          icon: <FileText size={16} />,
+        },
+      ],
+    },
+    {
+      group: "Assets & System",
+      items: [
+        {
+          id: "media",
+          label: "Media Library",
+          icon: <ImageIcon size={16} />,
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: <Settings size={16} />,
+        },
+      ],
+    },
+  ];
 
   return (
-    <>
-      {/* Mobile toggle */}
-      <button
-        onClick={() => setMobileOpen(!mobileOpen)}
-        className="md:hidden fixed top-3 left-3 z-50 p-2 bg-black text-white rounded-lg text-sm font-bold"
-      >
-        {mobileOpen ? "✕" : "☰"}
-      </button>
+    <aside
+      className={`fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-black/8 bg-white transition-all duration-300 lg:flex ${
+        open ? "w-64" : "w-16"
+      }`}
+    >
+      {/* Brand Header */}
+      <div className="flex h-16 items-center justify-between border-b border-black/8 px-4">
+        {open ? (
+          <div className="min-w-0">
+            <p className="text-[9px] font-bold uppercase tracking-[.24em] text-black/35">
+              RYUSEI TSUKAMOTO
+            </p>
+            <p className="truncate text-base font-bold tracking-tight text-black">
+              Portfolio Admin
+            </p>
+          </div>
+        ) : (
+          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-black text-xs font-black text-white">
+            R
+          </div>
+        )}
+        <button
+          onClick={onToggleOpen}
+          className="rounded-lg p-1.5 text-black/40 hover:bg-black/5 hover:text-black focus:outline-none"
+          aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {open ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+        </button>
+      </div>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden md:block w-60 border-r border-black/10 shrink-0">
-        {sidebarContent}
-      </aside>
+      {/* Navigation List */}
+      <div className="flex-1 overflow-y-auto px-2.5 py-4 space-y-6">
+        {navItems.map((group) => (
+          <div key={group.group}>
+            {open && (
+              <p className="px-2 mb-1.5 text-[9px] font-bold uppercase tracking-[.22em] text-black/30">
+                {group.group}
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive = currentTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onSelectTab(item.id)}
+                    className={`group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-semibold transition-all ${
+                      isActive
+                        ? "bg-black text-white shadow-sm"
+                        : "text-black/60 hover:bg-black/[.04] hover:text-black"
+                    }`}
+                    title={!open ? item.label : undefined}
+                  >
+                    <span
+                      className={`shrink-0 ${
+                        isActive ? "text-white" : "text-black/40 group-hover:text-black"
+                      }`}
+                    >
+                      {item.icon}
+                    </span>
+                    {open && (
+                      <>
+                        <span className="flex-1 truncate text-left">{item.label}</span>
+                        {item.badge !== undefined && (
+                          <span
+                            className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                              isActive
+                                ? "bg-white/20 text-white"
+                                : "bg-black/5 text-black/50 group-hover:bg-black/10"
+                            }`}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
 
-      {/* Mobile sidebar */}
-      {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40 flex">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setMobileOpen(false)}
-          />
-          <aside className="relative w-64 bg-white border-r border-black/10">
-            {sidebarContent}
-          </aside>
-        </div>
-      )}
-    </>
+      {/* Sign Out / User Footer */}
+      <div className="border-t border-black/8 p-3">
+        <button
+          onClick={onSignOut}
+          className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-semibold text-black/50 transition hover:bg-red-50 hover:text-red-700"
+          title={!open ? "Sign out" : undefined}
+        >
+          <LogOut size={16} className="shrink-0 text-black/40 group-hover:text-red-600" />
+          {open && <span>Sign out</span>}
+        </button>
+      </div>
+    </aside>
   );
 }

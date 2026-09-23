@@ -51,6 +51,14 @@ export type DbEvent = {
   created_at: string;
 };
 
+import type {
+  DevProjectInformation,
+  DevProjectDetailBlock,
+  DevProjectGalleryItem,
+  DevProjectLink,
+} from "@/types/dev-project";
+import type { DisciplineId } from "@/types/portfolio-map";
+
 export type DbDevProject = {
   id: string;
   project_name: string;
@@ -58,10 +66,11 @@ export type DbDevProject = {
   main_visual_url: string | null;
   main_visual_focal_point_x: number | null;
   main_visual_focal_point_y: number | null;
-  information: any; // JSON
-  details: any; // JSON
-  gallery: any; // JSON
-  links: any; // JSON
+  information: DevProjectInformation[];
+  details: DevProjectDetailBlock[];
+  gallery: DevProjectGalleryItem[];
+  links: DevProjectLink[];
+  discipline_id: DisciplineId;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -495,13 +504,19 @@ export async function getCommissions() {
 // Developer Projects CRUD
 // ----------------------------------------------------------------------
 
-export async function getDevProjects() {
+export async function getDevProjects(disciplineId?: DisciplineId) {
   if (!supabase) return [];
-  const { data, error } = await supabase
+  let query = supabase
     .from("dev_projects")
     .select("*")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
+  
+  if (disciplineId) {
+    query = query.eq("discipline_id", disciplineId);
+  }
+  
+  const { data, error } = await query;
   if (error) {
     console.error("Error fetching dev projects:", error);
     return [];

@@ -4,7 +4,9 @@ import { DevProjectDetailClient } from "@/components/dev-project/dev-project-det
 import { getActivity, getContent, getDiscipline } from "@/lib/portfolio-hierarchy";
 import { MOCK_DEV_PROJECT, MOCK_DEV_PROJECT_2 } from "@/lib/dev-project/mock";
 import { getDevProjectById } from "@/lib/supabase-queries";
+import { getDevProjects } from "@/lib/supabase-queries";
 import { mapDbToDevProject } from "@/lib/dev-project/mapper";
+import { projectContent, projectIsPublished, projectSlug } from "@/lib/portfolio-projects";
 import type { DeveloperProject } from "@/types/dev-project";
 import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
 import { buildBreadcrumbs } from "@/lib/portfolio-hierarchy";
@@ -28,7 +30,10 @@ async function resolveProject(projectId: string): Promise<DeveloperProject | nul
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { activity: activitySlug, content: contentSlug } = await params;
-  const content = getContent("developer", activitySlug, contentSlug);
+  const dbProject = activitySlug === "rt18-dev"
+    ? (await getDevProjects()).find((project) => projectIsPublished(project) && projectSlug(project.project_name) === contentSlug)
+    : null;
+  const content = getContent("developer", activitySlug, contentSlug) || (dbProject ? projectContent(dbProject) : null);
   if (!content) return {};
   return {
     title: `${content.name} | Developer | rt18formula1 Portfolio`,
@@ -40,12 +45,15 @@ export default async function DeveloperContentPage({ params }: PageProps) {
   const { activity: activitySlug, content: contentSlug } = await params;
   const discipline = getDiscipline("developer");
   const activity = getActivity("developer", activitySlug);
-  const content = getContent("developer", activitySlug, contentSlug);
+  const dbProject = activitySlug === "rt18-dev"
+    ? (await getDevProjects()).find((project) => projectIsPublished(project) && projectSlug(project.project_name) === contentSlug)
+    : null;
+  const content = getContent("developer", activitySlug, contentSlug) || (dbProject ? projectContent(dbProject) : null);
 
   if (!discipline || !activity || !content) notFound();
 
   const projectId = content.projectId ?? content.id;
-  const project = await resolveProject(projectId);
+  const project = dbProject ? mapDbToDevProject(dbProject) : await resolveProject(projectId);
   if (!project) notFound();
 
   const breadcrumbs = buildBreadcrumbs({ discipline, activity, content });

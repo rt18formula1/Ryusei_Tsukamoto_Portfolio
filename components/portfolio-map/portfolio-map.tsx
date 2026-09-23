@@ -392,7 +392,7 @@ export function PortfolioMap() {
             const dx = pos.x - centerX;
             const dy = pos.y - centerY;
             const baseAngle = Math.atan2(dy, dx);
-            const distance = 13;
+            const distance = 20;
             const spread = Math.PI * 0.55;
             const n = discipline.activities.length;
 
@@ -432,7 +432,7 @@ export function PortfolioMap() {
                     onMouseLeave={() => setHoveredNode(null)}
                   >
                     <path
-                      d={createPentagonPath(ax, ay, 4.5)}
+                      d={createPentagonPath(ax, ay, 6.5)}
                       fill={isHovered ? meta.color : "#fff"}
                       stroke={meta.color}
                       strokeWidth="0.2"
@@ -451,7 +451,7 @@ export function PortfolioMap() {
                       className="font-bold pointer-events-none"
                       fill={isHovered ? "#fff" : "#000"}
                       style={{
-                        fontSize: "1.1px",
+                        fontSize: "1.4px",
                         opacity: isHovered ? 1 : 0,
                         transition: "opacity 300ms ease-out",
                         transitionDelay: `${i * 60 + 100}ms`,

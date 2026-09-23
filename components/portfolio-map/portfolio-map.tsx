@@ -316,7 +316,7 @@ export function PortfolioMap() {
             
             // Initial size matches central pentagon for edge-to-edge contact
             const initialSize = 15;
-            const finalSize = 7;
+            const finalSize = 10;
 
             return (
               <g
@@ -370,7 +370,7 @@ export function PortfolioMap() {
                   className="font-black uppercase tracking-wider pointer-events-none"
                   fill={isSelected || isHovered ? "#fff" : "#000"}
                   style={{ 
-                    fontSize: isMounted ? "1.4px" : "2px",
+                    fontSize: isMounted ? "1.8px" : "2px",
                     opacity: textVisible ? 1 : 0,
                     transition: "font-size 1200ms, x 1200ms, y 1200ms, opacity 400ms",
                     transitionDelay: isMounted ? "100ms" : "0ms",
@@ -392,7 +392,7 @@ export function PortfolioMap() {
             const dx = pos.x - centerX;
             const dy = pos.y - centerY;
             const baseAngle = Math.atan2(dy, dx);
-            const distance = 8;
+            const distance = 13;
             const spread = Math.PI * 0.55;
             const n = discipline.activities.length;
 
@@ -432,7 +432,7 @@ export function PortfolioMap() {
                     onMouseLeave={() => setHoveredNode(null)}
                   >
                     <path
-                      d={createPentagonPath(ax, ay, 3)}
+                      d={createPentagonPath(ax, ay, 4.5)}
                       fill={isHovered ? meta.color : "#fff"}
                       stroke={meta.color}
                       strokeWidth="0.2"
@@ -451,7 +451,7 @@ export function PortfolioMap() {
                       className="font-bold pointer-events-none"
                       fill={isHovered ? "#fff" : "#000"}
                       style={{
-                        fontSize: "0.9px",
+                        fontSize: "1.1px",
                         opacity: isHovered ? 1 : 0,
                         transition: "opacity 300ms ease-out",
                         transitionDelay: `${i * 60 + 100}ms`,

@@ -60,8 +60,30 @@ export function PortfolioMap() {
   const [isMounted, setIsMounted] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced hover to prevent jitter when the zoom transform moves nodes
+  // out from under the cursor (enter → zoom → leave → unzoom → enter loop).
+  const handleHoverEnter = (nodeId: string) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = null;
+    setHoveredNode(nodeId);
+  };
+
+  const handleHoverLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredNode(null);
+      hoverTimeoutRef.current = null;
+    }, 300);
+  };
 
   const disciplines = getDisciplines();
+
+  const hoveredDiscipline =
+    hoveredNode && hoveredNode !== "central" && hoveredNode in NODE_META
+      ? (hoveredNode as DisciplineId)
+      : null;
 
   const centerX = 50;
   const centerY = 50;
@@ -224,6 +246,13 @@ export function PortfolioMap() {
     return `M ${points.join(" L ")} Z`;
   };
 
+  // Camera-pan zoom: when hovering a discipline, pan & zoom the SVG to center on it
+  const zoomScale = 1.8;
+  const zoomPos = hoveredDiscipline ? disciplinePositions[hoveredDiscipline] : null;
+  const zoomTransform = zoomPos
+    ? `translate(${50 - zoomScale * zoomPos.x}px, ${50 - zoomScale * zoomPos.y}px) scale(${zoomScale})`
+    : "translate(0px, 0px) scale(1)";
+
   return (
     <div className="relative w-full overflow-x-hidden bg-white">
       <section className="relative h-[100svh] min-h-[560px] max-h-[900px] overflow-hidden" role="region" aria-label="Portfolio Map Explorer">
@@ -259,6 +288,13 @@ export function PortfolioMap() {
           role="img"
           aria-label="Interactive portfolio five-point discipline map"
         >
+          <g
+            style={{
+              transform: zoomTransform,
+              transition: "transform 600ms cubic-bezier(0.4, 0, 0.2, 1)",
+              transformOrigin: "50px 50px",
+            }}
+          >
           {/* Connection lines - rendered first (bottom layer) */}
           {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
             const isSelected = state.selectedNode === disciplineId;
@@ -272,13 +308,17 @@ export function PortfolioMap() {
             const centralVertices = getPentagonVertices(centerX, centerY, 15);
             const vertex = centralVertices[edgeIndex];
 
+            const lineX2 = isMounted ? pos.x : vertex.x;
+            const lineY2 = isMounted ? pos.y : vertex.y;
+            const lineOpacity = hoveredDiscipline && !isHovered ? 0.15 : 1;
+
             return (
               <line
                 key={`line-${disciplineId}`}
                 x1={vertex.x}
                 y1={vertex.y}
-                x2={isMounted ? pos.x : vertex.x}
-                y2={isMounted ? pos.y : vertex.y}
+                x2={lineX2}
+                y2={lineY2}
                 stroke={
                   isSelected || isHovered || isCentralHovered
                     ? "#000"
@@ -295,6 +335,7 @@ export function PortfolioMap() {
                 }
                 className="transition-all"
                 style={{
+                  opacity: lineOpacity,
                   transitionDuration: isMounted ? "1200ms" : "0ms",
                   transitionDelay: isMounted ? "100ms" : "0ms",
                   transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -316,7 +357,7 @@ export function PortfolioMap() {
             
             // Initial size matches central pentagon for edge-to-edge contact
             const initialSize = 15;
-            const finalSize = 7;
+            const finalSize = 10;
 
             return (
               <g
@@ -336,8 +377,8 @@ export function PortfolioMap() {
                     handleDisciplineClick(disciplineId as DisciplineId);
                   }
                 }}
-                onMouseEnter={() => setHoveredNode(disciplineId)}
-                onMouseLeave={() => setHoveredNode(null)}
+                onMouseEnter={() => handleHoverEnter(disciplineId)}
+                onMouseLeave={handleHoverLeave}
               >
                 <g
                   style={{
@@ -350,12 +391,13 @@ export function PortfolioMap() {
                   }}
                 >
                   <path
-                    d={createPentagonPath(0, 0, isMounted ? finalSize : initialSize)}
+                    d={createPentagonPath(0, 0, isHovered ? 12 : (isMounted ? finalSize : initialSize))}
                     fill={isSelected || isHovered ? "#000" : "#fff"}
                     stroke={isSelected || isHovered ? "#000" : meta.color}
                     strokeWidth={isSelected || isHovered ? "0.3" : "0.2"}
                     style={{
-                      transition: "d",
+                      opacity: hoveredDiscipline && !isHovered ? 0.2 : 1,
+                      transition: "d, opacity",
                       transitionDuration: isMounted ? "1200ms" : "0ms",
                       transitionDelay: isMounted ? "100ms" : "0ms",
                       transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -370,8 +412,8 @@ export function PortfolioMap() {
                   className="font-black uppercase tracking-wider pointer-events-none"
                   fill={isSelected || isHovered ? "#fff" : "#000"}
                   style={{ 
-                    fontSize: isMounted ? "1.4px" : "2px",
-                    opacity: textVisible ? 1 : 0,
+                    fontSize: isHovered ? "2.2px" : (isMounted ? "1.8px" : "2px"),
+                    opacity: textVisible ? (hoveredDiscipline && !isHovered ? 0.2 : 1) : 0,
                     transition: "font-size 1200ms, x 1200ms, y 1200ms, opacity 400ms",
                     transitionDelay: isMounted ? "100ms" : "0ms",
                     transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -381,6 +423,90 @@ export function PortfolioMap() {
                 </text>
               </g>
             );
+          })}
+
+          {/* Activity nodes — fade in on discipline hover */}
+          {Object.entries(disciplinePositions).flatMap(([disciplineId, pos]) => {
+            const discipline = disciplines.find((d) => d.id === disciplineId);
+            if (!discipline || discipline.activities.length === 0) return [];
+            const isHovered = hoveredNode === disciplineId;
+            const meta = NODE_META[disciplineId as DisciplineId];
+            const dx = pos.x - centerX;
+            const dy = pos.y - centerY;
+            const baseAngle = Math.atan2(dy, dx);
+            const actDistance = 16;
+            const spread = Math.PI * 0.55;
+            const n = discipline.activities.length;
+
+            return discipline.activities.map((activity, i) => {
+              const angle = n === 1
+                ? baseAngle
+                : baseAngle - spread / 2 + (i / (n - 1)) * spread;
+              const ax = pos.x + actDistance * Math.cos(angle);
+              const ay = pos.y + actDistance * Math.sin(angle);
+
+              return (
+                <g key={`activity-${activity.id}`}>
+                  {/* Connection line from discipline to activity */}
+                  <line
+                    x1={pos.x}
+                    y1={pos.y}
+                    x2={ax}
+                    y2={ay}
+                    stroke={meta.color}
+                    strokeWidth="0.15"
+                    style={{
+                      opacity: isHovered ? 0.5 : 0,
+                      transition: "opacity 300ms ease-out",
+                      transitionDelay: `${i * 60}ms`,
+                    }}
+                  />
+                  {/* Activity pentagon */}
+                  <g
+                    className="cursor-pointer"
+                    onClick={() => {
+                      window.location.href = activityHref(
+                        disciplineId as DisciplineId,
+                        activity.slug
+                      );
+                    }}
+                    onMouseEnter={() => handleHoverEnter(disciplineId)}
+                    onMouseLeave={handleHoverLeave}
+                  >
+                    <path
+                      d={createPentagonPath(ax, ay, 5)}
+                      fill={isHovered ? meta.color : "#fff"}
+                      stroke={meta.color}
+                      strokeWidth="0.2"
+                      style={{
+                        opacity: isHovered ? 1 : 0,
+                        transition: "opacity 300ms ease-out",
+                        transitionDelay: `${i * 60}ms`,
+                        pointerEvents: isHovered ? "auto" : "none",
+                      }}
+                    />
+                    <text
+                      x={ax}
+                      y={ay}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      className="font-bold pointer-events-none"
+                      fill={isHovered ? "#fff" : "#000"}
+                      style={{
+                        fontSize: "1.4px",
+                        opacity: isHovered ? 1 : 0,
+                        transition: "opacity 300ms ease-out",
+                        transitionDelay: `${i * 60 + 100}ms`,
+                      }}
+                    >
+                      {activity.name.length > 12
+                        ? activity.name.slice(0, 10) + "…"
+                        : activity.name}
+                    </text>
+                  </g>
+                </g>
+              );
+            });
           })}
 
           {/* Central pentagon - rendered last (top layer, in front) */}
@@ -400,11 +526,11 @@ export function PortfolioMap() {
                 handleCentralNodeClick();
               }
             }}
-            onMouseEnter={() => setHoveredNode("central")}
-            onMouseLeave={() => setHoveredNode(null)}
+            onMouseEnter={() => handleHoverEnter("central")}
+            onMouseLeave={handleHoverLeave}
           >
             <path
-              d={createPentagonPath(centerX, centerY, 15)}
+              d={createPentagonPath(centerX, centerY, hoveredDiscipline ? 6 : 15)}
               fill={
                 state.selectedNode === "central" || hoveredNode === "central" ? "#000" : "#fff"
               }
@@ -412,7 +538,8 @@ export function PortfolioMap() {
               strokeWidth="0.4"
               className="transition-all"
               style={{ 
-                transitionDuration: "300ms",
+                opacity: hoveredDiscipline ? 0.15 : 1,
+                transitionDuration: "400ms",
                 transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" 
               }}
             />
@@ -425,7 +552,7 @@ export function PortfolioMap() {
               fill={
                 state.selectedNode === "central" || hoveredNode === "central" ? "#fff" : "#000"
               }
-              style={{ fontSize: "2.5px" }}
+              style={{ fontSize: "2.5px", opacity: hoveredDiscipline ? 0.15 : 1, transition: "opacity 400ms" }}
             >
               RYUSEI
             </text>
@@ -438,10 +565,11 @@ export function PortfolioMap() {
               fill={
                 state.selectedNode === "central" || hoveredNode === "central" ? "#fff" : "#000"
               }
-              style={{ fontSize: "2.5px" }}
+              style={{ fontSize: "2.5px", opacity: hoveredDiscipline ? 0.15 : 1, transition: "opacity 400ms" }}
             >
               TSUKAMOTO
             </text>
+          </g>
           </g>
         </svg>
       )}

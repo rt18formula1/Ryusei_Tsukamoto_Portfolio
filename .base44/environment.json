@@ -1,0 +1,67 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "NEXT_PUBLIC_SUPABASE_URL",
+      "description": "Supabase project URL (Supabase dashboard > Project Settings > API > Project URL). Required for auth, DB queries, and most data features.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "description": "Supabase anon public key (Supabase dashboard > Project Settings > API > anon public). Paired with NEXT_PUBLIC_SUPABASE_URL.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "SUPABASE_SERVICE_ROLE_KEY",
+      "description": "Supabase service role key (Supabase dashboard > Project Settings > API > service_role). Used by admin/server-side queries.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "STRIPE_SECRET_KEY",
+      "description": "Stripe secret key (Stripe dashboard > Developers > API keys > Secret key). Required for the shop checkout flow.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "STRIPE_WEBHOOK_SECRET",
+      "description": "Stripe webhook signing secret (Stripe dashboard > Developers > Webhooks > your endpoint > Signing secret). Required to verify webhook events.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "RESEND_API_KEY",
+      "description": "Resend API key (Resend dashboard > API keys). Required for sending emails.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "OPENROUTER_API_KEY",
+      "description": "OpenRouter API key (OpenRouter dashboard > Keys). Required for AI/openrouter features.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "R2_ACCOUNT_ID",
+      "description": "Cloudflare R2 account ID (Cloudflare dashboard > R2 > Overview). Required for image uploads.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "R2_ACCESS_KEY_ID",
+      "description": "Cloudflare R2 access key ID (Cloudflare dashboard > R2 > Manage R2 API tokens). Required for image uploads.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "R2_SECRET_ACCESS_KEY",
+      "description": "Cloudflare R2 secret access key (Cloudflare dashboard > R2 > Manage R2 API tokens). Required for image uploads.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "R2_BUCKET_NAME",
+      "description": "Cloudflare R2 bucket name. Required for image uploads.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "R2_PUBLIC_URL",
+      "description": "Cloudflare R2 bucket public URL, e.g. https://pub-xxxx.r2.dev (R2 > bucket > Settings > Public access). Required for image uploads.",
+      "requiredAtBoot": false
+    }
+  ]
+}

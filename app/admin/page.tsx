@@ -300,6 +300,12 @@ export default function AdminPage() {
         onToggleOpen={() => setSidebarOpen(!sidebarOpen)}
         projectCount={projects.length}
         onSignOut={signOut}
+        hierarchy={PORTFOLIO_HIERARCHY}
+        onNavigateActivity={(disciplineId, activity) => {
+          setEditingActivity(activity);
+          setEditingActivityDisciplineId(disciplineId);
+          setCurrentTab("activities");
+        }}
       />
 
       {/* Main content */}

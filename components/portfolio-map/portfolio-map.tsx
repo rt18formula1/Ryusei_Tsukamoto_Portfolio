@@ -60,6 +60,23 @@ export function PortfolioMap() {
   const [isMounted, setIsMounted] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced hover to prevent jitter when the zoom transform moves nodes
+  // out from under the cursor (enter → zoom → leave → unzoom → enter loop).
+  const handleHoverEnter = (nodeId: string) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = null;
+    setHoveredNode(nodeId);
+  };
+
+  const handleHoverLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredNode(null);
+      hoverTimeoutRef.current = null;
+    }, 300);
+  };
 
   const disciplines = getDisciplines();
 
@@ -360,8 +377,8 @@ export function PortfolioMap() {
                     handleDisciplineClick(disciplineId as DisciplineId);
                   }
                 }}
-                onMouseEnter={() => setHoveredNode(disciplineId)}
-                onMouseLeave={() => setHoveredNode(null)}
+                onMouseEnter={() => handleHoverEnter(disciplineId)}
+                onMouseLeave={handleHoverLeave}
               >
                 <g
                   style={{
@@ -453,8 +470,8 @@ export function PortfolioMap() {
                         activity.slug
                       );
                     }}
-                    onMouseEnter={() => setHoveredNode(disciplineId)}
-                    onMouseLeave={() => setHoveredNode(null)}
+                    onMouseEnter={() => handleHoverEnter(disciplineId)}
+                    onMouseLeave={handleHoverLeave}
                   >
                     <path
                       d={createPentagonPath(ax, ay, 5)}
@@ -509,8 +526,8 @@ export function PortfolioMap() {
                 handleCentralNodeClick();
               }
             }}
-            onMouseEnter={() => setHoveredNode("central")}
-            onMouseLeave={() => setHoveredNode(null)}
+            onMouseEnter={() => handleHoverEnter("central")}
+            onMouseLeave={handleHoverLeave}
           >
             <path
               d={createPentagonPath(centerX, centerY, hoveredDiscipline ? 6 : 15)}

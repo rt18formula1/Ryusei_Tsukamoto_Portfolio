@@ -63,6 +63,11 @@ export function PortfolioMap() {
 
   const disciplines = getDisciplines();
 
+  const hoveredDiscipline =
+    hoveredNode && hoveredNode !== "central" && hoveredNode in NODE_META
+      ? (hoveredNode as DisciplineId)
+      : null;
+
   const centerX = 50;
   const centerY = 50;
 
@@ -272,13 +277,17 @@ export function PortfolioMap() {
             const centralVertices = getPentagonVertices(centerX, centerY, 15);
             const vertex = centralVertices[edgeIndex];
 
+            const lineX2 = isHovered ? centerX : (isMounted ? pos.x : vertex.x);
+            const lineY2 = isHovered ? centerY : (isMounted ? pos.y : vertex.y);
+            const lineOpacity = hoveredDiscipline && !isHovered ? 0.15 : 1;
+
             return (
               <line
                 key={`line-${disciplineId}`}
                 x1={vertex.x}
                 y1={vertex.y}
-                x2={isMounted ? pos.x : vertex.x}
-                y2={isMounted ? pos.y : vertex.y}
+                x2={lineX2}
+                y2={lineY2}
                 stroke={
                   isSelected || isHovered || isCentralHovered
                     ? "#000"
@@ -295,6 +304,7 @@ export function PortfolioMap() {
                 }
                 className="transition-all"
                 style={{
+                  opacity: lineOpacity,
                   transitionDuration: isMounted ? "1200ms" : "0ms",
                   transitionDelay: isMounted ? "100ms" : "0ms",
                   transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -341,7 +351,7 @@ export function PortfolioMap() {
               >
                 <g
                   style={{
-                    transform: `translate(${isMounted ? pos.x : initialPos.x}px, ${isMounted ? pos.y : initialPos.y}px) rotate(${rotation}deg)`,
+                    transform: `translate(${isHovered ? centerX : (isMounted ? pos.x : initialPos.x)}px, ${isHovered ? centerY : (isMounted ? pos.y : initialPos.y)}px) rotate(${rotation}deg)`,
                     transformOrigin: "center",
                     transition: "transform",
                     transitionDuration: isMounted ? "1200ms" : "0ms",
@@ -350,12 +360,13 @@ export function PortfolioMap() {
                   }}
                 >
                   <path
-                    d={createPentagonPath(0, 0, isMounted ? finalSize : initialSize)}
+                    d={createPentagonPath(0, 0, isHovered ? 12 : (isMounted ? finalSize : initialSize))}
                     fill={isSelected || isHovered ? "#000" : "#fff"}
                     stroke={isSelected || isHovered ? "#000" : meta.color}
                     strokeWidth={isSelected || isHovered ? "0.3" : "0.2"}
                     style={{
-                      transition: "d",
+                      opacity: hoveredDiscipline && !isHovered ? 0.2 : 1,
+                      transition: "d, opacity",
                       transitionDuration: isMounted ? "1200ms" : "0ms",
                       transitionDelay: isMounted ? "100ms" : "0ms",
                       transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -363,15 +374,15 @@ export function PortfolioMap() {
                   />
                 </g>
                 <text
-                  x={isMounted ? pos.x : initialPos.x}
-                  y={isMounted ? pos.y : initialPos.y}
+                  x={isHovered ? centerX : (isMounted ? pos.x : initialPos.x)}
+                  y={isHovered ? centerY : (isMounted ? pos.y : initialPos.y)}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   className="font-black uppercase tracking-wider pointer-events-none"
                   fill={isSelected || isHovered ? "#fff" : "#000"}
                   style={{ 
-                    fontSize: isMounted ? "1.8px" : "2px",
-                    opacity: textVisible ? 1 : 0,
+                    fontSize: isHovered ? "2.2px" : (isMounted ? "1.8px" : "2px"),
+                    opacity: textVisible ? (hoveredDiscipline && !isHovered ? 0.2 : 1) : 0,
                     transition: "font-size 1200ms, x 1200ms, y 1200ms, opacity 400ms",
                     transitionDelay: isMounted ? "100ms" : "0ms",
                     transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -392,7 +403,7 @@ export function PortfolioMap() {
             const dx = pos.x - centerX;
             const dy = pos.y - centerY;
             const baseAngle = Math.atan2(dy, dx);
-            const distance = 20;
+            const actDistance = 16;
             const spread = Math.PI * 0.55;
             const n = discipline.activities.length;
 
@@ -400,15 +411,17 @@ export function PortfolioMap() {
               const angle = n === 1
                 ? baseAngle
                 : baseAngle - spread / 2 + (i / (n - 1)) * spread;
-              const ax = pos.x + distance * Math.cos(angle);
-              const ay = pos.y + distance * Math.sin(angle);
+              const actCx = isHovered ? centerX : pos.x;
+              const actCy = isHovered ? centerY : pos.y;
+              const ax = actCx + actDistance * Math.cos(angle);
+              const ay = actCy + actDistance * Math.sin(angle);
 
               return (
                 <g key={`activity-${activity.id}`}>
                   {/* Connection line from discipline to activity */}
                   <line
-                    x1={pos.x}
-                    y1={pos.y}
+                    x1={isHovered ? centerX : pos.x}
+                    y1={isHovered ? centerY : pos.y}
                     x2={ax}
                     y2={ay}
                     stroke={meta.color}
@@ -432,7 +445,7 @@ export function PortfolioMap() {
                     onMouseLeave={() => setHoveredNode(null)}
                   >
                     <path
-                      d={createPentagonPath(ax, ay, 6.5)}
+                      d={createPentagonPath(ax, ay, 5)}
                       fill={isHovered ? meta.color : "#fff"}
                       stroke={meta.color}
                       strokeWidth="0.2"
@@ -488,7 +501,7 @@ export function PortfolioMap() {
             onMouseLeave={() => setHoveredNode(null)}
           >
             <path
-              d={createPentagonPath(centerX, centerY, 15)}
+              d={createPentagonPath(centerX, centerY, hoveredDiscipline ? 6 : 15)}
               fill={
                 state.selectedNode === "central" || hoveredNode === "central" ? "#000" : "#fff"
               }
@@ -496,7 +509,8 @@ export function PortfolioMap() {
               strokeWidth="0.4"
               className="transition-all"
               style={{ 
-                transitionDuration: "300ms",
+                opacity: hoveredDiscipline ? 0.15 : 1,
+                transitionDuration: "400ms",
                 transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" 
               }}
             />
@@ -509,7 +523,7 @@ export function PortfolioMap() {
               fill={
                 state.selectedNode === "central" || hoveredNode === "central" ? "#fff" : "#000"
               }
-              style={{ fontSize: "2.5px" }}
+              style={{ fontSize: "2.5px", opacity: hoveredDiscipline ? 0.15 : 1, transition: "opacity 400ms" }}
             >
               RYUSEI
             </text>
@@ -522,7 +536,7 @@ export function PortfolioMap() {
               fill={
                 state.selectedNode === "central" || hoveredNode === "central" ? "#fff" : "#000"
               }
-              style={{ fontSize: "2.5px" }}
+              style={{ fontSize: "2.5px", opacity: hoveredDiscipline ? 0.15 : 1, transition: "opacity 400ms" }}
             >
               TSUKAMOTO
             </text>

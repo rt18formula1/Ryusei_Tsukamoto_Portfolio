@@ -229,6 +229,13 @@ export function PortfolioMap() {
     return `M ${points.join(" L ")} Z`;
   };
 
+  // Camera-pan zoom: when hovering a discipline, pan & zoom the SVG to center on it
+  const zoomScale = 1.8;
+  const zoomPos = hoveredDiscipline ? disciplinePositions[hoveredDiscipline] : null;
+  const zoomTransform = zoomPos
+    ? `translate(${50 - zoomScale * zoomPos.x}px, ${50 - zoomScale * zoomPos.y}px) scale(${zoomScale})`
+    : "translate(0px, 0px) scale(1)";
+
   return (
     <div className="relative w-full overflow-x-hidden bg-white">
       <section className="relative h-[100svh] min-h-[560px] max-h-[900px] overflow-hidden" role="region" aria-label="Portfolio Map Explorer">
@@ -264,6 +271,13 @@ export function PortfolioMap() {
           role="img"
           aria-label="Interactive portfolio five-point discipline map"
         >
+          <g
+            style={{
+              transform: zoomTransform,
+              transition: "transform 600ms cubic-bezier(0.4, 0, 0.2, 1)",
+              transformOrigin: "50px 50px",
+            }}
+          >
           {/* Connection lines - rendered first (bottom layer) */}
           {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
             const isSelected = state.selectedNode === disciplineId;
@@ -277,8 +291,8 @@ export function PortfolioMap() {
             const centralVertices = getPentagonVertices(centerX, centerY, 15);
             const vertex = centralVertices[edgeIndex];
 
-            const lineX2 = isHovered ? centerX : (isMounted ? pos.x : vertex.x);
-            const lineY2 = isHovered ? centerY : (isMounted ? pos.y : vertex.y);
+            const lineX2 = isMounted ? pos.x : vertex.x;
+            const lineY2 = isMounted ? pos.y : vertex.y;
             const lineOpacity = hoveredDiscipline && !isHovered ? 0.15 : 1;
 
             return (
@@ -351,7 +365,7 @@ export function PortfolioMap() {
               >
                 <g
                   style={{
-                    transform: `translate(${isHovered ? centerX : (isMounted ? pos.x : initialPos.x)}px, ${isHovered ? centerY : (isMounted ? pos.y : initialPos.y)}px) rotate(${rotation}deg)`,
+                    transform: `translate(${isMounted ? pos.x : initialPos.x}px, ${isMounted ? pos.y : initialPos.y}px) rotate(${rotation}deg)`,
                     transformOrigin: "center",
                     transition: "transform",
                     transitionDuration: isMounted ? "1200ms" : "0ms",
@@ -374,8 +388,8 @@ export function PortfolioMap() {
                   />
                 </g>
                 <text
-                  x={isHovered ? centerX : (isMounted ? pos.x : initialPos.x)}
-                  y={isHovered ? centerY : (isMounted ? pos.y : initialPos.y)}
+                  x={isMounted ? pos.x : initialPos.x}
+                  y={isMounted ? pos.y : initialPos.y}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   className="font-black uppercase tracking-wider pointer-events-none"
@@ -411,17 +425,15 @@ export function PortfolioMap() {
               const angle = n === 1
                 ? baseAngle
                 : baseAngle - spread / 2 + (i / (n - 1)) * spread;
-              const actCx = isHovered ? centerX : pos.x;
-              const actCy = isHovered ? centerY : pos.y;
-              const ax = actCx + actDistance * Math.cos(angle);
-              const ay = actCy + actDistance * Math.sin(angle);
+              const ax = pos.x + actDistance * Math.cos(angle);
+              const ay = pos.y + actDistance * Math.sin(angle);
 
               return (
                 <g key={`activity-${activity.id}`}>
                   {/* Connection line from discipline to activity */}
                   <line
-                    x1={isHovered ? centerX : pos.x}
-                    y1={isHovered ? centerY : pos.y}
+                    x1={pos.x}
+                    y1={pos.y}
                     x2={ax}
                     y2={ay}
                     stroke={meta.color}
@@ -540,6 +552,7 @@ export function PortfolioMap() {
             >
               TSUKAMOTO
             </text>
+          </g>
           </g>
         </svg>
       )}

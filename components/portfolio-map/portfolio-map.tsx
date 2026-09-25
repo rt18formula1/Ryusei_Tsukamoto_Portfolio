@@ -10,7 +10,7 @@ import {
   contentHref,
 } from "@/lib/portfolio-hierarchy";
 import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
-import { HierarchyHoverPanel } from "@/components/portfolio-map/hierarchy-hover-panel";
+import { HierarchyMapNodes } from "@/components/portfolio-map/hierarchy-map-nodes";
 import type { BreadcrumbItem, Discipline } from "@/types/portfolio-hierarchy";
 import { getDevProjects } from "@/lib/supabase-queries";
 import { buildUnifiedHierarchy } from "@/lib/admin-hierarchy-service";
@@ -476,13 +476,20 @@ export function PortfolioMap() {
               TSUKAMOTO
             </text>
           </g>
+          {/* Hovered discipline's child hierarchy rendered as map nodes */}
+          {focusPosition && hoveredDiscipline && (
+            <HierarchyMapNodes
+              discipline={hoveredDiscipline}
+              disciplinePos={focusPosition}
+              centerX={centerX}
+              centerY={centerY}
+            />
+          )}
           </g>
         </svg>
       )}
 
-      {state.viewMode === "map" && (
-        <HierarchyHoverPanel discipline={hoveredDiscipline} />
-      )}
+
 
       {state.viewMode === "list" && (
         <div className="mx-auto h-full max-w-4xl overflow-y-auto px-3 pb-12 pt-20 sm:px-6 sm:pt-24">

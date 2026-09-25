@@ -10,7 +10,11 @@ import {
   contentHref,
 } from "@/lib/portfolio-hierarchy";
 import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
-import type { BreadcrumbItem } from "@/types/portfolio-hierarchy";
+import { HierarchyHoverPanel } from "@/components/portfolio-map/hierarchy-hover-panel";
+import type { BreadcrumbItem, Discipline } from "@/types/portfolio-hierarchy";
+import { getDevProjects } from "@/lib/supabase-queries";
+import { buildUnifiedHierarchy } from "@/lib/admin-hierarchy-service";
+import { projectIsPublished } from "@/lib/portfolio-projects";
 
 const NODE_META: Record<DisciplineId, { label: string; color: string }> = {
   developer: { label: "Developer", color: "#2563eb" },
@@ -59,6 +63,7 @@ export function PortfolioMap() {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
+  const [liveDisciplines, setLiveDisciplines] = useState<Discipline[]>([]);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const disciplines = getDisciplines();
@@ -74,9 +79,13 @@ export function PortfolioMap() {
     blogger: { x: 25, y: 78 },
     investor: { x: 18, y: 35 },
   };
-  const focusPosition = hoveredNode === "central"
-    ? { x: centerX, y: centerY }
-    : hoveredNode ? disciplinePositions[hoveredNode as DisciplineId] : null;
+  const focusPosition = hoveredNode && hoveredNode !== "central"
+    ? disciplinePositions[hoveredNode as DisciplineId]
+    : null;
+
+  const hoveredDiscipline = hoveredNode && hoveredNode !== "central"
+    ? liveDisciplines.find((d) => d.id === hoveredNode) || null
+    : null;
 
   // Calculate pentagon vertices
   const getPentagonVertices = (cx: number, cy: number, size: number) => {
@@ -172,6 +181,19 @@ export function PortfolioMap() {
     // Text fade-in after pentagons start expanding
     const textTimer = setTimeout(() => setTextVisible(true), 800);
     return () => clearTimeout(textTimer);
+  }, []);
+
+  // Fetch live hierarchy from Supabase (reflects Admin edits)
+  useEffect(() => {
+    getDevProjects()
+      .then((projects) => {
+        const published = projects.filter(projectIsPublished);
+        setLiveDisciplines(buildUnifiedHierarchy(published).disciplines);
+      })
+      .catch(() => {
+        // Fallback: use static hierarchy
+        setLiveDisciplines(getDisciplines());
+      });
   }, []);
 
   const breadcrumbItems: BreadcrumbItem[] = state.breadcrumb.map((label, index) => {
@@ -456,6 +478,10 @@ export function PortfolioMap() {
           </g>
           </g>
         </svg>
+      )}
+
+      {state.viewMode === "map" && (
+        <HierarchyHoverPanel discipline={hoveredDiscipline} />
       )}
 
       {state.viewMode === "list" && (

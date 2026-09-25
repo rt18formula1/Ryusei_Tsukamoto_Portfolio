@@ -1,11 +1,5 @@
 import { PORTFOLIO_HIERARCHY } from "./portfolio-hierarchy/data";
-import type {
-  PortfolioHierarchy,
-  Discipline,
-  Activity,
-  HierarchyContent,
-  DisciplineId,
-} from "@/types/portfolio-hierarchy";
+import type { PortfolioHierarchy } from "@/types/portfolio-hierarchy";
 import type { DbDevProject } from "./supabase-queries";
 import { projectContent, projectIsPublished } from "./portfolio-projects";
 
@@ -24,26 +18,27 @@ export interface HierarchyStats {
 export function buildUnifiedHierarchy(dbProjects: DbDevProject[] = []): PortfolioHierarchy {
   const baseHierarchy = structuredClone(PORTFOLIO_HIERARCHY);
 
-  const developerDiscipline = baseHierarchy.disciplines.find((d) => d.id === "developer");
-  if (developerDiscipline) {
-    let rt18Dev = developerDiscipline.activities.find((a) => a.id === "rt18-dev");
-    if (!rt18Dev) {
-      rt18Dev = {
-        id: "rt18-dev",
-        name: "rt18_dev",
-        slug: "rt18-dev",
-        disciplineId: "developer",
+  for (const project of dbProjects) {
+    const discipline = baseHierarchy.disciplines.find((d) => d.id === project.discipline_id);
+    if (!discipline) continue;
+
+    // Use the first activity, or create a default one if the discipline has none
+    let activity = discipline.activities[0];
+    if (!activity) {
+      activity = {
+        id: `${discipline.id}-projects`,
+        name: `${discipline.name} Projects`,
+        slug: `${discipline.slug}-projects`,
+        disciplineId: discipline.id,
         contentType: "project",
         contents: [],
       };
-      developerDiscipline.activities.unshift(rt18Dev);
+      discipline.activities.push(activity);
     }
 
-    const existingIds = new Set(rt18Dev.contents.map((c) => c.projectId || c.id));
-    for (const project of dbProjects) {
-      if (!existingIds.has(project.id)) {
-        rt18Dev.contents.push(projectContent(project));
-      }
+    const existingIds = new Set(activity.contents.map((c) => c.projectId || c.id));
+    if (!existingIds.has(project.id)) {
+      activity.contents.push(projectContent(project));
     }
   }
 

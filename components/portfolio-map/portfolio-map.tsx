@@ -65,6 +65,7 @@ export function PortfolioMap() {
 
   const centerX = 50;
   const centerY = 50;
+  const hoverZoom = 1.8;
 
   const disciplinePositions: Record<DisciplineId, { x: number; y: number }> = {
     developer: { x: 50, y: 18 },
@@ -73,6 +74,9 @@ export function PortfolioMap() {
     blogger: { x: 25, y: 78 },
     investor: { x: 18, y: 35 },
   };
+  const focusPosition = hoveredNode === "central"
+    ? { x: centerX, y: centerY }
+    : hoveredNode ? disciplinePositions[hoveredNode as DisciplineId] : null;
 
   // Calculate pentagon vertices
   const getPentagonVertices = (cx: number, cy: number, size: number) => {
@@ -258,14 +262,23 @@ export function PortfolioMap() {
           preserveAspectRatio="xMidYMid meet"
           role="img"
           aria-label="Interactive portfolio five-point discipline map"
+          onMouseLeave={() => setHoveredNode(null)}
         >
+          <g
+            style={{
+              transform: focusPosition
+                ? `translate(${centerX - focusPosition.x * hoverZoom}px, ${centerY - focusPosition.y * hoverZoom}px) scale(${hoverZoom})`
+                : "translate(0px, 0px) scale(1)",
+              transformOrigin: "0 0",
+              transition: "transform 500ms cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+          >
           {/* Connection lines - rendered first (bottom layer) */}
           {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
             const isSelected = state.selectedNode === disciplineId;
             const isHovered = hoveredNode === disciplineId;
             const isCentralSelected = state.selectedNode === "central";
             const isCentralHovered = hoveredNode === "central";
-            const initialPos = initialPositions[disciplineId as DisciplineId];
             const edgeIndex = disciplineEdgeMap[disciplineId as DisciplineId];
             
             // Calculate vertex for line start (from central pentagon vertex)
@@ -337,7 +350,6 @@ export function PortfolioMap() {
                   }
                 }}
                 onMouseEnter={() => setHoveredNode(disciplineId)}
-                onMouseLeave={() => setHoveredNode(null)}
               >
                 <g
                   style={{
@@ -401,7 +413,6 @@ export function PortfolioMap() {
               }
             }}
             onMouseEnter={() => setHoveredNode("central")}
-            onMouseLeave={() => setHoveredNode(null)}
           >
             <path
               d={createPentagonPath(centerX, centerY, 15)}
@@ -442,6 +453,7 @@ export function PortfolioMap() {
             >
               TSUKAMOTO
             </text>
+          </g>
           </g>
         </svg>
       )}

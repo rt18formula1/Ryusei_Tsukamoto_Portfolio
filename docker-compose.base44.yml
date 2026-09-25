@@ -1,0 +1,17 @@
+services:
+  web:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - .:/app
+      - base44_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
+      BASE44_PUBLIC_HOST_SUFFIX: ${BASE44_PUBLIC_HOST_SUFFIX}
+      WATCHPACK_POLLING: "true"
+    command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
+volumes:
+  base44_node_modules:

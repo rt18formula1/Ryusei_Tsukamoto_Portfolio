@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 import type { Discipline, Activity } from "@/types/portfolio-hierarchy";
+import type { DisciplineId } from "@/types/portfolio-map";
+import { activityHref, contentHref } from "@/lib/portfolio-hierarchy";
 
 interface HierarchyMapNodesProps {
   discipline: Discipline | null;
@@ -20,14 +22,21 @@ const DISCIPLINE_SIZE = 7; // matches the discipline pentagon in the main map
 interface TreeNode {
   id: string;
   name: string;
+  href: string;
   children: TreeNode[];
 }
 
-function toTree(activity: Activity): TreeNode {
+function toTree(activity: Activity, disciplineId: DisciplineId): TreeNode {
   return {
     id: activity.id,
     name: activity.name,
-    children: activity.contents.map((c) => ({ id: c.id, name: c.name, children: [] })),
+    href: activityHref(disciplineId, activity.slug),
+    children: activity.contents.map((c) => ({
+      id: c.id,
+      name: c.name,
+      href: contentHref(disciplineId, activity.slug, c.slug),
+      children: [],
+    })),
   };
 }
 
@@ -121,7 +130,15 @@ function renderNode(
   const fs = fitFont(node.name, size);
 
   return (
-    <g key={node.id}>
+    <g
+      key={node.id}
+      className="cursor-pointer"
+      role="link"
+      aria-label={node.name}
+      onClick={() => {
+        window.location.href = node.href;
+      }}
+    >
       <path
         d={pentagonPath(pos.x, pos.y, size)}
         fill={color}
@@ -205,7 +222,7 @@ export function HierarchyMapNodes({
 
       {/* Render each activity (and its children) recursively as pentagons */}
       {acts.map((a, i) =>
-        renderNode(toTree(a), actPos[i], actSize, discipline.color, centerX, centerY)
+        renderNode(toTree(a, discipline.id), actPos[i], actSize, discipline.color, centerX, centerY)
       )}
     </g>
   );

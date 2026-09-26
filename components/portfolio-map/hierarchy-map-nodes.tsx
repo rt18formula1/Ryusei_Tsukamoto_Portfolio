@@ -1,6 +1,7 @@
 "use client";
 
-import type { Discipline } from "@/types/portfolio-hierarchy";
+import type { ReactNode } from "react";
+import type { Discipline, Activity } from "@/types/portfolio-hierarchy";
 
 interface HierarchyMapNodesProps {
   discipline: Discipline | null;
@@ -9,32 +10,161 @@ interface HierarchyMapNodesProps {
   centerY: number;
 }
 
-const ACTIVITY_SIZE = 3.5;
-const ACTIVITY_DISTANCE = 10;
-const ACTIVITY_SPREAD = 7;
-const CONTENT_RADIUS = 1.3;
-const CONTENT_DISTANCE = 6.5;
-const CONTENT_SPREAD = 4;
+/** Pentagon vertex angles in radians (matches createPentagonPath: i*72-90) */
+const VERTEX_ANGLES = [-90, -18, 54, 126, 198].map((a) => (a * Math.PI) / 180);
 
-function createPentagonPath(cx: number, cy: number, size: number) {
-  const points: string[] = [];
-  for (let i = 0; i < 5; i++) {
-    const angle = (i * 72 - 90) * (Math.PI / 180);
-    const x = cx + size * Math.cos(angle);
-    const y = cy + size * Math.sin(angle);
-    points.push(`${x},${y}`);
-  }
-  return `M ${points.join(" L ")} Z`;
+const SIZE_RATIO = 0.72; // child pentagon / parent pentagon
+const GAP = 1.5; // space between parent edge and child edge
+const DISCIPLINE_SIZE = 7; // matches the discipline pentagon in the main map
+
+interface TreeNode {
+  id: string;
+  name: string;
+  children: TreeNode[];
 }
 
-function truncate(name: string, max: number) {
-  return name.length > max ? name.slice(0, max - 1) + "…" : name;
+function toTree(activity: Activity): TreeNode {
+  return {
+    id: activity.id,
+    name: activity.name,
+    children: activity.contents.map((c) => ({ id: c.id, name: c.name, children: [] })),
+  };
+}
+
+function pentagonPath(cx: number, cy: number, size: number): string {
+  const pts = VERTEX_ANGLES.map(
+    (a) => `${cx + size * Math.cos(a)},${cy + size * Math.sin(a)}`
+  );
+  return `M ${pts.join(" L ")} Z`;
+}
+
+/** Find the pentagon vertex closest to the outward direction from map center. */
+function outwardVertex(
+  center: { x: number; y: number },
+  size: number,
+  angle: number
+): { x: number; y: number } {
+  let best = 0;
+  let bestDiff = Infinity;
+  for (let i = 0; i < 5; i++) {
+    let d = VERTEX_ANGLES[i] - angle;
+    while (d > Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    d = Math.abs(d);
+    if (d < bestDiff) {
+      bestDiff = d;
+      best = i;
+    }
+  }
+  return {
+    x: center.x + size * Math.cos(VERTEX_ANGLES[best]),
+    y: center.y + size * Math.sin(VERTEX_ANGLES[best]),
+  };
+}
+
+/** Calculate a font size that fits the text inside the pentagon (no truncation). */
+function fitFont(text: string, size: number): number {
+  const maxFont = size * 0.2;
+  const availableWidth = size * 1.5; // ~inscribed circle diameter
+  const charWidthRatio = 0.55;
+  const calculated = availableWidth / (text.length * charWidthRatio);
+  return Math.min(maxFont, Math.max(0.25, calculated));
+}
+
+/** Position children radiating outward from the parent's outward vertex. */
+function childPositions(
+  vertex: { x: number; y: number },
+  parentCenter: { x: number; y: number },
+  childSize: number,
+  count: number,
+  cx: number,
+  cy: number
+): { x: number; y: number }[] {
+  const dx = parentCenter.x - cx;
+  const dy = parentCenter.y - cy;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const dirX = dx / len;
+  const dirY = dy / len;
+  const perpX = -dirY;
+  const perpY = dirX;
+
+  const dist = childSize + GAP;
+  const spread = Math.max(childSize * 2.5, count * childSize * 0.9);
+
+  return Array.from({ length: count }, (_, i) => {
+    const t = count === 1 ? 0 : (i / (count - 1) - 0.5) * 2;
+    return {
+      x: vertex.x + dirX * dist + perpX * t * spread,
+      y: vertex.y + dirY * dist + perpY * t * spread,
+    };
+  });
+}
+
+/** Recursively render a node as a pentagon with lines to its children. */
+function renderNode(
+  node: TreeNode,
+  pos: { x: number; y: number },
+  size: number,
+  color: string,
+  cx: number,
+  cy: number
+): ReactNode {
+  const childSize = size * SIZE_RATIO;
+  const kids = node.children;
+
+  const angle = Math.atan2(pos.y - cy, pos.x - cx);
+  const v = outwardVertex(pos, size, angle);
+  const cps =
+    kids.length > 0
+      ? childPositions(v, pos, childSize, kids.length, cx, cy)
+      : [];
+  const fs = fitFont(node.name, size);
+
+  return (
+    <g key={node.id}>
+      <path
+        d={pentagonPath(pos.x, pos.y, size)}
+        fill={color}
+        stroke={color}
+        strokeWidth="0.2"
+      />
+      <text
+        x={pos.x}
+        y={pos.y}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        className="font-bold pointer-events-none"
+        fill="#fff"
+        style={{ fontSize: `${fs}px` }}
+      >
+        {node.name}
+      </text>
+
+      {/* Lines from this node's outward vertex to each child */}
+      {kids.map((kid, i) => (
+        <line
+          key={`l-${kid.id}`}
+          x1={v.x}
+          y1={v.y}
+          x2={cps[i].x}
+          y2={cps[i].y}
+          stroke={color}
+          strokeWidth="0.15"
+          opacity="0.55"
+        />
+      ))}
+
+      {/* Render children recursively */}
+      {kids.map((kid, i) =>
+        renderNode(kid, cps[i], childSize, color, cx, cy)
+      )}
+    </g>
+  );
 }
 
 /**
- * Renders the hovered discipline's child hierarchy (activities → contents)
- * as additional nodes directly on the SVG map, radiating outward from the
- * discipline pentagon.
+ * Renders the hovered discipline's child hierarchy (activities → contents → …)
+ * as pentagon nodes on the SVG map, with lines growing from pentagon vertices.
  */
 export function HierarchyMapNodes({
   discipline,
@@ -44,125 +174,39 @@ export function HierarchyMapNodes({
 }: HierarchyMapNodesProps) {
   if (!discipline || discipline.activities.length === 0) return null;
 
-  // Outward direction from map center → discipline
-  const dx = disciplinePos.x - centerX;
-  const dy = disciplinePos.y - centerY;
-  const len = Math.sqrt(dx * dx + dy * dy) || 1;
-  const dirX = dx / len;
-  const dirY = dy / len;
-  const perpX = -dirY;
-  const perpY = dirX;
-
-  const activities = discipline.activities;
-
-  const activityPositions = activities.map((_a, i) => {
-    const t = activities.length === 1 ? 0 : (i / (activities.length - 1) - 0.5) * 2;
-    return {
-      x: disciplinePos.x + dirX * ACTIVITY_DISTANCE + perpX * t * ACTIVITY_SPREAD,
-      y: disciplinePos.y + dirY * ACTIVITY_DISTANCE + perpY * t * ACTIVITY_SPREAD,
-    };
-  });
+  const actSize = DISCIPLINE_SIZE * SIZE_RATIO;
+  const angle = Math.atan2(disciplinePos.y - centerY, disciplinePos.x - centerX);
+  const dVertex = outwardVertex(disciplinePos, DISCIPLINE_SIZE, angle);
+  const acts = discipline.activities;
+  const actPos = childPositions(
+    dVertex,
+    disciplinePos,
+    actSize,
+    acts.length,
+    centerX,
+    centerY
+  );
 
   return (
     <g style={{ opacity: 1, transition: "opacity 300ms ease" }}>
-      {/* Lines: discipline → activities */}
-      {activities.map((activity, i) => (
+      {/* Lines from discipline pentagon's outward vertex to each activity */}
+      {acts.map((a, i) => (
         <line
-          key={`line-act-${activity.id}`}
-          x1={disciplinePos.x}
-          y1={disciplinePos.y}
-          x2={activityPositions[i].x}
-          y2={activityPositions[i].y}
+          key={`l-${a.id}`}
+          x1={dVertex.x}
+          y1={dVertex.y}
+          x2={actPos[i].x}
+          y2={actPos[i].y}
           stroke={discipline.color}
           strokeWidth="0.15"
           opacity="0.55"
         />
       ))}
 
-      {/* Activities + their contents */}
-      {activities.map((activity, i) => {
-        const actPos = activityPositions[i];
-        const contents = activity.contents;
-
-        // Outward direction from center → activity (for content fan-out)
-        const cdx = actPos.x - centerX;
-        const cdy = actPos.y - centerY;
-        const cLen = Math.sqrt(cdx * cdx + cdy * cdy) || 1;
-        const cDirX = cdx / cLen;
-        const cDirY = cdy / cLen;
-        const cPerpX = -cDirY;
-        const cPerpY = cDirX;
-
-        const contentPositions = contents.map((_c, j) => {
-          const t = contents.length === 1 ? 0 : (j / (contents.length - 1) - 0.5) * 2;
-          return {
-            x: actPos.x + cDirX * CONTENT_DISTANCE + cPerpX * t * CONTENT_SPREAD,
-            y: actPos.y + cDirY * CONTENT_DISTANCE + cPerpY * t * CONTENT_SPREAD,
-          };
-        });
-
-        return (
-          <g key={`act-${activity.id}`}>
-            {/* Activity pentagon */}
-            <path
-              d={createPentagonPath(actPos.x, actPos.y, ACTIVITY_SIZE)}
-              fill={discipline.color}
-              stroke={discipline.color}
-              strokeWidth="0.2"
-            />
-            <text
-              x={actPos.x}
-              y={actPos.y}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="font-bold pointer-events-none"
-              fill="#fff"
-              style={{ fontSize: "0.9px" }}
-            >
-              {truncate(activity.name, 12)}
-            </text>
-
-            {/* Lines: activity → contents */}
-            {contents.map((content, j) => (
-              <line
-                key={`line-con-${content.id}`}
-                x1={actPos.x}
-                y1={actPos.y}
-                x2={contentPositions[j].x}
-                y2={contentPositions[j].y}
-                stroke={discipline.color}
-                strokeWidth="0.1"
-                opacity="0.4"
-              />
-            ))}
-
-            {/* Content circles */}
-            {contents.map((content, j) => (
-              <g key={`con-${content.id}`}>
-                <circle
-                  cx={contentPositions[j].x}
-                  cy={contentPositions[j].y}
-                  r={CONTENT_RADIUS}
-                  fill="#fff"
-                  stroke={discipline.color}
-                  strokeWidth="0.15"
-                />
-                <text
-                  x={contentPositions[j].x}
-                  y={contentPositions[j].y}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  className="font-medium pointer-events-none"
-                  fill="#000"
-                  style={{ fontSize: "0.65px" }}
-                >
-                  {truncate(content.name, 10)}
-                </text>
-              </g>
-            ))}
-          </g>
-        );
-      })}
+      {/* Render each activity (and its children) recursively as pentagons */}
+      {acts.map((a, i) =>
+        renderNode(toTree(a), actPos[i], actSize, discipline.color, centerX, centerY)
+      )}
     </g>
   );
 }

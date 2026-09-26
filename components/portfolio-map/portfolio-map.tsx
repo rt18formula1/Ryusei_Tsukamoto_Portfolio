@@ -10,7 +10,11 @@ import {
   contentHref,
 } from "@/lib/portfolio-hierarchy";
 import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
-import type { BreadcrumbItem } from "@/types/portfolio-hierarchy";
+import { HierarchyMapNodes } from "@/components/portfolio-map/hierarchy-map-nodes";
+import type { BreadcrumbItem, Discipline } from "@/types/portfolio-hierarchy";
+import { getDevProjects } from "@/lib/supabase-queries";
+import { buildUnifiedHierarchy } from "@/lib/admin-hierarchy-service";
+import { projectIsPublished } from "@/lib/portfolio-projects";
 
 const NODE_META: Record<DisciplineId, { label: string; color: string }> = {
   developer: { label: "Developer", color: "#2563eb" },
@@ -59,12 +63,14 @@ export function PortfolioMap() {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
+  const [liveDisciplines, setLiveDisciplines] = useState<Discipline[]>([]);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const disciplines = getDisciplines();
 
   const centerX = 50;
   const centerY = 50;
+  const hoverZoom = 1.8;
 
   const disciplinePositions: Record<DisciplineId, { x: number; y: number }> = {
     developer: { x: 50, y: 18 },
@@ -73,6 +79,13 @@ export function PortfolioMap() {
     blogger: { x: 25, y: 78 },
     investor: { x: 18, y: 35 },
   };
+  const focusPosition = hoveredNode && hoveredNode !== "central"
+    ? disciplinePositions[hoveredNode as DisciplineId]
+    : null;
+
+  const hoveredDiscipline = hoveredNode && hoveredNode !== "central"
+    ? liveDisciplines.find((d) => d.id === hoveredNode) || null
+    : null;
 
   // Calculate pentagon vertices
   const getPentagonVertices = (cx: number, cy: number, size: number) => {
@@ -170,6 +183,19 @@ export function PortfolioMap() {
     return () => clearTimeout(textTimer);
   }, []);
 
+  // Fetch live hierarchy from Supabase (reflects Admin edits)
+  useEffect(() => {
+    getDevProjects()
+      .then((projects) => {
+        const published = projects.filter(projectIsPublished);
+        setLiveDisciplines(buildUnifiedHierarchy(published).disciplines);
+      })
+      .catch(() => {
+        // Fallback: use static hierarchy
+        setLiveDisciplines(getDisciplines());
+      });
+  }, []);
+
   const breadcrumbItems: BreadcrumbItem[] = state.breadcrumb.map((label, index) => {
     if (index === 0) return { label: "HOME", href: "/" };
     const discipline = disciplines.find((d) => d.name.toUpperCase() === label.toUpperCase());
@@ -258,14 +284,23 @@ export function PortfolioMap() {
           preserveAspectRatio="xMidYMid meet"
           role="img"
           aria-label="Interactive portfolio five-point discipline map"
+          onMouseLeave={() => setHoveredNode(null)}
         >
+          <g
+            style={{
+              transform: focusPosition
+                ? `translate(${centerX - focusPosition.x * hoverZoom}px, ${centerY - focusPosition.y * hoverZoom}px) scale(${hoverZoom})`
+                : "translate(0px, 0px) scale(1)",
+              transformOrigin: "0 0",
+              transition: "transform 500ms cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+          >
           {/* Connection lines - rendered first (bottom layer) */}
           {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
             const isSelected = state.selectedNode === disciplineId;
             const isHovered = hoveredNode === disciplineId;
             const isCentralSelected = state.selectedNode === "central";
             const isCentralHovered = hoveredNode === "central";
-            const initialPos = initialPositions[disciplineId as DisciplineId];
             const edgeIndex = disciplineEdgeMap[disciplineId as DisciplineId];
             
             // Calculate vertex for line start (from central pentagon vertex)
@@ -337,7 +372,6 @@ export function PortfolioMap() {
                   }
                 }}
                 onMouseEnter={() => setHoveredNode(disciplineId)}
-                onMouseLeave={() => setHoveredNode(null)}
               >
                 <g
                   style={{
@@ -401,7 +435,6 @@ export function PortfolioMap() {
               }
             }}
             onMouseEnter={() => setHoveredNode("central")}
-            onMouseLeave={() => setHoveredNode(null)}
           >
             <path
               d={createPentagonPath(centerX, centerY, 15)}
@@ -443,8 +476,20 @@ export function PortfolioMap() {
               TSUKAMOTO
             </text>
           </g>
+          {/* Hovered discipline's child hierarchy rendered as map nodes */}
+          {focusPosition && hoveredDiscipline && (
+            <HierarchyMapNodes
+              discipline={hoveredDiscipline}
+              disciplinePos={focusPosition}
+              centerX={centerX}
+              centerY={centerY}
+            />
+          )}
+          </g>
         </svg>
       )}
+
+
 
       {state.viewMode === "list" && (
         <div className="mx-auto h-full max-w-4xl overflow-y-auto px-3 pb-12 pt-20 sm:px-6 sm:pt-24">

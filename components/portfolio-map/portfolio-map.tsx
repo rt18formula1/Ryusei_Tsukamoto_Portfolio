@@ -251,13 +251,19 @@ export function PortfolioMap() {
   };
 
   return (
-    <div className="relative w-full overflow-x-hidden bg-white">
-      <section className="relative h-[100svh] min-h-[560px] max-h-[900px] overflow-hidden" role="region" aria-label="Portfolio Map Explorer">
+    <div className="relative w-full h-[100svh] overflow-hidden bg-white flex flex-col justify-between">
+      <section className="relative flex-1 w-full h-full overflow-hidden" role="region" aria-label="Portfolio Map Explorer">
       <nav className="absolute left-0 right-0 top-0 z-10 border-b border-black/10 bg-white/90 px-4 py-3 backdrop-blur-md sm:px-8 sm:py-4 lg:px-12" aria-label="Portfolio Navigation">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <HierarchyBreadcrumb items={breadcrumbItems} />
 
           <div className="flex items-center gap-1.5 sm:gap-3">
+            <Link
+              href="/profile"
+              className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest border border-black/15 rounded-full px-2 sm:px-4 py-1 sm:py-2 hover:border-black hover:bg-black hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-black"
+            >
+              Profile / Contact
+            </Link>
             <button
               onClick={toggleViewMode}
               aria-label={`Switch to ${state.viewMode === "map" ? "List" : "Map"} view`}
@@ -315,19 +321,24 @@ export function PortfolioMap() {
                 x2={isMounted ? pos.x : vertex.x}
                 y2={isMounted ? pos.y : vertex.y}
                 stroke={
-                  isSelected || isHovered || isCentralHovered
-                    ? "#000"
-                    : isCentralSelected
-                      ? "#666"
-                      : "#e5e5e5"
+                  isSelected || isHovered
+                    ? "#2563eb"
+                    : isCentralHovered
+                      ? "#2563eb"
+                      : isCentralSelected
+                        ? "#000"
+                        : "#e5e5e5"
                 }
                 strokeWidth={
-                  isSelected || isHovered || isCentralHovered
-                    ? "0.5"
-                    : isCentralSelected
-                      ? "0.3"
-                      : "0.2"
+                  isSelected || isHovered
+                    ? "0.6"
+                    : isCentralHovered
+                      ? "0.4"
+                      : isCentralSelected
+                        ? "0.3"
+                        : "0.2"
                 }
+                strokeDasharray={isSelected || isHovered ? "none" : undefined}
                 className="transition-all"
                 style={{
                   transitionDuration: isMounted ? "1200ms" : "0ms",
@@ -436,13 +447,23 @@ export function PortfolioMap() {
             }}
             onMouseEnter={() => setHoveredNode("central")}
           >
+            {/* Outer halo when central node is hovered */}
+            <path
+              d={createPentagonPath(centerX, centerY, 16.5)}
+              fill="none"
+              stroke="#2563eb"
+              strokeWidth="0.25"
+              strokeDasharray="1 1"
+              opacity={hoveredNode === "central" || state.selectedNode === "central" ? 1 : 0}
+              className="transition-opacity duration-300"
+            />
             <path
               d={createPentagonPath(centerX, centerY, 15)}
               fill={
                 state.selectedNode === "central" || hoveredNode === "central" ? "#000" : "#fff"
               }
-              stroke="#000"
-              strokeWidth="0.4"
+              stroke={hoveredNode === "central" || state.selectedNode === "central" ? "#2563eb" : "#000"}
+              strokeWidth={hoveredNode === "central" || state.selectedNode === "central" ? "0.6" : "0.4"}
               className="transition-all"
               style={{ 
                 transitionDuration: "300ms",
@@ -553,28 +574,30 @@ export function PortfolioMap() {
       )}
       </section>
 
-      <section id="personal" className="border-t border-black/10 bg-white px-5 py-16 sm:px-10 sm:py-24 lg:px-16 lg:py-28">
-        <div className="mx-auto grid max-w-7xl gap-10 sm:gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-24">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[.3em] text-black/35">Personal / About</p>
-            <h2 className="mt-5 text-4xl font-black uppercase tracking-[-.06em] sm:text-5xl lg:text-6xl">Beyond the<br />five points.</h2>
-          </div>
-          <div className="max-w-2xl">
-            <p className="text-xl leading-9 tracking-tight text-black/75 sm:text-2xl sm:leading-10">Ryusei Tsukamoto is a multi-disciplinary creator working across software, visual expression, music, writing, and research.</p>
-            <p className="mt-8 text-sm leading-7 text-black/50">この五角形は、活動領域をひとつの場所から眺めるためのホームです。Developerとしてサービスをつくり、Illustratorとして視覚化し、Musician・Blogger・Investorとして考えたことを外へ広げています。</p>
-            <div className="mt-10 flex flex-wrap gap-2">{["Tokyo / Japan", "Creative Technology", "Independent Work"].map((item) => <span key={item} className="rounded-full border border-black/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[.16em] text-black/50">{item}</span>)}</div>
-          </div>
+      {/* Bottom Status Bar */}
+      <footer className="z-10 flex items-center justify-between border-t border-black/10 bg-white/90 px-4 py-2.5 backdrop-blur-md sm:px-8 text-[10px] font-bold uppercase tracking-widest text-black/50">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+          <span>Interactive Portfolio Map</span>
         </div>
-      </section>
-
-      <section id="services" className="bg-[#f7f7f5] py-12 sm:py-16">
-        <div className="mb-7 px-5 text-center sm:mb-8 sm:px-10"><p className="text-[10px] font-bold uppercase tracking-[.3em] text-black/35">Tools / Services / Platforms</p><h2 className="mt-3 text-xl font-bold tracking-tight sm:text-2xl">Built with and around these services.</h2></div>
-        <ServiceMarquee />
-      </section>
-
-      <Link href="/admin" className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-3 py-2 text-[10px] font-bold uppercase tracking-[.16em] text-black/45 shadow-lg backdrop-blur transition hover:border-black hover:text-black sm:bottom-6 sm:right-6" aria-label="Open Admin">
-        <span className="h-1.5 w-1.5 rounded-full bg-black/35" /> Admin
-      </Link>
+        <div className="hidden md:flex items-center gap-6 text-[9px] text-black/40">
+          <span>Click a node to explore</span>
+          <span>•</span>
+          <Link href="/profile" className="hover:text-black transition-colors">
+            Ryusei Tsukamoto Profile & Contact
+          </Link>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin"
+            className="flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-1 text-[9px] hover:border-black hover:bg-black hover:text-white transition-all"
+            aria-label="Admin Dashboard"
+          >
+            <span className="h-1 w-1 rounded-full bg-black/40" />
+            <span>Admin</span>
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }

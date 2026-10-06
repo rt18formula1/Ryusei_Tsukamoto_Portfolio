@@ -1,46 +1,29 @@
 import Link from "next/link";
-import { ArrowUpRight, ChevronRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
-const activities = [
-  { label: "Developer", color: "#2563eb", href: "/portfolio/developer", text: "Next.js、React、TypeScript、Supabase、Cloudflare。フルスタックWebアプリケーション開発、ツール・自動化設計。" },
-  { label: "Illustrator", color: "#7c3aed", href: "/disciplines/illustrator", text: "モータースポーツ・F1を中心としたデジタルイラストレーション、ファンアート、ビジュアルコンテンツ制作。" },
-  { label: "Musician", color: "#db2777", href: "/disciplines/musician", text: "サウンドデザイン、楽曲制作、オーディオコンテンツ制作。" },
-  { label: "Blogger", color: "#059669", href: "/disciplines/blogger", text: "技術検証、開発ログ、設計思想、noteやWeb上での知見発信。" },
-  { label: "Investor", color: "#d97706", href: "/disciplines/investor", text: "テクノロジー市場、新興成長企業、金融市場におけるリサーチと知見の集積。" },
+const record = [
+  { label: "Developer", title: "rt18_dev", text: "Webプロダクト、ツール、自動化の設計と実装。calender-generator、nasu-calendar、rt18-formula1-official-site、Meteor_Creator_Studio、fine-day-plus-officialを扱っています。", color: "#2563eb" },
+  { label: "Illustrator", title: "rt18_formula1", text: "モータースポーツとF1を題材に、ドライバー、マシン、レースの瞬間をデジタルイラストレーションとして記録しています。", color: "#7c3aed" },
+  { label: "Musician", title: "rt18_music / Fine Day Plus", text: "サウンドデザイン、楽曲制作、オーディオコンテンツの制作と発表。", color: "#db2777" },
+  { label: "Blogger", title: "記録・考察・開発ログ", text: "技術検証、設計思想、制作の過程を文章として残し、noteやWebで共有しています。", color: "#059669" },
+  { label: "Investor", title: "市場・テクノロジーリサーチ", text: "新興成長企業やテクノロジー市場を調べ、長期的な視点で知識を蓄積しています。", color: "#d97706" },
 ];
-
-const socialLinks = [
-  ["Instagram", "https://www.instagram.com/rt18_formula1/", "/instagram-icon.png"],
-  ["X", "https://x.com/rt18_formula1_x", "/x-logo.png"],
-  ["YouTube", "https://www.youtube.com/@rt18_formula1", "/youtube-logo.png"],
-  ["TikTok", "https://www.tiktok.com/@rt18_formula1_official", "/tiktok-logo.png"],
-  ["GitHub", "https://github.com/rt18formula1", "/github-icon.webp"],
-  ["Threads", "https://www.threads.com/@rt18_formula1", "/threads-icon.png"],
-  ["LinkedIn", "https://www.linkedin.com/in/rt18-formula1/", "/linkedin-icon.png"],
-  ["LINE", "https://lin.ee/4jupn4j", "/line-icon.png"],
-] as const;
-
-const workProfile = [
-  { title: "まず整理する", text: "目的や困っていることを聞き、必要なものと優先順位を一緒に整理します。" },
-  { title: "小さく試す", text: "いきなり完成を目指さず、触れる試作をつくって方向を確かめながら進めます。" },
-  { title: "領域をまたぐ", text: "開発だけ、デザインだけに分けず、使う人の体験と運用まで考えます。" },
-  { title: "考えを共有する", text: "制作の意図や判断を言葉にして、相談しながら前に進めます。" },
-];
-
-const workTopics = ["Webサイト / Webアプリ", "ツール・自動化", "ビジュアル制作", "企画・リサーチ"];
 
 export function PortfolioLowerSection() {
   return (
-    <section className="border-t border-black/10 bg-white" aria-label="Profile and activity">
-      <div className="mx-auto max-w-6xl px-4 sm:px-8">
-        <section id="profile" className="grid gap-10 border-b border-black/10 py-16 sm:py-24 lg:grid-cols-[.7fr_1.3fr] lg:gap-20">
-          <div><p className="text-[10px] font-black uppercase tracking-[0.28em] text-black/40">Profile / プロフィール</p><h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Ryusei Tsukamoto</h2></div>
-          <div><p className="max-w-2xl text-sm leading-7 text-black/65 sm:text-base">テクノロジーによるプロダクト実装から、グラフィックによる視覚的表現、音楽制作、考察・執筆、市場リサーチまで、境界を持たずに活動を展開。それぞれの領域で培った知見を統合し、独自の価値とクオリティを追求しています。</p><p className="mt-7 text-[10px] font-black uppercase tracking-[0.25em] text-black/40">相談できること</p><div className="mt-3 flex flex-wrap gap-2">{workTopics.map((topic) => <span key={topic} className="rounded-full border border-black/10 px-3 py-1.5 text-xs text-black/65">{topic}</span>)}</div><div className="mt-8 grid gap-3 sm:grid-cols-2">{workProfile.map((item) => <div key={item.title} className="border-t border-black/15 pt-3"><h3 className="text-sm font-black">{item.title}</h3><p className="mt-1 text-xs leading-5 text-black/55">{item.text}</p></div>)}</div><div className="mt-8 flex flex-wrap gap-2">{socialLinks.map(([name, url, icon]) => <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name} className="flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-black/[.02] p-3 transition hover:-translate-y-0.5 hover:border-black hover:bg-white"><img src={icon} alt="" className="h-full w-full object-contain" /></a>)}</div></div>
-        </section>
+    <section id="profile" className="bg-white" aria-label="Ryusei Tsukamoto profile">
+      <div className="mx-auto max-w-5xl px-5 py-20 sm:px-10 sm:py-28">
+        <div className="max-w-3xl">
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-black/40">Profile</p>
+          <h2 className="mt-5 text-4xl font-black tracking-[-0.04em] sm:text-6xl">Ryusei Tsukamoto</h2>
+          <p className="mt-8 text-base leading-8 text-black/70 sm:text-lg sm:leading-9">ソフトウェアをつくり、絵を描き、音楽と文章で考えを記録する。技術と表現を別々のものにせず、調べること、つくること、伝えることをひとつの活動として続けています。</p>
+          <Link href="/profile" className="mt-7 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-blue-600 transition hover:text-blue-800">プロフィール全文 <ArrowUpRight size={14} /></Link>
+        </div>
 
-        <section className="border-b border-black/10 py-16 sm:py-24"><div className="flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.28em] text-black/40">Activities / 活動領域</p><h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">What I do</h2></div><span className="hidden items-center gap-1 text-[10px] font-black uppercase tracking-widest text-black/35 sm:flex">Scroll <ChevronRight size={14} /></span></div><div className="mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{activities.map((item) => <Link key={item.label} href={item.href} className="group min-w-[82%] snap-start border-t-2 border-black pt-5 sm:min-w-[360px]"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} /><h3 className="text-base font-black tracking-tight group-hover:text-blue-600">{item.label}</h3></div><p className="mt-3 max-w-sm text-sm leading-6 text-black/55">{item.text}</p><span className="mt-5 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-black/35 group-hover:text-black">Explore <ArrowUpRight size={13} /></span></Link>)}</div></section>
-
-        <section className="grid gap-4 py-16 sm:grid-cols-2 sm:py-20"><Link href="/links" className="group rounded-3xl bg-black p-7 text-white transition hover:bg-black/85"><p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/45">Links</p><h2 className="mt-6 text-2xl font-black tracking-tight">SNS・公式サイト・ショップ</h2><span className="mt-8 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest">Open links <ArrowUpRight size={14} /></span></Link><Link href="/profile" className="group rounded-3xl border border-black/10 p-7 transition hover:border-black"><p className="text-[10px] font-black uppercase tracking-[0.28em] text-black/40">More about me</p><h2 className="mt-6 text-2xl font-black tracking-tight">プロフィールの詳細</h2><span className="mt-8 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-blue-600">Read profile <ArrowUpRight size={14} /></span></Link></section>
+        <div className="mt-24 sm:mt-32">
+          <div className="mb-8 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.28em] text-black/40">Personal record</p><h3 className="mt-4 text-2xl font-black tracking-tight sm:text-4xl">活動の記録</h3></div><span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/35">Scroll</span></div>
+          <div className="relative ml-1 border-l border-black/15 pl-7 sm:pl-12">{record.map((item, index) => <article key={item.label} className="relative pb-12 last:pb-0"><span className="absolute -left-[2.08rem] top-1 h-3 w-3 rounded-full border-2 border-white" style={{ backgroundColor: item.color, boxShadow: `0 0 0 1px ${item.color}` }} /><p className="text-[10px] font-black uppercase tracking-[0.25em] text-black/40">{String(index + 1).padStart(2, "0")} / {item.label}</p><h4 className="mt-3 text-xl font-black tracking-tight sm:text-2xl">{item.title}</h4><p className="mt-3 max-w-2xl text-sm leading-7 text-black/60">{item.text}</p></article>)}</div>
+        </div>
       </div>
     </section>
   );

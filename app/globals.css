@@ -12,19 +12,20 @@ body { min-height: 100vh; }
 
 .animate-marquee { animation: marquee 34s linear infinite; }
 
-@keyframes record-scroll {
-  from { transform: translateY(0); }
-  to { transform: translateY(-50%); }
-}
+.record-entry { animation: record-reveal .7s ease both; }
+.record-entry:nth-child(2) { animation-delay: .08s; }
+.record-entry:nth-child(3) { animation-delay: .16s; }
+.record-entry:nth-child(4) { animation-delay: .24s; }
+.record-entry:nth-child(5) { animation-delay: .32s; }
 
-.record-scroll { height: 31rem; mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent); }
-.record-scroll::before { content: ""; position: absolute; left: 0.3rem; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,.14); }
-.record-scroll-track { animation: record-scroll 42s linear infinite; }
-.record-scroll:hover .record-scroll-track { animation-play-state: paused; }
+@keyframes record-reveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee { animation-play-state: paused; }
-  .record-scroll-track { animation-play-state: paused; }
+  .record-entry { animation: none; }
 }
 
 @media print {

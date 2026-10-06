@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, BarChart3, ExternalLink } from "lucide-react";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { linktreeLinks } from "@/lib/content";
+import { getLinktreeLinks } from "@/lib/linktree-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,7 @@ type ClickRow = { link_slug: string; link_title: string; clicked_at: string };
 export default async function LinkAnalyticsPage() {
   let rows: ClickRow[] = [];
   let errorMessage = "";
+  const currentLinks = await getLinktreeLinks({ includeInactive: true });
   try {
     await verifyAdmin();
     const result = await supabaseAdmin.from("link_click_events").select("link_slug, link_title, clicked_at").order("clicked_at", { ascending: false });
@@ -21,7 +22,7 @@ export default async function LinkAnalyticsPage() {
   }
 
   const counts = new Map<string, { title: string; count: number; lastClicked: string | null }>();
-  for (const link of linktreeLinks) counts.set(link.slug, { title: link.title, count: 0, lastClicked: null });
+  for (const link of currentLinks) counts.set(link.slug, { title: link.title, count: 0, lastClicked: null });
   for (const row of rows) {
     const current = counts.get(row.link_slug) ?? { title: row.link_title, count: 0, lastClicked: null };
     counts.set(row.link_slug, { title: current.title, count: current.count + 1, lastClicked: current.lastClicked ?? row.clicked_at });

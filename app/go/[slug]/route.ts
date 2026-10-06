@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getLinktreeLink } from "@/lib/linktree";
+import { getPublishedLinktreeLink } from "@/lib/linktree";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const link = getLinktreeLink(slug);
+  const link = await getPublishedLinktreeLink(slug);
   if (!link) return NextResponse.redirect(new URL("/links", request.url));
   try {
     await supabaseAdmin.from("link_click_events").insert({

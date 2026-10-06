@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { ExternalLink, Link2, QrCode } from "lucide-react";
-import { linktreeLinks } from "@/lib/content";
-
-const socialLinks = linktreeLinks.filter((link) => link.group === "social");
-const featuredLinks = linktreeLinks.filter((link) => link.group === "featured");
-const resourceLinks = linktreeLinks.filter((link) => link.group === "resources");
+import type { LinktreeLink } from "@/lib/content";
 
 function TrackableLink({ slug, title }: { slug: string; title: string }) {
   return (
@@ -17,7 +13,7 @@ function TrackableLink({ slug, title }: { slug: string; title: string }) {
   );
 }
 
-export function LinktreePageClient() {
+export function LinktreePageClient({ links }: { links: LinktreeLink[] }) {
   return (
     <main className="min-h-screen bg-[#dfe4e8] px-4 py-8 text-black sm:px-6 sm:py-12">
       <div className="mx-auto max-w-2xl">
@@ -32,11 +28,7 @@ export function LinktreePageClient() {
             <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-black/65">This account is dedicated to posting F1 illustrations created by RT18. We would greatly appreciate it if you could follow, like, and share!</p>
             <div className="mt-5 flex items-center justify-center gap-3 text-black/45"><Link2 size={16} /><span className="text-[10px] font-black uppercase tracking-[0.25em]">Links</span></div>
           </header>
-          <div className="mt-8 space-y-3">{featuredLinks.map((link) => <TrackableLink key={link.slug} {...link} />)}</div>
-          <div className="my-8 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.25em] text-black/35"><span className="h-px flex-1 bg-black/10" /> Social <span className="h-px flex-1 bg-black/10" /></div>
-          <div className="space-y-3">{socialLinks.map((link) => <TrackableLink key={link.slug} {...link} />)}</div>
-          <div className="my-8 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.25em] text-black/35"><span className="h-px flex-1 bg-black/10" /> More <span className="h-px flex-1 bg-black/10" /></div>
-          <div className="space-y-3">{resourceLinks.map((link) => <TrackableLink key={link.slug} {...link} />)}</div>
+          <div className="mt-8 space-y-3">{links.map((link) => <TrackableLink key={link.slug} {...link} />)}</div>
         </section>
         <p className="mt-6 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">RT18_FORMULA1 · RYUSEI TSUKAMOTO</p>
       </div>

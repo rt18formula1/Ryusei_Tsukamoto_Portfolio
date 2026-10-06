@@ -3,6 +3,9 @@ export type LinktreeLink = {
   title: string;
   url: string;
   group: "featured" | "social" | "resources";
+  description?: string;
+  sort_order?: number;
+  is_active?: boolean;
 };
 
 /** Ordered to match the public Linktree profile at linktr.ee/rt18_formula1. */

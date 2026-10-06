@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Eye,
   BarChart3,
+  Link2,
 } from "lucide-react";
 import type { DbDevProject } from "@/lib/supabase-queries";
 import type { HierarchyStats } from "@/lib/admin-hierarchy-service";
@@ -111,6 +112,10 @@ export function AdminDashboard({
           <Link href="/admin/link-analytics" className="flex items-center gap-2 rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-xs font-bold text-black shadow-sm transition hover:bg-black/5">
             <BarChart3 size={15} />
             <span>Link Analytics</span>
+          </Link>
+          <Link href="/admin/links" className="flex items-center gap-2 rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-xs font-bold text-black shadow-sm transition hover:bg-black/5">
+            <Link2 size={15} />
+            <span>Edit Links</span>
           </Link>
         </div>
       </div>

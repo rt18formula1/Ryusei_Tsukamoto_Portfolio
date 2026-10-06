@@ -6,6 +6,7 @@ import type { DbNews, DbPortfolio, DbAlbum, DbEvent, DbDevProject } from "./supa
 import { verifyAdmin } from "./admin-auth";
 import { uploadImageToStorage } from "./supabase-queries";
 import type { DbPortfolioActivity } from "@/types/portfolio-hierarchy";
+import type { LinktreeLink } from "@/lib/content";
 
 
 export async function createNewsAction(news: Partial<DbNews>) {
@@ -188,4 +189,21 @@ export async function updatePortfolioActivityAction(id: string, activity: Partia
 export async function uploadDevProjectImageAction(bucket: "news-images" | "portfolio-images" | "album-covers" | "bucknumber-covers", file: File) {
   await verifyAdmin();
   return await uploadImageToStorage(bucket, file);
+}
+
+export async function saveLinktreeLinksAction(links: LinktreeLink[]) {
+  await verifyAdmin();
+  const rows = links.map((link, index) => ({
+    slug: link.slug.trim(),
+    title: link.title.trim(),
+    url: link.url.trim(),
+    group: link.group,
+    description: link.description?.trim() || null,
+    sort_order: index,
+    is_active: link.is_active !== false,
+  }));
+  if (rows.some((row) => !row.slug || !row.title || !row.url)) throw new Error("Slug, title, and URL are required");
+  const { error: upsertError } = await supabaseAdmin.from("linktree_links").upsert(rows, { onConflict: "slug" });
+  if (upsertError) throw upsertError;
+  return { success: true };
 }

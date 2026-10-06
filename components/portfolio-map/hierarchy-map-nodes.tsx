@@ -15,7 +15,9 @@ interface HierarchyMapNodesProps {
 /** Pentagon vertex angles in radians (matches createPentagonPath: i*72-90) */
 const VERTEX_ANGLES = [-90, -18, 54, 126, 198].map((a) => (a * Math.PI) / 180);
 
-const SIZE_RATIO = 0.72; // child pentagon / parent pentagon
+// Child activities/projects should read as a slightly smaller layer than the
+// five top-level discipline pentagons, while remaining large enough to scan.
+const SIZE_RATIO = 0.84; // child pentagon / parent pentagon
 const GAP = 1.5; // space between parent edge and child edge
 const DISCIPLINE_SIZE = 7; // matches the discipline pentagon in the main map
 
@@ -74,8 +76,8 @@ function outwardVertex(
 /** Calculate a font size that fits the text inside the pentagon (no truncation). */
 function fitFont(text: string, size: number): number {
   const maxFont = size * 0.2;
-  const availableWidth = size * 1.5; // ~inscribed circle diameter
-  const charWidthRatio = 0.55;
+  const availableWidth = size * 1.52; // safe width inside the pentagon
+  const charWidthRatio = 0.6;
   const calculated = availableWidth / (text.length * charWidthRatio);
   return Math.min(maxFont, Math.max(0.25, calculated));
 }
@@ -128,6 +130,9 @@ function renderNode(
       ? childPositions(v, pos, childSize, kids.length, cx, cy)
       : [];
   const fs = fitFont(node.name, size);
+  // Longer names use SVG text compression so they never overflow the node.
+  // Short labels keep their natural width and therefore do not look stretched.
+  const textLength = node.name.length > 10 ? size * 1.48 : undefined;
 
   return (
     <g
@@ -153,6 +158,8 @@ function renderNode(
         className="font-bold pointer-events-none"
         fill="#fff"
         style={{ fontSize: `${fs}px` }}
+        textLength={textLength}
+        lengthAdjust={textLength ? "spacingAndGlyphs" : undefined}
       >
         {node.name}
       </text>

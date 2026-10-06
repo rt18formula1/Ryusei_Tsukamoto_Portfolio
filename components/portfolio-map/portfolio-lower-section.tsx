@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, ExternalLink, QrCode } from "lucide-react";
-import { linktreeLinks } from "@/lib/content";
+import { ArrowUpRight, QrCode } from "lucide-react";
 
 const activityHistory = [
   { year: "2026", label: "Developer Project detail / Print Sheet / Admin data model" },
@@ -67,19 +66,12 @@ export function PortfolioLowerSection() {
             </div>
           </div>
 
-          <div>
-            <div className="mb-5 flex items-center justify-between">
+          <div className="flex flex-col justify-between rounded-3xl border border-black/10 bg-white p-6 sm:p-8">
+            <div>
               <h2 className="text-xs font-black uppercase tracking-[0.25em] text-black/40">Links</h2>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-black/35">Linktree replacement</span>
+              <p className="mt-3 text-sm leading-6 text-black/60">SNS、公式サイト、ショップ、リクエスト窓口をLinktree風の独立ページにまとめています。各リンクのクリック数も管理画面で確認できます。</p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {linktreeLinks.map((item) => (
-                <a key={item.title} href={item.url} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-between rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm font-bold transition hover:border-black hover:bg-black hover:text-white">
-                  <span>{item.title}</span>
-                  <ExternalLink size={14} className="text-black/30 transition group-hover:text-white" />
-                </a>
-              ))}
-            </div>
+            <Link href="/links" className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-black px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition hover:bg-black/75">Open Links Page <ArrowUpRight size={14} /></Link>
           </div>
         </div>
 

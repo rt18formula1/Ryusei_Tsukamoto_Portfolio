@@ -1,4 +1,4 @@
-import { PortfolioLowerSection } from "@/components/portfolio-map/portfolio-lower-section";
+import { LinktreePageClient } from "@/components/linktree/linktree-page-client";
 
 export const metadata = {
   title: "Links | Ryusei Tsukamoto Portfolio",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function LinksPage() {
-  return <PortfolioLowerSection />;
+  return <LinktreePageClient />;
 }

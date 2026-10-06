@@ -14,6 +14,7 @@ import {
   GitFork,
   ExternalLink,
   Eye,
+  BarChart3,
 } from "lucide-react";
 import type { DbDevProject } from "@/lib/supabase-queries";
 import type { HierarchyStats } from "@/lib/admin-hierarchy-service";
@@ -107,6 +108,10 @@ export function AdminDashboard({
             <Plus size={15} />
             <span>New Project</span>
           </button>
+          <Link href="/admin/link-analytics" className="flex items-center gap-2 rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-xs font-bold text-black shadow-sm transition hover:bg-black/5">
+            <BarChart3 size={15} />
+            <span>Link Analytics</span>
+          </Link>
         </div>
       </div>
 

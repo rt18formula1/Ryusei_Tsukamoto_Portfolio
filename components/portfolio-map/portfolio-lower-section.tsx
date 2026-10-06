@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Locale = "ja" | "en";
 
@@ -19,6 +19,39 @@ const copy = {
   en: { label: "Author profile", name: "Ryusei Tsukamoto", alias: "塚本隆正", intro: "A high-school student based in Komatsu, Ishikawa. In July 2023, he began publishing F1-related updates and illustrations as rt18_formula1. In November 2024, he started performing with the student band Fine Day Plus. Since 2025, his work has expanded from F1 web, social media, and illustration to web and AI projects such as calender-generator, nasu-calendar, and Meteor_Creator_Studio, as well as a personal portfolio and Nankai Trough disaster-prevention research for the Nikkei STOCK League. He continues to work across software development, visual expression, music, and research.", full: "Full profile", record: "Activity record", hint: "Scroll to explore", details: "Read more" },
 };
 
+function RecordScroller({ locale, details }: { locale: Locale; details: string }) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState(false);
+  const [interacting, setInteracting] = useState(false);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let frame = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const viewport = viewportRef.current;
+      const elapsed = now - last;
+      last = now;
+      if (viewport && !hovered && !interacting) {
+        const midpoint = viewport.scrollHeight / 2;
+        viewport.scrollTop += elapsed * 0.018;
+        if (viewport.scrollTop >= midpoint) viewport.scrollTop -= midpoint;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [hovered, interacting]);
+
+  const handleUserScroll = () => {
+    setInteracting(true);
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => setInteracting(false), 1800);
+  };
+
+  return <div ref={viewportRef} className="record-scroll" aria-label="活動歴の縦スクロール" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onWheel={handleUserScroll} onTouchStart={() => setInteracting(true)} onTouchEnd={() => setInteracting(false)}>{[...records, ...records].map((item, index) => <article key={`${item.date}-${index}`} aria-hidden={index >= records.length} className="record-entry relative py-7 pl-8 first:pt-0 sm:pl-12"><span className="absolute -left-[2.08rem] top-9 h-2.5 w-2.5 rounded-full border-2 border-white bg-blue-600 ring-1 ring-blue-600 sm:top-10" /><p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-600">{item.date}</p><h4 className="mt-2 text-xl font-black tracking-tight sm:text-2xl">{item.title[locale]}</h4><p className="mt-3 max-w-2xl text-sm leading-7 text-black/60">{item.text[locale]}</p><span className="mt-4 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.2em] text-black/35">{details} <ArrowUpRight size={13} /></span></article>)}</div>;
+}
+
 export function PortfolioLowerSection() {
   const [locale, setLocale] = useState<Locale>("ja");
   const text = copy[locale];
@@ -29,7 +62,7 @@ export function PortfolioLowerSection() {
           <div className="max-w-3xl"><p className="text-[10px] font-black uppercase tracking-[0.28em] text-black/40">{text.label}</p><h2 className="mt-5 text-4xl font-black tracking-[-0.04em] sm:text-6xl">{text.name}</h2><p className="mt-2 text-sm font-medium tracking-wide text-black/45">{text.alias}</p><p className="mt-8 text-base leading-8 text-black/70 sm:text-lg sm:leading-9">{text.intro}</p><Link href="/profile" className="mt-7 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-blue-600 transition hover:text-blue-800">{text.full} <ArrowUpRight size={14} /></Link></div>
           <div className="flex shrink-0 rounded-full border border-black/10 p-1 text-[10px] font-black uppercase tracking-widest"><button onClick={() => setLocale("ja")} className={`rounded-full px-2.5 py-1.5 ${locale === "ja" ? "bg-black text-white" : "text-black/40"}`}>JA</button><button onClick={() => setLocale("en")} className={`rounded-full px-2.5 py-1.5 ${locale === "en" ? "bg-black text-white" : "text-black/40"}`}>EN</button></div>
         </div>
-        <div className="mt-24 sm:mt-32"><div className="mb-8 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.28em] text-black/40">Personal record</p><h3 className="mt-4 text-2xl font-black tracking-tight sm:text-4xl">{text.record}</h3></div><span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/35">{text.hint} ↓</span></div><div className="relative ml-1 border-l border-black/15 pl-7 sm:pl-12">{records.map((item) => <article key={item.date} className="record-entry relative pb-14 last:pb-0"><span className="absolute -left-[2.08rem] top-1 h-3 w-3 rounded-full border-2 border-white bg-blue-600 ring-1 ring-blue-600" /><p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-600">{item.date}</p><h4 className="mt-3 text-xl font-black tracking-tight sm:text-2xl">{item.title[locale]}</h4><p className="mt-3 max-w-2xl text-sm leading-7 text-black/60">{item.text[locale]}</p><Link href={item.href} className="mt-4 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.2em] text-black/35 transition hover:text-black">{text.details} <ArrowUpRight size={13} /></Link></article>)}</div></div>
+        <div className="mt-24 sm:mt-32"><div className="mb-8 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.28em] text-black/40">Personal record</p><h3 className="mt-4 text-2xl font-black tracking-tight sm:text-4xl">{text.record}</h3></div><span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/35">{text.hint} ↕</span></div><div className="relative ml-1 border-l border-black/15 pl-7 sm:pl-12"><RecordScroller locale={locale} details={text.details} /></div></div>
       </div>
     </section>
   );

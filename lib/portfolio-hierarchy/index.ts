@@ -68,6 +68,12 @@ export function disciplineHref(disciplineId: DisciplineId): string {
 }
 
 export function activityHref(disciplineId: DisciplineId, activitySlug: string): string {
+  // The Illustrator identity is represented by the public rt18_formula1 site.
+  // Keep this as the one intentional external activity route; other hierarchy
+  // nodes continue to resolve to the portfolio's internal pages.
+  if (disciplineId === "illustrator" && activitySlug === "rt18-formula1") {
+    return "https://rt18-formula1-official-site.vercel.app";
+  }
   if (disciplineId === "developer") {
     return `/portfolio/developer/${activitySlug}`;
   }

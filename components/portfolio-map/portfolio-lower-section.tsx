@@ -20,13 +20,22 @@ const socialLinks = [
   ["LINE", "https://lin.ee/4jupn4j", "/line-icon.png"],
 ] as const;
 
+const workProfile = [
+  { title: "まず整理する", text: "目的や困っていることを聞き、必要なものと優先順位を一緒に整理します。" },
+  { title: "小さく試す", text: "いきなり完成を目指さず、触れる試作をつくって方向を確かめながら進めます。" },
+  { title: "領域をまたぐ", text: "開発だけ、デザインだけに分けず、使う人の体験と運用まで考えます。" },
+  { title: "考えを共有する", text: "制作の意図や判断を言葉にして、相談しながら前に進めます。" },
+];
+
+const workTopics = ["Webサイト / Webアプリ", "ツール・自動化", "ビジュアル制作", "企画・リサーチ"];
+
 export function PortfolioLowerSection() {
   return (
     <section className="border-t border-black/10 bg-white" aria-label="Profile and activity">
       <div className="mx-auto max-w-6xl px-4 sm:px-8">
         <section id="profile" className="grid gap-10 border-b border-black/10 py-16 sm:py-24 lg:grid-cols-[.7fr_1.3fr] lg:gap-20">
           <div><p className="text-[10px] font-black uppercase tracking-[0.28em] text-black/40">Profile / プロフィール</p><h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Ryusei Tsukamoto</h2></div>
-          <div><p className="max-w-2xl text-sm leading-7 text-black/65 sm:text-base">テクノロジーによるプロダクト実装から、グラフィックによる視覚的表現、音楽制作、考察・執筆、市場リサーチまで、境界を持たずに活動を展開。それぞれの領域で培った知見を統合し、独自の価値とクオリティを追求しています。</p><div className="mt-7 flex flex-wrap gap-2">{socialLinks.map(([name, url, icon]) => <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name} className="flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-black/[.02] p-3 transition hover:-translate-y-0.5 hover:border-black hover:bg-white"><img src={icon} alt="" className="h-full w-full object-contain" /></a>)}</div></div>
+          <div><p className="max-w-2xl text-sm leading-7 text-black/65 sm:text-base">テクノロジーによるプロダクト実装から、グラフィックによる視覚的表現、音楽制作、考察・執筆、市場リサーチまで、境界を持たずに活動を展開。それぞれの領域で培った知見を統合し、独自の価値とクオリティを追求しています。</p><p className="mt-7 text-[10px] font-black uppercase tracking-[0.25em] text-black/40">相談できること</p><div className="mt-3 flex flex-wrap gap-2">{workTopics.map((topic) => <span key={topic} className="rounded-full border border-black/10 px-3 py-1.5 text-xs text-black/65">{topic}</span>)}</div><div className="mt-8 grid gap-3 sm:grid-cols-2">{workProfile.map((item) => <div key={item.title} className="border-t border-black/15 pt-3"><h3 className="text-sm font-black">{item.title}</h3><p className="mt-1 text-xs leading-5 text-black/55">{item.text}</p></div>)}</div><div className="mt-8 flex flex-wrap gap-2">{socialLinks.map(([name, url, icon]) => <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name} className="flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-black/[.02] p-3 transition hover:-translate-y-0.5 hover:border-black hover:bg-white"><img src={icon} alt="" className="h-full w-full object-contain" /></a>)}</div></div>
         </section>
 
         <section className="border-b border-black/10 py-16 sm:py-24"><div className="flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.28em] text-black/40">Activities / 活動領域</p><h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">What I do</h2></div><span className="hidden items-center gap-1 text-[10px] font-black uppercase tracking-widest text-black/35 sm:flex">Scroll <ChevronRight size={14} /></span></div><div className="mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{activities.map((item) => <Link key={item.label} href={item.href} className="group min-w-[82%] snap-start border-t-2 border-black pt-5 sm:min-w-[360px]"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} /><h3 className="text-base font-black tracking-tight group-hover:text-blue-600">{item.label}</h3></div><p className="mt-3 max-w-sm text-sm leading-6 text-black/55">{item.text}</p><span className="mt-5 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-black/35 group-hover:text-black">Explore <ArrowUpRight size={13} /></span></Link>)}</div></section>

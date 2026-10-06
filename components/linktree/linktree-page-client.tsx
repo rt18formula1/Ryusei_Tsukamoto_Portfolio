@@ -4,10 +4,24 @@ import Link from "next/link";
 import { ExternalLink, Link2, QrCode } from "lucide-react";
 import type { LinktreeLink } from "@/lib/content";
 
-function TrackableLink({ slug, title }: { slug: string; title: string }) {
+function iconForLink(link: LinktreeLink) {
+  const value = `${link.title} ${link.url}`.toLowerCase();
+  if (value.includes("instagram")) return "/instagram-icon.png";
+  if (value.includes("youtube")) return "/youtube-logo.png";
+  if (value.includes("tiktok")) return "/tiktok-logo.png";
+  if (value.includes("linkedin")) return "/linkedin-icon.png";
+  if (value.includes("github")) return "/github-icon.webp";
+  if (value.includes("line")) return "/line-icon.png";
+  if (value.includes("twitter") || value.includes("x.com")) return "/x-logo.png";
+  if (value.includes("threads")) return "/threads-icon.png";
+  return "/icon.png";
+}
+
+function TrackableLink({ link }: { link: LinktreeLink }) {
   return (
-    <a href={`/go/${slug}`} className="group flex min-h-14 items-center justify-between gap-4 rounded-2xl border border-black/10 bg-white px-5 py-4 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-black/30 hover:shadow-lg">
-      <span className="min-w-0 flex-1 truncate text-sm font-bold tracking-tight">{title}</span>
+    <a href={`/go/${link.slug}`} className="group flex min-h-14 items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 py-3.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-black/30 hover:shadow-lg">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black/[.04] p-2"><img src={iconForLink(link)} alt="" className="h-full w-full object-contain" /></span>
+      <span className="min-w-0 flex-1 truncate text-sm font-bold tracking-tight">{link.title}</span>
       <ExternalLink size={16} className="shrink-0 text-black/25 transition group-hover:text-black" />
     </a>
   );
@@ -28,7 +42,7 @@ export function LinktreePageClient({ links }: { links: LinktreeLink[] }) {
             <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-black/65">This account is dedicated to posting F1 illustrations created by RT18. We would greatly appreciate it if you could follow, like, and share!</p>
             <div className="mt-5 flex items-center justify-center gap-3 text-black/45"><Link2 size={16} /><span className="text-[10px] font-black uppercase tracking-[0.25em]">Links</span></div>
           </header>
-          <div className="mt-8 space-y-3">{links.map((link) => <TrackableLink key={link.slug} {...link} />)}</div>
+          <div className="mt-8 space-y-3">{links.map((link) => <TrackableLink key={link.slug} link={link} />)}</div>
         </section>
         <p className="mt-6 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">RT18_FORMULA1 · RYUSEI TSUKAMOTO</p>
       </div>

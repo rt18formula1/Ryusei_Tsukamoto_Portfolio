@@ -24,7 +24,7 @@ export function LinktreePageClient({ links }: { links: LinktreeLink[] }) {
         <section className="rounded-[2rem] bg-white/65 px-4 py-8 shadow-sm backdrop-blur sm:px-12 sm:py-12">
           <header className="text-center">
             <div className="mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-black shadow-xl"><img src="/icon.png" alt="" className="h-full w-full object-cover" /></div>
-            <h1 className="mt-5 text-2xl font-black tracking-tight">rt18_formula1</h1>
+            <a href="https://rt18-formula1-official-site.vercel.app/#top" className="mt-5 inline-block text-2xl font-black tracking-tight transition-opacity hover:opacity-60">rt18_formula1</a>
             <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-black/65">This account is dedicated to posting F1 illustrations created by RT18. We would greatly appreciate it if you could follow, like, and share!</p>
             <div className="mt-5 flex items-center justify-center gap-3 text-black/45"><Link2 size={16} /><span className="text-[10px] font-black uppercase tracking-[0.25em]">Links</span></div>
           </header>

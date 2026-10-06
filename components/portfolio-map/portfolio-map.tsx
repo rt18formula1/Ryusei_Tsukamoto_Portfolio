@@ -15,6 +15,7 @@ import type { BreadcrumbItem, Discipline } from "@/types/portfolio-hierarchy";
 import { getDevProjects, getPortfolioActivities } from "@/lib/supabase-queries";
 import { buildUnifiedHierarchy } from "@/lib/admin-hierarchy-service";
 import { projectIsPublished } from "@/lib/portfolio-projects";
+import { PortfolioLowerSection } from "@/components/portfolio-map/portfolio-lower-section";
 
 const NODE_META: Record<DisciplineId, { label: string; color: string }> = {
   developer: { label: "Developer", color: "#2563eb" },
@@ -70,7 +71,7 @@ export function PortfolioMap() {
 
   const centerX = 50;
   const centerY = 50;
-  const hoverZoom = 1.8;
+  const hoverZoom = 1.45;
 
   const disciplinePositions: Record<DisciplineId, { x: number; y: number }> = {
     developer: { x: 50, y: 18 },
@@ -251,8 +252,8 @@ export function PortfolioMap() {
   };
 
   return (
-    <div className="relative w-full h-[100svh] overflow-hidden bg-white flex flex-col justify-between">
-      <section className="relative flex-1 w-full h-full overflow-hidden" role="region" aria-label="Portfolio Map Explorer">
+    <div className="relative w-full min-h-screen overflow-visible bg-white">
+      <section className="relative h-[100svh] min-h-[640px] w-full overflow-hidden" role="region" aria-label="Portfolio Map Explorer">
       <nav className="absolute left-0 right-0 top-0 z-10 border-b border-black/10 bg-white/90 px-4 py-3 backdrop-blur-md sm:px-8 sm:py-4 lg:px-12" aria-label="Portfolio Navigation">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <HierarchyBreadcrumb items={breadcrumbItems} />
@@ -447,16 +448,6 @@ export function PortfolioMap() {
             }}
             onMouseEnter={() => setHoveredNode("central")}
           >
-            {/* Outer halo when central node is hovered */}
-            <path
-              d={createPentagonPath(centerX, centerY, 16.5)}
-              fill="none"
-              stroke="#2563eb"
-              strokeWidth="0.25"
-              strokeDasharray="1 1"
-              opacity={hoveredNode === "central" || state.selectedNode === "central" ? 1 : 0}
-              className="transition-opacity duration-300"
-            />
             <path
               d={createPentagonPath(centerX, centerY, 15)}
               fill={
@@ -598,6 +589,7 @@ export function PortfolioMap() {
           </Link>
         </div>
       </footer>
+      <PortfolioLowerSection />
     </div>
   );
 }

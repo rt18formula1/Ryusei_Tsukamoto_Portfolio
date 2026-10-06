@@ -52,7 +52,13 @@ function iconForLink(link: LinktreeLink) {
   if (value.includes("line")) return "/line-icon.png";
   if (value.includes("twitter") || value.includes("x.com")) return "/x-logo.png";
   if (value.includes("threads")) return "/threads-icon.png";
-  return "/icon.png";
+  if (value.includes("note.com") || value.includes(" note")) return "/note-icon.ico";
+  if (value.includes("gipt") || value.includes("gi-pt.com")) return "/gipt-icon.ico";
+  try {
+    return `https://www.google.com/s2/favicons?domain=${new URL(link.url).hostname}&sz=64`;
+  } catch {
+    return "/icon.png";
+  }
 }
 
 export function ProfilePageClient({ links }: { links: LinktreeLink[] }) {

@@ -16,6 +16,7 @@ import { getDevProjects, getPortfolioActivities } from "@/lib/supabase-queries";
 import { buildUnifiedHierarchy } from "@/lib/admin-hierarchy-service";
 import { projectIsPublished } from "@/lib/portfolio-projects";
 import { PortfolioLowerSection } from "@/components/portfolio-map/portfolio-lower-section";
+import { SiteFooter } from "@/components/site-footer";
 
 const NODE_META: Record<DisciplineId, { label: string; color: string }> = {
   developer: { label: "Developer", color: "#2563eb" },
@@ -590,6 +591,7 @@ export function PortfolioMap() {
         </div>
       </footer>
       <PortfolioLowerSection />
+      <SiteFooter />
     </div>
   );
 }

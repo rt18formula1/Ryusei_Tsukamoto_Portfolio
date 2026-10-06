@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
+import { SiteFooter } from "@/components/site-footer";
 
 type Locale = "ja" | "en";
 type Localized = { ja: string; en: string };
@@ -46,6 +47,6 @@ export function ProfilePageClient() {
       <section className="mt-24"><h2 className="text-2xl font-black tracking-tight sm:text-4xl">{text.releases}</h2><div className="mt-8 grid gap-x-10 gap-y-10 sm:grid-cols-2">{projects.map((project) => <article key={project.name}><h3 className="font-mono text-sm font-bold">{project.name}</h3><p className="mt-3 text-sm leading-7 text-black/60">{project.description[locale]}</p><div className="mt-4 flex flex-wrap gap-4">{project.links.map((link) => <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-600 hover:text-blue-800">{link.label} <ExternalLink size={12} /></a>)}</div></article>)}</div></section>
       <section className="mt-24"><h2 className="text-2xl font-black tracking-tight sm:text-4xl">{text.identities}</h2><div className="mt-8 grid gap-8 sm:grid-cols-3">{identities.map((item) => <Link key={item.name} href={item.href} className="group"><h3 className="font-black group-hover:text-blue-600">{item.name}</h3><p className="mt-3 text-sm leading-7 text-black/60">{item.text[locale]}</p><span className="mt-3 inline-flex text-[10px] font-black uppercase tracking-[0.18em] text-black/35">{text.map} <ArrowUpRight size={12} className="ml-1" /></span></Link>)}</div></section>
       <div className="mt-24"><Link href="/" className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-white hover:bg-blue-600">{text.home} <ArrowUpRight size={14} /></Link></div>
-    </main><footer className="border-t border-black/10 px-5 py-8 text-center text-[10px] font-mono uppercase tracking-[0.2em] text-black/35">© {new Date().getFullYear()} Ryusei Tsukamoto</footer>
+    </main><SiteFooter />
   </div>;
 }

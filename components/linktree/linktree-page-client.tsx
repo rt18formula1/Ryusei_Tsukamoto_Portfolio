@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ExternalLink, Link2, QrCode } from "lucide-react";
 import type { LinktreeLink } from "@/lib/content";
+import { SiteFooter } from "@/components/site-footer";
 
 function iconForLink(link: LinktreeLink) {
   const value = `${link.title} ${link.url}`.toLowerCase();
@@ -46,6 +47,7 @@ export function LinktreePageClient({ links }: { links: LinktreeLink[] }) {
         </section>
         <p className="mt-6 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">RT18_FORMULA1 · RYUSEI TSUKAMOTO</p>
       </div>
+      <div className="mx-auto mt-10 max-w-6xl overflow-hidden rounded-[1.5rem]"><SiteFooter /></div>
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { stripe } from "./stripe";
 import type { DbNews, DbPortfolio, DbAlbum, DbEvent, DbDevProject } from "./supabase-queries";
 import { verifyAdmin } from "./admin-auth";
 import { uploadImageToStorage } from "./supabase-queries";
+import type { DbPortfolioActivity } from "@/types/portfolio-hierarchy";
 
 
 export async function createNewsAction(news: Partial<DbNews>) {
@@ -168,6 +169,20 @@ export async function deleteDevProjectAction(id: string) {
   const { error } = await supabaseAdmin.from("dev_projects").delete().eq("id", id);
   if (error) throw error;
   return { success: true };
+}
+
+export async function createPortfolioActivityAction(activity: Partial<DbPortfolioActivity>) {
+  await verifyAdmin();
+  const { data, error } = await supabaseAdmin.from("portfolio_activities").insert(activity).select().single();
+  if (error) throw error;
+  return data as DbPortfolioActivity;
+}
+
+export async function updatePortfolioActivityAction(id: string, activity: Partial<DbPortfolioActivity>) {
+  await verifyAdmin();
+  const { data, error } = await supabaseAdmin.from("portfolio_activities").update(activity).eq("id", id).select().single();
+  if (error) throw error;
+  return data as DbPortfolioActivity;
 }
 
 export async function uploadDevProjectImageAction(bucket: "news-images" | "portfolio-images" | "album-covers" | "bucknumber-covers", file: File) {

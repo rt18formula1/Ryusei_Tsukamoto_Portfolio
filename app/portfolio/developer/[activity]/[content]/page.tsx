@@ -1,15 +1,15 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { DevProjectDetailClient } from "@/components/dev-project/dev-project-detail-client";
-import { getActivity, getContent, getDiscipline } from "@/lib/portfolio-hierarchy";
-import { MOCK_DEV_PROJECT, MOCK_DEV_PROJECT_2 } from "@/lib/dev-project/mock";
+import { getDevProjects, getPortfolioActivities } from "@/lib/supabase-queries";
 import { getDevProjectById } from "@/lib/supabase-queries";
-import { getDevProjects } from "@/lib/supabase-queries";
+import { buildUnifiedHierarchy } from "@/lib/admin-hierarchy-service";
 import { mapDbToDevProject } from "@/lib/dev-project/mapper";
 import { projectContent, projectIsPublished, projectSlug } from "@/lib/portfolio-projects";
 import type { DeveloperProject } from "@/types/dev-project";
 import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
 import { buildBreadcrumbs } from "@/lib/portfolio-hierarchy";
+import type { DbPortfolioActivity } from "@/types/portfolio-hierarchy";
 
 export const dynamic = "force-dynamic";
 
@@ -17,23 +17,19 @@ interface PageProps {
   params: Promise<{ activity: string; content: string }>;
 }
 
-const MOCK_BY_ID: Record<string, DeveloperProject> = {
-  [MOCK_DEV_PROJECT.id]: MOCK_DEV_PROJECT,
-  [MOCK_DEV_PROJECT_2.id]: MOCK_DEV_PROJECT_2,
-};
-
 async function resolveProject(projectId: string): Promise<DeveloperProject | null> {
-  if (MOCK_BY_ID[projectId]) return MOCK_BY_ID[projectId];
   const db = await getDevProjectById(projectId);
   return db ? mapDbToDevProject(db) : null;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { activity: activitySlug, content: contentSlug } = await params;
-  const dbProject = activitySlug === "rt18-dev"
-    ? (await getDevProjects()).find((project) => projectIsPublished(project) && projectSlug(project.project_name) === contentSlug)
-    : null;
-  const content = getContent("developer", activitySlug, contentSlug) || (dbProject ? projectContent(dbProject) : null);
+  const [dbProjects, activities] = await Promise.all([getDevProjects(), getPortfolioActivities("developer")]);
+  const hierarchy = buildUnifiedHierarchy(dbProjects.filter(projectIsPublished), activities as DbPortfolioActivity[]);
+  const discipline = hierarchy.disciplines.find((item) => item.id === "developer");
+  const activity = discipline?.activities.find((item) => item.slug === activitySlug);
+  const content = activity?.contents.find((item) => item.slug === contentSlug);
+  const dbProject = dbProjects.find((project) => projectIsPublished(project) && projectSlug(project.project_name) === contentSlug) || null;
   if (!content) return {};
   return {
     title: `${content.name} | Developer | rt18formula1 Portfolio`,
@@ -43,12 +39,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function DeveloperContentPage({ params }: PageProps) {
   const { activity: activitySlug, content: contentSlug } = await params;
-  const discipline = getDiscipline("developer");
-  const activity = getActivity("developer", activitySlug);
-  const dbProject = activitySlug === "rt18-dev"
-    ? (await getDevProjects()).find((project) => projectIsPublished(project) && projectSlug(project.project_name) === contentSlug)
-    : null;
-  const content = getContent("developer", activitySlug, contentSlug) || (dbProject ? projectContent(dbProject) : null);
+  const [dbProjects, activities] = await Promise.all([getDevProjects(), getPortfolioActivities("developer")]);
+  const hierarchy = buildUnifiedHierarchy(dbProjects.filter(projectIsPublished), activities as DbPortfolioActivity[]);
+  const discipline = hierarchy.disciplines.find((item) => item.id === "developer");
+  const activity = discipline?.activities.find((item) => item.slug === activitySlug);
+  const dbProject = dbProjects.find((project) => projectIsPublished(project) && projectSlug(project.project_name) === contentSlug) || null;
+  const content = activity?.contents.find((item) => item.slug === contentSlug);
 
   if (!discipline || !activity || !content) notFound();
 

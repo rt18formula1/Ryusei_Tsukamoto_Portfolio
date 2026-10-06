@@ -12,7 +12,7 @@ import {
 import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
 import { HierarchyMapNodes } from "@/components/portfolio-map/hierarchy-map-nodes";
 import type { BreadcrumbItem, Discipline } from "@/types/portfolio-hierarchy";
-import { getDevProjects } from "@/lib/supabase-queries";
+import { getDevProjects, getPortfolioActivities } from "@/lib/supabase-queries";
 import { buildUnifiedHierarchy } from "@/lib/admin-hierarchy-service";
 import { projectIsPublished } from "@/lib/portfolio-projects";
 
@@ -185,10 +185,10 @@ export function PortfolioMap() {
 
   // Fetch live hierarchy from Supabase (reflects Admin edits)
   useEffect(() => {
-    getDevProjects()
-      .then((projects) => {
+    Promise.all([getDevProjects(), getPortfolioActivities()])
+      .then(([projects, activities]) => {
         const published = projects.filter(projectIsPublished);
-        setLiveDisciplines(buildUnifiedHierarchy(published).disciplines);
+        setLiveDisciplines(buildUnifiedHierarchy(published, activities).disciplines);
       })
       .catch(() => {
         // Fallback: use static hierarchy

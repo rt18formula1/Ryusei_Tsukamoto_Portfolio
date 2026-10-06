@@ -57,6 +57,20 @@ export interface Activity {
   visible?: boolean;
 }
 
+export interface DbPortfolioActivity {
+  id: string;
+  discipline_id: DisciplineId;
+  name: string;
+  slug: string;
+  description: string | null;
+  visual: ActivityVisual | null;
+  links: ActivityLink[];
+  display_order: number;
+  visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 /** L1: Discipline */
 export interface Discipline {
   id: DisciplineId;

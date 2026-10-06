@@ -1,5 +1,5 @@
 import { PORTFOLIO_HIERARCHY } from "./portfolio-hierarchy/data";
-import type { PortfolioHierarchy } from "@/types/portfolio-hierarchy";
+import type { DbPortfolioActivity, PortfolioHierarchy } from "@/types/portfolio-hierarchy";
 import type { DbDevProject } from "./supabase-queries";
 import { projectContent, projectIsPublished } from "./portfolio-projects";
 
@@ -15,8 +15,32 @@ export interface HierarchyStats {
 /**
  * Builds the full live unified hierarchy tree combining base definitions and Supabase projects.
  */
-export function buildUnifiedHierarchy(dbProjects: DbDevProject[] = []): PortfolioHierarchy {
+export function buildUnifiedHierarchy(dbProjects: DbDevProject[] = [], dbActivities: DbPortfolioActivity[] = []): PortfolioHierarchy {
   const baseHierarchy = structuredClone(PORTFOLIO_HIERARCHY);
+
+  for (const activity of dbActivities.filter((item) => item.visible)) {
+    const discipline = baseHierarchy.disciplines.find((d) => d.id === activity.discipline_id);
+    if (!discipline) continue;
+    const mappedActivity = {
+      id: activity.id,
+      name: activity.name,
+      slug: activity.slug,
+      description: activity.description || undefined,
+      disciplineId: activity.discipline_id,
+      visual: activity.visual || undefined,
+      links: activity.links || [],
+      contentType: "project",
+      contents: [],
+      displayOrder: activity.display_order,
+      visible: activity.visible,
+    };
+    const existing = discipline.activities.find((item) => item.id === activity.id || item.slug === activity.slug);
+    if (existing) Object.assign(existing, mappedActivity);
+    else discipline.activities.push(mappedActivity);
+  }
+  for (const discipline of baseHierarchy.disciplines) {
+    discipline.activities.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+  }
 
   for (const project of dbProjects) {
     const discipline = baseHierarchy.disciplines.find((d) => d.id === project.discipline_id);

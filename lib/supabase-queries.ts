@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient";
+import type { DbPortfolioActivity } from "@/types/portfolio-hierarchy";
 
 export type DbNews = {
   id: string;
@@ -522,6 +523,18 @@ export async function getDevProjects(disciplineId?: DisciplineId) {
     return [];
   }
   return data as DbDevProject[];
+}
+
+export async function getPortfolioActivities(disciplineId?: DisciplineId) {
+  if (!supabase) return [];
+  let query = supabase.from("portfolio_activities").select("*").order("display_order", { ascending: true }).order("created_at", { ascending: true });
+  if (disciplineId) query = query.eq("discipline_id", disciplineId);
+  const { data, error } = await query;
+  if (error) {
+    console.error("Error fetching portfolio activities:", error);
+    return [];
+  }
+  return data as DbPortfolioActivity[];
 }
 
 export async function getDevProjectById(id: string) {

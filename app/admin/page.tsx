@@ -23,10 +23,12 @@ import {
 } from "lucide-react";
 import {
   createDevProjectAction,
+  createPortfolioActivityAction,
   deleteDevProjectAction,
   updateDevProjectAction,
+  updatePortfolioActivityAction,
 } from "@/lib/admin-actions";
-import { getDevProjects, uploadImageToStorage, type DbDevProject } from "@/lib/supabase-queries";
+import { getDevProjects, getPortfolioActivities, uploadImageToStorage, type DbDevProject } from "@/lib/supabase-queries";
 import type {
   DevProjectInformation,
   DevProjectDetailBlock,
@@ -42,9 +44,8 @@ import { AdminHierarchyTree } from "@/components/admin/admin-hierarchy-tree";
 import { AdminActivityEditor } from "@/components/admin/admin-activity-editor";
 
 // Hierarchy data & service
-import { PORTFOLIO_HIERARCHY } from "@/lib/portfolio-hierarchy/data";
-import { computeHierarchyStats } from "@/lib/admin-hierarchy-service";
-import type { Activity } from "@/types/portfolio-hierarchy";
+import { buildUnifiedHierarchy, computeHierarchyStats } from "@/lib/admin-hierarchy-service";
+import type { Activity, DbPortfolioActivity } from "@/types/portfolio-hierarchy";
 import type { DisciplineId } from "@/types/portfolio-map";
 
 // ─── Types & helpers ────────────────────────────────────────────────────────
@@ -170,6 +171,7 @@ export default function AdminPage() {
 
   // Projects data
   const [projects, setProjects] = useState<DbDevProject[]>([]);
+  const [activities, setActivities] = useState<DbPortfolioActivity[]>([]);
   const [selectedDiscipline, setSelectedDiscipline] = useState<DisciplineId | null>(null);
 
   // Admin Console state
@@ -186,7 +188,14 @@ export default function AdminPage() {
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [editingActivityDisciplineId, setEditingActivityDisciplineId] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => setProjects(await getDevProjects(selectedDiscipline || undefined)), [selectedDiscipline]);
+  const refresh = useCallback(async () => {
+    const [nextProjects, nextActivities] = await Promise.all([
+      getDevProjects(selectedDiscipline || undefined),
+      getPortfolioActivities(selectedDiscipline || undefined),
+    ]);
+    setProjects(nextProjects);
+    setActivities(nextActivities);
+  }, [selectedDiscipline]);
 
   useEffect(() => {
     fetch("/api/admin/session", { credentials: "include" })
@@ -257,8 +266,30 @@ export default function AdminPage() {
     setSessionOk(false);
   };
 
-  // ── Hierarchy stats ──────────────────────────────────────────────────────
-  const stats = computeHierarchyStats(PORTFOLIO_HIERARCHY, projects);
+  const hierarchy = buildUnifiedHierarchy(projects, activities);
+  const stats = computeHierarchyStats(hierarchy, projects);
+
+  const saveActivity = useCallback(async (activity: Activity) => {
+    const payload = {
+      id: activity.id || activity.slug,
+      discipline_id: activity.disciplineId,
+      name: activity.name,
+      slug: activity.slug,
+      description: activity.description || null,
+      visual: activity.visual || {},
+      links: activity.links || [],
+      display_order: activity.displayOrder ?? 0,
+      visible: activity.visible ?? true,
+    };
+    if (activities.some((item) => item.id === payload.id)) {
+      await updatePortfolioActivityAction(payload.id, payload);
+    } else {
+      await createPortfolioActivityAction(payload);
+    }
+    await refresh();
+    setEditingActivity(null);
+    setEditingActivityDisciplineId(null);
+  }, [activities, refresh]);
 
   // ── Render: Login ────────────────────────────────────────────────────────
   if (!sessionOk) {
@@ -339,7 +370,7 @@ export default function AdminPage() {
           {/* ── Hierarchy Tree ── */}
           {currentTab === "hierarchy" && (
             <AdminHierarchyTree
-              hierarchy={PORTFOLIO_HIERARCHY}
+              hierarchy={hierarchy}
               dbProjects={projects}
               onEditProject={openProject}
               onEditActivity={(activity) => {
@@ -370,7 +401,7 @@ export default function AdminPage() {
           {/* ── Disciplines (read-only view) ── */}
           {currentTab === "disciplines" && (
             <DisciplinesView
-              disciplines={PORTFOLIO_HIERARCHY.disciplines}
+              disciplines={hierarchy.disciplines}
               onNavigate={() => setCurrentTab("activities")}
             />
           )}
@@ -378,11 +409,12 @@ export default function AdminPage() {
           {/* ── Activities ── */}
           {currentTab === "activities" && (
             <ActivitiesView
-              disciplines={PORTFOLIO_HIERARCHY.disciplines}
+              disciplines={hierarchy.disciplines}
               editingActivity={editingActivity}
               defaultDisciplineId={editingActivityDisciplineId ?? undefined}
               onEditActivity={(activity) => setEditingActivity(activity)}
               onCloseEditor={() => { setEditingActivity(null); setEditingActivityDisciplineId(null); }}
+              onSaveActivity={saveActivity}
             />
           )}
 
@@ -474,22 +506,25 @@ function ActivitiesView({
   defaultDisciplineId,
   onEditActivity,
   onCloseEditor,
+  onSaveActivity,
 }: {
   disciplines: import("@/types/portfolio-hierarchy").Discipline[];
   editingActivity: Activity | null;
   defaultDisciplineId?: string;
   onEditActivity: (activity: Activity) => void;
   onCloseEditor: () => void;
+  onSaveActivity: (activity: Activity) => Promise<void>;
 }) {
   const allActivities = disciplines.flatMap((d) =>
     (d.activities || []).map((a) => ({ ...a, disciplineId: d.id, disciplineLabel: d.name }))
   );
 
-  const handleSave = () => {
-    // Activity data is static (in portfolio-hierarchy/data.ts).
-    // In a future iteration this would write to a DB table.
-    alert("Activity管理はstatic定義のため、現在はコードから変更してください。（将来的にはDB管理に移行予定）");
-    onCloseEditor();
+  const handleSave = async (updatedActivity: Activity) => {
+    try {
+      await onSaveActivity(updatedActivity);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Activityの保存に失敗しました");
+    }
   };
 
   return (
@@ -527,7 +562,7 @@ function ActivitiesView({
           </div>
         </div>
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
-          <strong>Note:</strong> Activityは静的定義です。追加・削除はコードを変更してください。
+          <strong>Note:</strong> ActivityはSupabaseに保存され、公開サイトへ反映されます。
         </div>
       </div>
 

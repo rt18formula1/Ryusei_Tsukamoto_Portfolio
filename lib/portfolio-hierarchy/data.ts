@@ -1,10 +1,9 @@
 import type { PortfolioHierarchy } from "@/types/portfolio-hierarchy";
-import { MOCK_DEV_PROJECT, MOCK_DEV_PROJECT_2 } from "@/lib/dev-project/mock";
 
 /**
  * Single source of truth for Portfolio → Discipline → Activity → Content.
- * Developer projects reuse existing mock / project ids (no invented placeholders).
- * Other disciplines declare Activity shells for future extension.
+ * Base hierarchy contains stable disciplines and activity entities only.
+ * Projects are appended from Supabase at render time.
  */
 export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
   disciplines: [
@@ -23,26 +22,7 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
           description: "Development work under the rt18_dev brand.",
           disciplineId: "developer",
           contentType: "project",
-          contents: [
-            {
-              id: MOCK_DEV_PROJECT.id,
-              name: MOCK_DEV_PROJECT.projectName,
-              slug: "f1-sns-post-automator",
-              type: "project",
-              description: MOCK_DEV_PROJECT.shortDescription,
-              mainVisualUrl: MOCK_DEV_PROJECT.mainVisualUrl,
-              projectId: MOCK_DEV_PROJECT.id,
-            },
-            {
-              id: MOCK_DEV_PROJECT_2.id,
-              name: MOCK_DEV_PROJECT_2.projectName,
-              slug: "portfolio-generator",
-              type: "project",
-              description: MOCK_DEV_PROJECT_2.shortDescription,
-              mainVisualUrl: MOCK_DEV_PROJECT_2.mainVisualUrl,
-              projectId: MOCK_DEV_PROJECT_2.id,
-            },
-          ],
+          contents: [],
         },
       ],
     },

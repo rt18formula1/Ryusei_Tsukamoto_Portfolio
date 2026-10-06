@@ -12,8 +12,19 @@ body { min-height: 100vh; }
 
 .animate-marquee { animation: marquee 34s linear infinite; }
 
+@keyframes record-scroll {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+.record-scroll { height: 31rem; mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent); }
+.record-scroll::before { content: ""; position: absolute; left: 0.3rem; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,.14); }
+.record-scroll-track { animation: record-scroll 42s linear infinite; }
+.record-scroll:hover .record-scroll-track { animation-play-state: paused; }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee { animation-play-state: paused; }
+  .record-scroll-track { animation-play-state: paused; }
 }
 
 @media print {

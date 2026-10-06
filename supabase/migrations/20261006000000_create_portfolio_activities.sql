@@ -15,5 +15,6 @@ CREATE TABLE IF NOT EXISTS portfolio_activities (
 CREATE INDEX IF NOT EXISTS idx_portfolio_activities_discipline_order ON portfolio_activities(discipline_id, display_order);
 ALTER TABLE portfolio_activities ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read visible portfolio activities" ON portfolio_activities FOR SELECT TO anon, authenticated USING (visible = true);
+GRANT SELECT ON TABLE portfolio_activities TO anon, authenticated;
 DROP TRIGGER IF EXISTS update_portfolio_activities_updated_at ON portfolio_activities;
 CREATE TRIGGER update_portfolio_activities_updated_at BEFORE UPDATE ON portfolio_activities FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

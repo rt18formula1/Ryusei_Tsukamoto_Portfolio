@@ -32,6 +32,8 @@ CREATE POLICY "Admin write access" ON dev_projects
   FOR ALL USING (auth.jwt() ->> 'role' = 'service_role')
   WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
 
+GRANT SELECT ON TABLE dev_projects TO anon, authenticated;
+
 -- Updated at trigger
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

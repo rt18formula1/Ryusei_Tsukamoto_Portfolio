@@ -16,6 +16,7 @@ const DISCIPLINE_COLORS = [
   { id: "musician", name: "MUSICIAN", color: "#db2777" },
   { id: "blogger", name: "BLOGGER", color: "#059669" },
   { id: "investor", name: "INVESTOR", color: "#d97706" },
+  { id: "photographer", name: "PHOTOGRAPHER", color: "#0ea5e9" },
 ];
 
 export function AdminDisciplineEditor({

@@ -580,7 +580,7 @@ export function AdminProjectEditor({
                   </span>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {["developer", "illustrator", "musician", "blogger", "investor"].map((discipline) => (
+                  {["developer", "illustrator", "musician", "blogger", "investor", "photographer"].map((discipline) => (
                     <button
                       key={discipline}
                       type="button"

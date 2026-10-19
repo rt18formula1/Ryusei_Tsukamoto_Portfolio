@@ -18,6 +18,7 @@ const records = [
   { date: "2026 上期", title: { ja: "calender-generatorを公開", en: "Released calender-generator" }, text: { ja: "画像と年月から、フォトフレームや壁紙向けのカレンダー画像を生成・書き出しできるWebツールを公開。", en: "Released a web tool that generates and exports calendar artwork from an image, year, month, and layout template." }, href: "/portfolio/developer" },
   { date: "2026 上期", title: { ja: "nasu-calendarを公開", en: "Released nasu-calendar" }, text: { ja: "株式会社pedanticの動画投稿予定をGoogle Calendarで一覧・購読できる公開カレンダーを実装。", en: "Built a public calendar for browsing and subscribing to 株式会社pedantic's video publishing schedule through Google Calendar." }, href: "/portfolio/developer" },
   { date: "2026 上期", title: { ja: "Meteor Creator Studioを開発", en: "Developed Meteor Creator Studio" }, text: { ja: "レイヤー、ツール、パネルを備えたプロ向けクリエイティブスイートの開発を開始。", en: "Started developing a professional creative suite built around layers, tools, and dockable panels." }, href: "/portfolio/developer" },
+  { date: "2026.04", title: { ja: "Instagram @rt18_photoを開設", en: "Opened Instagram @rt18_photo" }, text: { ja: "写真撮影・ビジュアルストーリーテリングを記録するInstagramアカウントを開設。写真作品の公開を始める。", en: "Opened an Instagram account for photography and visual storytelling, sharing photo works." }, href: "https://www.instagram.com/rt18_photo/" },
   { date: "2026.08–09", title: { ja: "Portfolio Mapを制作", en: "Built the Portfolio Map" }, text: { ja: "複数の活動Identityと公開した制作物をつなぎ、F1・音楽・開発を横断して閲覧できるPortfolio Mapを制作。", en: "Built a Portfolio Map connecting public releases across F1, music, and software." }, href: "/profile" },
 ];
 

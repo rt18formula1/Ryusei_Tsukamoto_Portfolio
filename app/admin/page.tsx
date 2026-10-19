@@ -639,7 +639,7 @@ function ProjectsView({
         >
           All
         </button>
-        {["developer", "illustrator", "musician", "blogger", "investor"].map((discipline) => (
+        {["developer", "illustrator", "musician", "blogger", "investor", "photographer"].map((discipline) => (
           <button
             key={discipline}
             onClick={() => onDisciplineChange(discipline as DisciplineId)}

@@ -86,5 +86,24 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
       color: "#d97706",
       activities: [],
     },
+    {
+      id: "photographer",
+      name: "Photographer",
+      slug: "photographer",
+      description:
+        "Photography, visual storytelling, and photo documentation shared through @rt18_photo on Instagram.",
+      color: "#0ea5e9",
+      activities: [
+        {
+          id: "rt18-photo",
+          name: "rt18_photo",
+          slug: "rt18-photo",
+          description: "Photography work shared on Instagram @rt18_photo.",
+          disciplineId: "photographer",
+          contentType: "photo",
+          contents: [],
+        },
+      ],
+    },
   ],
 };

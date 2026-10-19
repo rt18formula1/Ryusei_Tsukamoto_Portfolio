@@ -18,6 +18,7 @@ const DISCIPLINE_LABELS: Record<DisciplineId, string> = {
   musician: "MUSICIAN",
   blogger: "BLOGGER",
   investor: "INVESTOR",
+  photographer: "PHOTOGRAPHER",
 };
 
 export function AdminActivityList({

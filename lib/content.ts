@@ -24,6 +24,7 @@ export const linktreeLinks: LinktreeLink[] = [
   { slug: "request", title: "Google Form：Request", url: "https://forms.gle/", group: "resources" },
   { slug: "contact", title: "Google Forms : Contact", url: "https://docs.google.com/forms/", group: "resources" },
   { slug: "instagram-music", title: "Instagram : rt18_music", url: "https://www.instagram.com/rt18_music/", group: "social" },
+  { slug: "instagram-photo", title: "Instagram : rt18_photo", url: "https://www.instagram.com/rt18_photo/", group: "social" },
   { slug: "instagram-mylife", title: "Instagram : rt18_mylife", url: "https://www.instagram.com/rt18_mylife/", group: "social" },
   { slug: "pinterest", title: "Pinterest : rt18_formula1", url: "https://www.pinterest.jp/rt18_formula1/", group: "social" },
   { slug: "linkedin", title: "LinkedIn : rt18_formula1", url: "https://www.linkedin.com/in/rt18-formula1/", group: "social" },

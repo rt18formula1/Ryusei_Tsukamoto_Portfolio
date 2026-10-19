@@ -16,6 +16,7 @@ const DISCIPLINES: Array<{ id: DisciplineId; label: string }> = [
   { id: "musician", label: "MUSICIAN" },
   { id: "blogger", label: "BLOGGER" },
   { id: "investor", label: "INVESTOR" },
+  { id: "photographer", label: "PHOTOGRAPHER" },
 ];
 
 export function AdminActivityEditor({

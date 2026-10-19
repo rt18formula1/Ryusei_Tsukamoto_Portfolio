@@ -1,4 +1,4 @@
-export type DisciplineId = "developer" | "illustrator" | "musician" | "blogger" | "investor";
+export type DisciplineId = "developer" | "illustrator" | "musician" | "blogger" | "investor" | "photographer";
 
 export interface PortfolioNode {
   id: string;

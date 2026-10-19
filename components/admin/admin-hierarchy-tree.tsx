@@ -46,6 +46,8 @@ export function AdminHierarchyTree({
     musician: true,
     blogger: false,
     investor: false,
+    photographer: true,
+    "rt18-photo": true,
   });
 
   const toggleExpand = (nodeId: string) => {

@@ -24,6 +24,7 @@ const NODE_META: Record<DisciplineId, { label: string; color: string }> = {
   musician: { label: "Musician", color: "#db2777" },
   blogger: { label: "Blogger", color: "#059669" },
   investor: { label: "Investor", color: "#d97706" },
+  photographer: { label: "Photographer", color: "#0ea5e9" },
 };
 
 const SERVICE_LOGOS = [
@@ -75,11 +76,12 @@ export function PortfolioMap() {
   const hoverZoom = 1.45;
 
   const disciplinePositions: Record<DisciplineId, { x: number; y: number }> = {
-    developer: { x: 50, y: 18 },
-    illustrator: { x: 82, y: 35 },
-    musician: { x: 75, y: 78 },
-    blogger: { x: 25, y: 78 },
-    investor: { x: 18, y: 35 },
+    developer:    { x: 50, y: 18 },      // top (0°)
+    illustrator:  { x: 77.7, y: 34 },    // top-right (60°)
+    musician:     { x: 77.7, y: 66 },     // bottom-right (120°)
+    blogger:      { x: 50, y: 82 },       // bottom (180°)
+    investor:     { x: 22.3, y: 66 },     // bottom-left (240°)
+    photographer: { x: 22.3, y: 34 },     // top-left (300°)
   };
   const focusPosition = hoveredNode && hoveredNode !== "central"
     ? disciplinePositions[hoveredNode as DisciplineId]
@@ -89,11 +91,11 @@ export function PortfolioMap() {
     ? liveDisciplines.find((d) => d.id === hoveredNode) || null
     : null;
 
-  // Calculate pentagon vertices
-  const getPentagonVertices = (cx: number, cy: number, size: number) => {
+  // Calculate hexagon vertices
+  const getHexagonVertices = (cx: number, cy: number, size: number) => {
     const vertices = [];
-    for (let i = 0; i < 5; i++) {
-      const angle = (i * 72 - 90) * (Math.PI / 180);
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * 60 - 90) * (Math.PI / 180);
       const x = cx + size * Math.cos(angle);
       const y = cy + size * Math.sin(angle);
       vertices.push({ x, y });
@@ -104,9 +106,9 @@ export function PortfolioMap() {
   // Calculate edge midpoints and outward normals
   const getEdgeData = (vertices: Array<{ x: number; y: number }>) => {
     const edges = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
       const v1 = vertices[i];
-      const v2 = vertices[(i + 1) % 5];
+      const v2 = vertices[(i + 1) % 6];
       
       // Midpoint
       const midX = (v1.x + v2.x) / 2;
@@ -136,45 +138,27 @@ export function PortfolioMap() {
     return edges;
   };
 
-  // Calculate initial position for surrounding pentagon (edge-to-edge contact)
-  const getInitialPosition = (edgeIndex: number) => {
-    const centralVertices = getPentagonVertices(centerX, centerY, 15);
-    const edges = getEdgeData(centralVertices);
-    const edge = edges[edgeIndex];
-    
-    // For edge-to-edge contact, the surrounding pentagon's center should be positioned
-    // such that its corresponding edge aligns with the central pentagon's edge
-    // The distance from center to edge midpoint (apothem) for a regular pentagon with edge length L is:
-    // apothem = L / (2 * tan(π/5))
-    // But we're using circumradius (size parameter), so we need to calculate the apothem from that
-    
-    // Apothem = size * cos(π/5) for regular pentagon
-    const centralApothem = 15 * Math.cos(Math.PI / 5);
-    
-    // Initial position: edge midpoint + (apothem * normal)
-    // This places the surrounding pentagon's center at the correct distance for edge-to-edge contact
-    const initialX = edge.midpoint.x + centralApothem * edge.normal.x;
-    const initialY = edge.midpoint.y + centralApothem * edge.normal.y;
-    
-    return { x: initialX, y: initialY };
-  };
+  // Central hexagon vertices used for line start and initial node positions
+  const centralVertices = getHexagonVertices(centerX, centerY, 15);
 
-  // Map discipline IDs to edge indices (top, top-right, bottom-right, bottom-left, top-left)
+  // Map discipline IDs to vertex indices (top, top-right, bottom-right, bottom, bottom-left, top-left)
   const disciplineEdgeMap: Record<DisciplineId, number> = {
-    developer: 0,    // top edge
-    illustrator: 1,  // top-right edge
-    musician: 2,    // bottom-right edge
-    blogger: 3,     // bottom-left edge
-    investor: 4,    // top-left edge
+    developer: 0,     // top vertex
+    illustrator: 1,   // top-right vertex
+    musician: 2,      // bottom-right vertex
+    blogger: 3,       // bottom vertex
+    investor: 4,      // bottom-left vertex
+    photographer: 5,  // top-left vertex
   };
 
-  // Calculate initial positions for all disciplines
+  // Calculate initial positions for all disciplines (at central hexagon vertices before expansion)
   const initialPositions: Record<DisciplineId, { x: number; y: number }> = {
-    developer: getInitialPosition(0),
-    illustrator: getInitialPosition(1),
-    musician: getInitialPosition(2),
-    blogger: getInitialPosition(3),
-    investor: getInitialPosition(4),
+    developer: centralVertices[0],
+    illustrator: centralVertices[1],
+    musician: centralVertices[2],
+    blogger: centralVertices[3],
+    investor: centralVertices[4],
+    photographer: centralVertices[5],
   };
 
   // Animation trigger on mount
@@ -241,10 +225,10 @@ export function PortfolioMap() {
     }));
   };
 
-  const createPentagonPath = (cx: number, cy: number, size: number) => {
+  const createHexagonPath = (cx: number, cy: number, size: number) => {
     const points = [];
-    for (let i = 0; i < 5; i++) {
-      const angle = (i * 72 - 90) * (Math.PI / 180);
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * 60 - 90) * (Math.PI / 180);
       const x = cx + size * Math.cos(angle);
       const y = cy + size * Math.sin(angle);
       points.push(`${x},${y}`);
@@ -291,7 +275,7 @@ export function PortfolioMap() {
           viewBox="0 0 100 100"
           preserveAspectRatio="xMidYMid meet"
           role="img"
-          aria-label="Interactive portfolio five-point discipline map"
+          aria-label="Interactive portfolio hexagonal discipline map"
           onMouseLeave={() => setHoveredNode(null)}
         >
           <g
@@ -311,8 +295,6 @@ export function PortfolioMap() {
             const isCentralHovered = hoveredNode === "central";
             const edgeIndex = disciplineEdgeMap[disciplineId as DisciplineId];
             
-            // Calculate vertex for line start (from central pentagon vertex)
-            const centralVertices = getPentagonVertices(centerX, centerY, 15);
             const vertex = centralVertices[edgeIndex];
 
             return (
@@ -351,7 +333,7 @@ export function PortfolioMap() {
             );
           })}
 
-          {/* Surrounding pentagons - rendered before central (behind layer) */}
+          {/* Surrounding hexagons - rendered before central (behind layer) */}
           {Object.entries(disciplinePositions).map(([disciplineId, pos]) => {
             const isSelected = state.selectedNode === disciplineId;
             const isHovered = hoveredNode === disciplineId;
@@ -362,7 +344,7 @@ export function PortfolioMap() {
             // Calculate rotation for animation (±5-15 degrees based on edge index)
             const rotation = isMounted ? 0 : (edgeIndex % 2 === 0 ? 10 : -10);
             
-            // Initial size matches central pentagon for edge-to-edge contact
+            // Initial size matches central hexagon for edge-to-edge contact
             const initialSize = 15;
             const finalSize = 7;
 
@@ -397,7 +379,7 @@ export function PortfolioMap() {
                   }}
                 >
                   <path
-                    d={createPentagonPath(0, 0, isMounted ? finalSize : initialSize)}
+                    d={createHexagonPath(0, 0, isMounted ? finalSize : initialSize)}
                     fill={isSelected || isHovered ? "#000" : "#fff"}
                     stroke={isSelected || isHovered ? "#000" : meta.color}
                     strokeWidth={isSelected || isHovered ? "0.3" : "0.2"}
@@ -430,7 +412,7 @@ export function PortfolioMap() {
             );
           })}
 
-          {/* Central pentagon - rendered last (top layer, in front) */}
+          {/* Central hexagon - rendered last (top layer, in front) */}
           <g
             className="cursor-pointer focus:outline-none"
             role="button"
@@ -450,7 +432,7 @@ export function PortfolioMap() {
             onMouseEnter={() => setHoveredNode("central")}
           >
             <path
-              d={createPentagonPath(centerX, centerY, 15)}
+              d={createHexagonPath(centerX, centerY, 15)}
               fill={
                 state.selectedNode === "central" || hoveredNode === "central" ? "#000" : "#fff"
               }

@@ -12,14 +12,14 @@ interface HierarchyMapNodesProps {
   centerY: number;
 }
 
-/** Pentagon vertex angles in radians (matches createPentagonPath: i*72-90) */
-const VERTEX_ANGLES = [-90, -18, 54, 126, 198].map((a) => (a * Math.PI) / 180);
+/** Hexagon vertex angles in radians (matches createHexagonPath: i*60-90) */
+const VERTEX_ANGLES = [-90, -30, 30, 90, 150, 210].map((a) => (a * Math.PI) / 180);
 
 // Child activities/projects should read as a slightly smaller layer than the
-// five top-level discipline pentagons, while remaining large enough to scan.
-const SIZE_RATIO = 0.84; // child pentagon / parent pentagon
+// six top-level discipline hexagons, while remaining large enough to scan.
+const SIZE_RATIO = 0.84; // child hexagon / parent hexagon
 const GAP = 1.5; // space between parent edge and child edge
-const DISCIPLINE_SIZE = 7; // matches the discipline pentagon in the main map
+const DISCIPLINE_SIZE = 7; // matches the discipline hexagon in the main map
 
 interface TreeNode {
   id: string;
@@ -42,14 +42,14 @@ function toTree(activity: Activity, disciplineId: DisciplineId): TreeNode {
   };
 }
 
-function pentagonPath(cx: number, cy: number, size: number): string {
+function hexagonPath(cx: number, cy: number, size: number): string {
   const pts = VERTEX_ANGLES.map(
     (a) => `${cx + size * Math.cos(a)},${cy + size * Math.sin(a)}`
   );
   return `M ${pts.join(" L ")} Z`;
 }
 
-/** Find the pentagon vertex closest to the outward direction from map center. */
+/** Find the hexagon vertex closest to the outward direction from map center. */
 function outwardVertex(
   center: { x: number; y: number },
   size: number,
@@ -57,7 +57,7 @@ function outwardVertex(
 ): { x: number; y: number } {
   let best = 0;
   let bestDiff = Infinity;
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     let d = VERTEX_ANGLES[i] - angle;
     while (d > Math.PI) d -= 2 * Math.PI;
     while (d < -Math.PI) d += 2 * Math.PI;
@@ -73,10 +73,10 @@ function outwardVertex(
   };
 }
 
-/** Calculate a font size that fits the text inside the pentagon (no truncation). */
+/** Calculate a font size that fits the text inside the hexagon (no truncation). */
 function fitFont(text: string, size: number): number {
   const maxFont = size * 0.2;
-  const availableWidth = size * 1.52; // safe width inside the pentagon
+  const availableWidth = size * 1.72; // safe width inside the hexagon (wider than pentagon)
   const charWidthRatio = 0.6;
   const calculated = availableWidth / (text.length * charWidthRatio);
   return Math.min(maxFont, Math.max(0.25, calculated));
@@ -111,7 +111,7 @@ function childPositions(
   });
 }
 
-/** Recursively render a node as a pentagon with lines to its children. */
+/** Recursively render a node as a hexagon with lines to its children. */
 function renderNode(
   node: TreeNode,
   pos: { x: number; y: number },
@@ -132,7 +132,7 @@ function renderNode(
   const fs = fitFont(node.name, size);
   // Longer names use SVG text compression so they never overflow the node.
   // Short labels keep their natural width and therefore do not look stretched.
-  const textLength = node.name.length > 10 ? size * 1.48 : undefined;
+  const textLength = node.name.length > 10 ? size * 1.68 : undefined;
 
   return (
     <g
@@ -145,7 +145,7 @@ function renderNode(
       }}
     >
       <path
-        d={pentagonPath(pos.x, pos.y, size)}
+        d={hexagonPath(pos.x, pos.y, size)}
         fill={color}
         stroke={color}
         strokeWidth="0.2"
@@ -188,7 +188,7 @@ function renderNode(
 
 /**
  * Renders the hovered discipline's child hierarchy (activities → contents → …)
- * as pentagon nodes on the SVG map, with lines growing from pentagon vertices.
+ * as hexagon nodes on the SVG map, with lines growing from hexagon vertices.
  */
 export function HierarchyMapNodes({
   discipline,
@@ -213,7 +213,7 @@ export function HierarchyMapNodes({
 
   return (
     <g style={{ opacity: 1, transition: "opacity 300ms ease" }}>
-      {/* Lines from discipline pentagon's outward vertex to each activity */}
+      {/* Lines from discipline hexagon's outward vertex to each activity */}
       {acts.map((a, i) => (
         <line
           key={`l-${a.id}`}
@@ -227,7 +227,7 @@ export function HierarchyMapNodes({
         />
       ))}
 
-      {/* Render each activity (and its children) recursively as pentagons */}
+      {/* Render each activity (and its children) recursively as hexagons */}
       {acts.map((a, i) =>
         renderNode(toTree(a, discipline.id), actPos[i], actSize, discipline.color, centerX, centerY)
       )}

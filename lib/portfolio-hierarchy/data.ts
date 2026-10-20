@@ -98,9 +98,16 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
           id: "rt18-photo",
           name: "rt18_photo",
           slug: "rt18-photo",
-          description: "Photography work shared on Instagram @rt18_photo.",
+          description:
+            "写真撮影およびビジュアルストーリーテリングの公式アカウント。日常の情景、モータースポーツ、建築、クリエイティブスナップを公開中。",
           disciplineId: "photographer",
           contentType: "photo",
+          links: [
+            {
+              label: "Instagram @rt18_photo",
+              url: "https://www.instagram.com/rt18_photo/",
+            },
+          ],
           contents: [],
         },
       ],

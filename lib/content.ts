@@ -12,6 +12,7 @@ export type LinktreeLink = {
 export const linktreeLinks: LinktreeLink[] = [
   { slug: "official-web", title: "Official Web : rt18_formula1", url: "https://rt18-formula1-official-site.vercel.app", group: "featured" },
   { slug: "instagram", title: "Instagram : rt18_formula1", url: "https://www.instagram.com/rt18_formula1/", group: "social" },
+  { slug: "instagram-photo", title: "Instagram : rt18_photo", url: "https://www.instagram.com/rt18_photo/", group: "social" },
   { slug: "x-main", title: "X(Twitter)：rt18_formula1_x", url: "https://x.com/rt18_formula1_x", group: "social" },
   { slug: "x-yurugakuto", title: "X(Twitter) : rt18_yurugakuto", url: "https://x.com/rt18_yurugakuto", group: "social" },
   { slug: "nasu-calendar", title: "ゆる学徒公開カレンダー", url: "https://nasu-calendar.vercel.app", group: "featured" },
@@ -24,7 +25,6 @@ export const linktreeLinks: LinktreeLink[] = [
   { slug: "request", title: "Google Form：Request", url: "https://forms.gle/", group: "resources" },
   { slug: "contact", title: "Google Forms : Contact", url: "https://docs.google.com/forms/", group: "resources" },
   { slug: "instagram-music", title: "Instagram : rt18_music", url: "https://www.instagram.com/rt18_music/", group: "social" },
-  { slug: "instagram-photo", title: "Instagram : rt18_photo", url: "https://www.instagram.com/rt18_photo/", group: "social" },
   { slug: "instagram-mylife", title: "Instagram : rt18_mylife", url: "https://www.instagram.com/rt18_mylife/", group: "social" },
   { slug: "pinterest", title: "Pinterest : rt18_formula1", url: "https://www.pinterest.jp/rt18_formula1/", group: "social" },
   { slug: "linkedin", title: "LinkedIn : rt18_formula1", url: "https://www.linkedin.com/in/rt18-formula1/", group: "social" },
@@ -33,7 +33,8 @@ export const linktreeLinks: LinktreeLink[] = [
 ];
 
 export const snsLinks = [
-  { name: "Instagram", url: "https://www.instagram.com/rt18_formula1/", icon: "/instagram-icon.png" },
+  { name: "Instagram (rt18_formula1)", url: "https://www.instagram.com/rt18_formula1/", icon: "/instagram-icon.png" },
+  { name: "Instagram (rt18_photo)", url: "https://www.instagram.com/rt18_photo/", icon: "/instagram-icon.png" },
   { name: "X", url: "https://x.com/rt18_formula1_x", icon: "/x-logo.png" },
   { name: "YouTube", url: "https://www.youtube.com/@rt18_formula1", icon: "/youtube-logo.png" },
   { name: "TikTok", url: "https://www.tiktok.com/@rt18_formula1_official", icon: "/tiktok-logo.png" },

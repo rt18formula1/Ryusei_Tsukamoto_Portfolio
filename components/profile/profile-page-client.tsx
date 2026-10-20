@@ -21,7 +21,7 @@ const milestones: Array<{ date: string; title: Localized; body: Localized; href:
   { date: "2025", title: { ja: "rt18_formula1公式サイトを公開", en: "Published the rt18_formula1 official site" }, body: { ja: "ニュース、スケジュール、リザルト、イラスト、ポートフォリオを一つのWeb基盤にまとめた。", en: "Brought news, schedules, results, illustrations, and portfolio work into one web platform." }, href: "/portfolio/developer" },
   { date: "2026 上期", title: { ja: "calender-generator / nasu-calendar", en: "calender-generator / nasu-calendar" }, body: { ja: "カレンダー画像生成ツールと、株式会社pedanticの動画公開予定を購読できるGoogle Calendar連携サイトを制作。", en: "Built a calendar artwork generator and a Google Calendar-powered public schedule site for 株式会社pedantic." }, href: "/portfolio/developer" },
   { date: "2026 上期", title: { ja: "Meteor Creator Studio", en: "Meteor Creator Studio" }, body: { ja: "レイヤー、ツール、パネルを備えたフリーミアム型クリエイティブスイートの構想・開発を開始。", en: "Started designing and developing a freemium creative suite with layers, tools, and dockable panels." }, href: "/portfolio/developer" },
-  { date: "2026.04", title: { ja: "Instagram @rt18_photoを開設", en: "Opened Instagram @rt18_photo" }, body: { ja: "写真撮影・ビジュアルストーリーテリングを記録するInstagramアカウントを開設。写真作品の公開を始める。", en: "Opened an Instagram account for photography and visual storytelling, sharing photo works." }, href: "https://www.instagram.com/rt18_photo/" },
+  { date: "2026.04", title: { ja: "Instagram @rt18_photoを開設", en: "Opened Instagram @rt18_photo" }, body: { ja: "写真撮影・ビジュアルストーリーテリングを記録するInstagramアカウントを開設。写真作品の公開を始める。", en: "Opened an Instagram account for photography and visual storytelling, sharing photo works." }, href: "/disciplines/photographer/rt18-photo" },
   { date: "2026.08–09", title: { ja: "Portfolio Mapを制作", en: "Built the Portfolio Map" }, body: { ja: "活動Identityと公開した制作物を接続し、F1・音楽・開発を横断して閲覧できるPortfolio Mapを制作。", en: "Built a Portfolio Map connecting public releases across F1, music, and software." }, href: "/" },
 ];
 
@@ -35,13 +35,13 @@ const projects = [
 const identities = [
   { name: "rt18_formula1", text: { ja: "F1の情報、イラスト、Webを公開する活動名。", en: "The public identity for F1 information, illustration, and web work." }, href: "/links" },
   { name: "rt18_dev", text: { ja: "Webアプリケーション、ツール、オートメーションを制作する開発活動。", en: "The development identity for web applications, tools, and automation." }, href: "/portfolio/developer" },
-  { name: "rt18_photo", text: { ja: "写真撮影とビジュアルストーリーテリングの活動。Instagramを中心に公開。", en: "Photography and visual storytelling, shared primarily through Instagram." }, href: "https://www.instagram.com/rt18_photo/" },
+  { name: "rt18_photo", text: { ja: "写真撮影とビジュアルストーリーテリングの活動。Instagramを中心に公開。", en: "Photography and visual storytelling, shared primarily through Instagram." }, href: "/disciplines/photographer/rt18-photo" },
   { name: "Fine Day Plus / rt18_music", text: { ja: "学生バンドでの演奏と、音楽制作・記録の活動。", en: "Band performance plus personal music production and documentation." }, href: "/disciplines/musician" },
 ];
 
 const copy = {
-  ja: { eyebrow: "プロフィール", name: "塚本隆正", roman: "Ryusei Tsukamoto", bio: "2010年石川県生まれ。クリエイター。角川ドワンゴ学園S高等学校に在学。Fine Day Plusに所属。2023年7月にrt18_formula1としてF1を中心とした情報やイラストの発信活動を始める。以降、rt18_musicとしての音楽活動やrt18_devとしてのWeb開発など、複数の名前と媒体を行き来しながら制作を続けている。", history: "活動歴", releases: "主要な公開したサービス / 制作物", identities: "活動名と役割", social: "SNS / 外部リンク", home: "Portfolio Mapへ戻る", map: "Mapで見る" },
-  en: { eyebrow: "Profile", name: "Ryusei Tsukamoto", roman: "塚本隆正", bio: "Born in Ishikawa in 2010. Creator. Currently attending S High School at Kadokawa Dwango Academy and a member of Fine Day Plus. He began publishing F1 information and illustrations as rt18_formula1 in July 2023, and continues to create across music as rt18_music and web development as rt18_dev.", history: "Activity history", releases: "Major published services / works", identities: "Public identities and roles", social: "Social / external links", home: "Back to Portfolio Map", map: "View on Map" },
+  ja: { eyebrow: "プロフィール", name: "塚本隆正", roman: "Ryusei Tsukamoto", bio: "2010年石川県生まれ。クリエイター。角川ドワンゴ学園S高等学校に在学。Fine Day Plusに所属。2023年7月にrt18_formula1としてF1を中心とした情報やイラストの発信活動を始める。以降、rt18_photoとしての写真撮影、rt18_musicとしての音楽活動、rt18_devとしてのWeb開発など、複数の名前と媒体を行き来しながら制作を続けている。", history: "活動歴", releases: "主要な公開したサービス / 制作物", identities: "活動名と役割", social: "SNS / 外部リンク", home: "Portfolio Mapへ戻る", map: "Mapで見る" },
+  en: { eyebrow: "Profile", name: "Ryusei Tsukamoto", roman: "塚本隆正", bio: "Born in Ishikawa in 2010. Creator. Currently attending S High School at Kadokawa Dwango Academy and a member of Fine Day Plus. He began publishing F1 information and illustrations as rt18_formula1 in July 2023, and continues to create across photography as rt18_photo, music as rt18_music, and web development as rt18_dev.", history: "Activity history", releases: "Major published services / works", identities: "Public identities and roles", social: "Social / external links", home: "Back to Portfolio Map", map: "View on Map" },
 };
 
 function iconForLink(link: LinktreeLink) {

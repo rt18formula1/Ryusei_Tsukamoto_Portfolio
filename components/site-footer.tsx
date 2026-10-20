@@ -9,13 +9,13 @@ export function SiteFooter() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-sm font-black tracking-tight">Ryusei Tsukamoto</p>
-            <p className="mt-3 max-w-xs text-xs leading-6 text-black/50">F1、音楽、イラスト、Web開発を横断するPortfolio。</p>
+            <p className="mt-3 max-w-xs text-xs leading-6 text-black/50">F1、写真、音楽、イラスト、Web開発を横断するPortfolio。</p>
           </div>
           <FooterColumn title="Explore" links={[
             ["Portfolio Map", "/"], ["Profile", "/profile"], ["Links", "/links"], ["Portfolio", "/portfolio"],
           ]} />
           <FooterColumn title="Activities" links={[
-            ["Developer", "/portfolio/developer"], ["Illustrator", "/disciplines/illustrator"], ["Musician", "/disciplines/musician"], ["Blogger", "/disciplines/blogger"],
+            ["Developer", "/portfolio/developer"], ["Illustrator", "/disciplines/illustrator"], ["Photographer", "/disciplines/photographer"], ["Musician", "/disciplines/musician"], ["Blogger", "/disciplines/blogger"], ["Investor", "/disciplines/investor"],
           ]} />
           <FooterColumn title="More" links={[
             ["News", "/news"], ["Calendar", "/calendar"], ["F1 Database", "/f1-database"], ["Shop", "/shop"], ["QR Card", "/wallet"],

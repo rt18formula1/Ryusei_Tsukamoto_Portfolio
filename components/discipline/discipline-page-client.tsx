@@ -7,6 +7,7 @@ import {
 } from "@/lib/portfolio-hierarchy";
 import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
 import { DisciplineActivitiesClient } from "@/components/discipline/discipline-activities-client";
+import { SiteFooter } from "@/components/site-footer";
 import Link from "next/link";
 
 interface DisciplinePageClientProps {
@@ -65,6 +66,7 @@ export function DisciplinePageClient({ disciplineId }: DisciplinePageClientProps
           <p className="text-gray-500">{discipline.name} content is coming soon.</p>
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 }

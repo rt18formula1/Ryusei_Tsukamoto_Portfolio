@@ -9,7 +9,12 @@ export async function getLinktreeLinks(options: { includeInactive?: boolean } = 
       .order("sort_order", { ascending: true });
     if (!options.includeInactive) query = query.eq("is_active", true);
     const { data, error } = await query;
-    if (!error && data?.length) return data as LinktreeLink[];
+    if (!error && data?.length) {
+      const dbSlugs = new Set(data.map((l: any) => l.slug));
+      const missing = linktreeLinks.filter((l) => !dbSlugs.has(l.slug));
+      if (missing.length === 0) return data as LinktreeLink[];
+      return [...(data as LinktreeLink[]), ...missing];
+    }
   } catch {
     // Keep the public page available during local development or before migration.
   }

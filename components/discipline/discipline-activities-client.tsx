@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Discipline } from "@/types/portfolio-hierarchy";
 import { activityHref, buildBreadcrumbs } from "@/lib/portfolio-hierarchy";
 import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
+import { SiteFooter } from "@/components/site-footer";
 
 interface DisciplineActivitiesClientProps {
   discipline: Discipline;
@@ -82,6 +83,7 @@ export function DisciplineActivitiesClient({ discipline }: DisciplineActivitiesC
           </div>
         )}
       </div>
+      <SiteFooter />
     </div>
   );
 }

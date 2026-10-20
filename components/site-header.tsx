@@ -15,15 +15,16 @@ export function SiteHeader() {
 
   const closeMenu = () => setMenuOpen(false);
 
-  const navLinks = [
-    { href: "/#developer",   label: "Developer", badge: "Flagship" },
-    { href: "/#illustrator", label: "Illustrator" },
-    { href: "/#musician",    label: "Musician" },
-    { href: "/#blogger",     label: "Blogger" },
-    { href: "/#investor",    label: "Investor" },
-    { href: "/portfolio",    label: language === "ja" ? "ポートフォリオ全一覧" : "All Portfolio" },
-    { href: "/#profile",     label: language === "ja" ? "プロフィール" : "Profile" },
-    { href: "/#contact",     label: language === "ja" ? "コンタクト" : "Contact" },
+  const navLinks: Array<{ href: string; label: string; badge?: string }> = [
+    { href: "/portfolio/developer",       label: "Developer" },
+    { href: "/disciplines/illustrator",   label: "Illustrator" },
+    { href: "/disciplines/photographer",  label: "Photographer" },
+    { href: "/disciplines/musician",      label: "Musician" },
+    { href: "/disciplines/blogger",       label: "Blogger" },
+    { href: "/disciplines/investor",      label: "Investor" },
+    { href: "/portfolio",                 label: language === "ja" ? "ポートフォリオ全一覧" : "All Portfolio" },
+    { href: "/profile",                   label: language === "ja" ? "プロフィール" : "Profile" },
+    { href: "/links",                     label: language === "ja" ? "リンク一覧" : "Links" },
   ];
 
   return (
@@ -41,20 +42,22 @@ export function SiteHeader() {
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-6">
-          <Link href="/#developer" className="text-xs font-bold uppercase tracking-widest text-black hover:text-gray-600 transition-colors flex items-center gap-1.5">
-            <span>Developer</span>
-            <span className="bg-black text-white text-[9px] px-2 py-0.5 rounded-full font-black">PRO</span>
+          <Link href="/portfolio/developer" className="text-xs font-bold uppercase tracking-widest text-black hover:text-gray-600 transition-colors">
+            Developer
           </Link>
-          <Link href="/#illustrator" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
+          <Link href="/disciplines/illustrator" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
             Illustrator
           </Link>
-          <Link href="/#musician" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
+          <Link href="/disciplines/photographer" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
+            Photographer
+          </Link>
+          <Link href="/disciplines/musician" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
             Musician
           </Link>
-          <Link href="/#blogger" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
+          <Link href="/disciplines/blogger" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
             Blogger
           </Link>
-          <Link href="/#investor" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
+          <Link href="/disciplines/investor" className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
             Investor
           </Link>
           <Link href="/portfolio" className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-black transition-colors border-l border-black/10 pl-6">

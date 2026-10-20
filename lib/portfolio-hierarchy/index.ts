@@ -74,9 +74,6 @@ export function activityHref(disciplineId: DisciplineId, activitySlug: string): 
   if (disciplineId === "illustrator" && activitySlug === "rt18-formula1") {
     return "https://rt18-formula1-official-site.vercel.app";
   }
-  if (disciplineId === "photographer" && activitySlug === "rt18-photo") {
-    return "https://www.instagram.com/rt18_photo/";
-  }
   if (disciplineId === "developer") {
     return `/portfolio/developer/${activitySlug}`;
   }

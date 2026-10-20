@@ -15,6 +15,7 @@ const VALID: DisciplineId[] = [
   "musician",
   "blogger",
   "investor",
+  "photographer",
 ];
 
 export default async function DisciplineActivityPage({ params }: PageProps) {

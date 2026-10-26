@@ -1,7 +1,12 @@
 name = "ryusei-tsukamoto-portfolio"
 main = ".open-next/worker.js"
-compatibility_date = "2024-09-26"
+compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
+
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://ipyoybforulvshtpgosa.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_CV3OewS0VqkaM4h7qt2Ubw_VtmzO8YR"
+ADMIN_EMAIL = "rb18vcarb@gmail.com"
 
 [assets]
 directory = ".open-next/assets"

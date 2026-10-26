@@ -2,15 +2,10 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 function getEnvVar(key: string): string {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getCloudflareContext } = require('@opennextjs/cloudflare');
-    const ctx = getCloudflareContext();
-    if (ctx?.env && ctx.env[key]) {
-      return String(ctx.env[key]).trim();
-    }
-  } catch {}
-  return (process.env[key] || '').trim();
+  // OpenNext copies env vars to process.env in nodejs_compat mode
+  const value = (process.env[key] || '').trim();
+  console.log(`[Cloudflare] ${key} from process.env: ${value ? value.substring(0, 10) + '...' : 'MISSING'}`);
+  return value;
 }
 
 export async function createClient() {

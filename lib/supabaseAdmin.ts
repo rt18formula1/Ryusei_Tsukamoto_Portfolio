@@ -1,14 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 function getEnvVar(key: string): string {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getCloudflareContext } = require('@opennextjs/cloudflare');
-    const ctx = getCloudflareContext();
-    if (ctx?.env && ctx.env[key]) {
-      return String(ctx.env[key]).trim();
-    }
-  } catch {}
+  // OpenNext copies env vars to process.env in nodejs_compat mode
   return (process.env[key] || '').trim();
 }
 

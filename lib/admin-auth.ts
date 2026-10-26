@@ -1,15 +1,7 @@
 import { createClient } from "./supabaseServer";
 
 export function getAdminEmails(): string[] {
-  let cfEnv: Record<string, any> = {};
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getCloudflareContext } = require("@opennextjs/cloudflare");
-    const ctx = getCloudflareContext();
-    if (ctx?.env) cfEnv = ctx.env;
-  } catch {}
-
-  const raw = (cfEnv.ADMIN_EMAIL || process.env.ADMIN_EMAIL || "").trim();
+  const raw = (process.env.ADMIN_EMAIL || "").trim();
   const list = raw
     .split(",")
     .map((e: string) => e.trim().toLowerCase())

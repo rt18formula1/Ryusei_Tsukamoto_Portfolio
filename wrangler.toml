@@ -1,6 +1,6 @@
 name = "ryusei-tsukamoto-portfolio"
 main = ".open-next/worker.js"
-compatibility_date = "2025-09-01"
+compatibility_date = "2025-09-15"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]

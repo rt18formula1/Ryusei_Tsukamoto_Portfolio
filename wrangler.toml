@@ -10,7 +10,7 @@ ADMIN_EMAIL = "rb18vcarb@gmail.com"
 R2_ACCOUNT_ID = "76e067622140110530ca3ec6c8583069"
 R2_ACCESS_KEY_ID = "c19af53a5a7c10fac43e8eeb27fa56ee"
 R2_BUCKET_NAME = "ryusei-tsukamoto-portfolio"
-R2_PUBLIC_URL = "https://76e067622140110530ca3ec6c8583069.r2.cloudflarestorage.com/ryusei-tsukamoto-portfolio"
+R2_PUBLIC_URL = "https://pub-968efb5e793649ae91cd0042896597b6.r2.dev"
 
 [assets]
 directory = ".open-next/assets"

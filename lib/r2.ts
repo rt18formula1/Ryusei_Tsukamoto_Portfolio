@@ -2,14 +2,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 function getEnvVar(key: string): string {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getCloudflareContext } = require("@opennextjs/cloudflare");
-    const ctx = getCloudflareContext();
-    if (ctx?.env && ctx.env[key]) {
-      return String(ctx.env[key]).trim();
-    }
-  } catch {}
+  // OpenNext copies env vars to process.env in nodejs_compat mode
   return (process.env[key] || "").trim();
 }
 
@@ -42,21 +35,7 @@ export function getR2Config(): R2Config {
   const publicUrl = normalizeR2PublicUrl(getEnvVar("R2_PUBLIC_URL"));
 
   let r2Bucket: any = null;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getCloudflareContext } = require("@opennextjs/cloudflare");
-    const ctx = getCloudflareContext();
-    const env = ctx?.env as Record<string, any> | undefined;
-    if (env) {
-      if (bucketName && env[bucketName] && typeof env[bucketName].put === "function") {
-        r2Bucket = env[bucketName];
-      } else if (env.R2_BUCKET && typeof env.R2_BUCKET.put === "function") {
-        r2Bucket = env.R2_BUCKET;
-      } else if (env.BUCKET && typeof env.BUCKET.put === "function") {
-        r2Bucket = env.BUCKET;
-      }
-    }
-  } catch {}
+  // R2 binding is not available via process.env, requires wrangler.toml binding configuration
 
   return {
     accountId,

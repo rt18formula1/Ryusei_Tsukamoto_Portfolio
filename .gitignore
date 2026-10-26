@@ -13,8 +13,9 @@
 # testing
 /coverage
 
-# next.js
+# next.js & open-next
 /.next/
+/.open-next/
 /out/
 
 # production

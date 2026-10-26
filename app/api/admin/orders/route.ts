@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { isAdminEmail } from "@/lib/admin-auth";
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
 
 // Verify admin session
 async function requireAdmin() {
-  const adminEmail = process.env.ADMIN_EMAIL ?? "";
-  if (!adminEmail) return false;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return !!user && user.email === adminEmail;
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    return !!user && isAdminEmail(user.email);
+  } catch {
+    return false;
+  }
 }
 
 // PATCH /api/admin/orders  { id, status?, tracking_number? }

@@ -396,10 +396,28 @@ export function PortfolioMap() {
                   y={isMounted ? pos.y : initialPos.y}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  className="font-black uppercase tracking-wider pointer-events-none"
+                  className={`font-black uppercase pointer-events-none ${
+                    meta.label.length >= 11
+                      ? "tracking-tight"
+                      : meta.label.length >= 9
+                        ? "tracking-normal"
+                        : "tracking-wider"
+                  }`}
                   fill={isSelected || isHovered ? "#fff" : "#000"}
+                  textLength={
+                    meta.label.length >= 11
+                      ? isMounted ? 10.2 : 18
+                      : undefined
+                  }
+                  lengthAdjust={meta.label.length >= 11 ? "spacingAndGlyphs" : undefined}
                   style={{ 
-                    fontSize: isMounted ? "1.4px" : "2px",
+                    fontSize: isMounted
+                      ? meta.label.length >= 12
+                        ? "1.05px"
+                        : meta.label.length >= 10
+                          ? "1.2px"
+                          : "1.4px"
+                      : "2px",
                     opacity: textVisible ? 1 : 0,
                     transition: "font-size 1200ms, x 1200ms, y 1200ms, opacity 400ms",
                     transitionDelay: isMounted ? "100ms" : "0ms",

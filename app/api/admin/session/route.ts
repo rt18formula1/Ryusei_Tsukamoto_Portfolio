@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "";
+import { isAdminEmail } from "@/lib/admin-auth";
 
 export async function GET() {
-  if (!ADMIN_EMAIL) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return NextResponse.json({ ok: false });
+    }
+
+    const ok = isAdminEmail(user.email);
+    return NextResponse.json({ ok, email: ok ? user.email : undefined });
+  } catch {
     return NextResponse.json({ ok: false });
   }
-
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const ok = !!user && user.email === ADMIN_EMAIL;
-  return NextResponse.json({ ok });
 }
+

@@ -128,12 +128,44 @@ async function uploadViaPresignedUrl(
   return signed.url;
 }
 
+async function uploadViaDirectApi(bucket: string, file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("bucket", bucket);
+
+  const res = await fetch("/api/admin/upload-direct", {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let errMsg = "Direct upload failed";
+    try {
+      const err = await res.json();
+      errMsg = err.error || errMsg;
+    } catch { /* ignore */ }
+    throw new Error(`direct: ${errMsg} (HTTP ${res.status})`);
+  }
+
+  const data = (await res.json()) as { url?: string };
+  if (!data.url) {
+    throw new Error("direct: アップロードURLの取得に失敗しました");
+  }
+  return data.url;
+}
+
 export async function uploadImageToStorage(
   bucket: "news-images" | "portfolio-images" | "album-covers" | "bucknumber-covers",
   file: File
 ): Promise<string> {
-  // Use presigned URL only (supports large files, no server payload limit)
-  return await uploadViaPresignedUrl(bucket, file);
+  // Try presigned URL first; if CORS or client PUT fails, fallback to direct upload API
+  try {
+    return await uploadViaPresignedUrl(bucket, file);
+  } catch (err) {
+    console.warn("Presigned upload failed, falling back to direct upload API:", err);
+    return await uploadViaDirectApi(bucket, file);
+  }
 }
 
 // ----------------------------------------------------------------------

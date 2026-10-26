@@ -5,7 +5,7 @@ import QRCode from "react-qr-code";
 import { ArrowLeft, Copy, ExternalLink } from "lucide-react";
 import { useState } from "react";
 
-const cardUrl = "https://ryusei-tsukamoto-portfolio.vercel.app/links";
+const cardUrl = "https://ryusei-tsukamoto-portfolio.rb18vcarb.workers.dev/links";
 
 export function QrCardClient() {
   const [copied, setCopied] = useState(false);

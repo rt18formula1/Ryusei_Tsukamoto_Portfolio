@@ -25,6 +25,8 @@ import {
   createDevProjectAction,
   createPortfolioActivityAction,
   deleteDevProjectAction,
+  getAdminDevProjectsAction,
+  getAdminPortfolioActivitiesAction,
   updateDevProjectAction,
   updatePortfolioActivityAction,
 } from "@/lib/admin-actions";
@@ -189,12 +191,22 @@ export default function AdminPage() {
   const [editingActivityDisciplineId, setEditingActivityDisciplineId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [nextProjects, nextActivities] = await Promise.all([
-      getDevProjects(selectedDiscipline || undefined),
-      getPortfolioActivities(selectedDiscipline || undefined),
-    ]);
-    setProjects(nextProjects);
-    setActivities(nextActivities);
+    try {
+      const [nextProjects, nextActivities] = await Promise.all([
+        getAdminDevProjectsAction(selectedDiscipline || undefined),
+        getAdminPortfolioActivitiesAction(selectedDiscipline || undefined),
+      ]);
+      setProjects(nextProjects);
+      setActivities(nextActivities);
+    } catch {
+      // Fallback if session/admin action fails
+      const [nextProjects, nextActivities] = await Promise.all([
+        getDevProjects(selectedDiscipline || undefined),
+        getPortfolioActivities(selectedDiscipline || undefined),
+      ]);
+      setProjects(nextProjects);
+      setActivities(nextActivities);
+    }
   }, [selectedDiscipline]);
 
   useEffect(() => {
@@ -692,7 +704,7 @@ function ProjectsView({
           <div className="divide-y divide-black/6">
             {filtered.map((project) => (
               <div key={project.id} className="flex items-center gap-3 px-5 py-4 transition hover:bg-black/[.015] sm:px-6">
-                <button onClick={() => onOpenProject(project)} className="flex min-w-0 flex-1 items-center gap-3.5 text-left">
+                <button onClick={() => onOpenProject(project)} className="flex min-w-0 flex-1 items-center gap-3.5 text-left group">
                   <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-black/5 border border-black/5">
                     {project.main_visual_url ? (
                       <img src={project.main_visual_url} alt="" className="h-full w-full object-cover" />
@@ -703,12 +715,12 @@ function ProjectsView({
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold">{project.project_name || "Untitled"}</p>
+                    <p className="truncate text-sm font-bold group-hover:text-black/70">{project.project_name || "Untitled"}</p>
                     <p className="mt-0.5 truncate text-xs text-black/45">{project.short_description || "No description"}</p>
                   </div>
                 </button>
                 <span
-                  className={`hidden rounded-full px-2.5 py-1 text-[10px] font-bold sm:block ${
+                  className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
                     generalValue(project, "Visibility", "Draft") === "Published"
                       ? "bg-emerald-50 text-emerald-700"
                       : "bg-black/5 text-black/45"
@@ -716,6 +728,20 @@ function ProjectsView({
                 >
                   {generalValue(project, "Visibility", "Draft")}
                 </span>
+                <Link
+                  href={projectSlug(project.id)}
+                  target="_blank"
+                  className="rounded-lg p-2 text-black/35 hover:bg-black/5 hover:text-black"
+                  title="プレビュー"
+                >
+                  <Eye size={15} />
+                </Link>
+                <button
+                  onClick={() => onOpenProject(project)}
+                  className="flex items-center gap-1 rounded-lg border border-black/10 bg-white px-2.5 py-1.5 text-xs font-bold text-black/70 hover:border-black/30 hover:text-black shadow-xs"
+                >
+                  Edit
+                </button>
                 <button
                   onClick={() => void onRemove(project)}
                   className="rounded-lg p-2 text-black/25 hover:bg-red-50 hover:text-red-600"

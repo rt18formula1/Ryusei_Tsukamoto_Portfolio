@@ -42,11 +42,18 @@ export function buildUnifiedHierarchy(dbProjects: DbDevProject[] = [], dbActivit
     discipline.activities.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
   }
 
+  // Group db projects by discipline
+  const projectsByDiscipline = new Map<string, DbDevProject[]>();
   for (const project of dbProjects) {
-    const discipline = baseHierarchy.disciplines.find((d) => d.id === project.discipline_id);
+    const list = projectsByDiscipline.get(project.discipline_id) || [];
+    list.push(project);
+    projectsByDiscipline.set(project.discipline_id, list);
+  }
+
+  for (const [disciplineId, pList] of projectsByDiscipline.entries()) {
+    const discipline = baseHierarchy.disciplines.find((d) => d.id === disciplineId);
     if (!discipline) continue;
 
-    // Use the first activity, or create a default one if the discipline has none
     let activity = discipline.activities[0];
     if (!activity) {
       activity = {
@@ -58,10 +65,12 @@ export function buildUnifiedHierarchy(dbProjects: DbDevProject[] = [], dbActivit
         contents: [],
       };
       discipline.activities.push(activity);
+    } else {
+      // If we have live DB projects, replace static placeholder contents
+      activity.contents = [];
     }
 
-    const existingIds = new Set(activity.contents.map((c) => c.projectId || c.id));
-    if (!existingIds.has(project.id)) {
+    for (const project of pList) {
       activity.contents.push(projectContent(project));
     }
   }

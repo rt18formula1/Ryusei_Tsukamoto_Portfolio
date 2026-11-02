@@ -148,20 +148,72 @@ export async function syncProductToStripeAction(productId: string) {
 }
 
 // ----------------------------------------------------------------------
-// Developer Projects
+// Developer Projects & Activities (Admin Operations)
 // ----------------------------------------------------------------------
+
+export async function getAdminDevProjectsAction(disciplineId?: string) {
+  await verifyAdmin();
+  let query = supabaseAdmin
+    .from("dev_projects")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (disciplineId) {
+    query = query.eq("discipline_id", disciplineId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Admin fetch dev projects error:", error);
+    throw error;
+  }
+  return (data || []) as DbDevProject[];
+}
+
+export async function getAdminPortfolioActivitiesAction(disciplineId?: string) {
+  await verifyAdmin();
+  let query = supabaseAdmin
+    .from("portfolio_activities")
+    .select("*")
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (disciplineId) {
+    query = query.eq("discipline_id", disciplineId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Admin fetch portfolio activities error:", error);
+    throw error;
+  }
+  return (data || []) as DbPortfolioActivity[];
+}
 
 export async function createDevProjectAction(project: Partial<DbDevProject>) {
   await verifyAdmin();
-  const { data, error } = await supabaseAdmin.from("dev_projects").insert(project).select().single();
-  if (error) throw error;
+  // Strip empty/undefined id or timestamps so Supabase sets default UUID and timestamp
+  const { id, created_at, updated_at, ...clean } = project as any;
+  const payload = id ? { id, ...clean } : clean;
+
+  const { data, error } = await supabaseAdmin.from("dev_projects").insert(payload).select().single();
+  if (error) {
+    console.error("Create dev project error:", error);
+    throw error;
+  }
   return data as DbDevProject;
 }
 
 export async function updateDevProjectAction(id: string, project: Partial<DbDevProject>) {
   await verifyAdmin();
-  const { data, error } = await supabaseAdmin.from("dev_projects").update(project).eq("id", id).select().single();
-  if (error) throw error;
+  // Never update primary key or timestamps in update payload
+  const { id: _id, created_at, updated_at, ...payload } = project as any;
+  const { data, error } = await supabaseAdmin.from("dev_projects").update(payload).eq("id", id).select().single();
+  if (error) {
+    console.error("Update dev project error:", error);
+    throw error;
+  }
   return data as DbDevProject;
 }
 

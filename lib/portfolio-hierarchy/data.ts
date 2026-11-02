@@ -22,7 +22,24 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
           description: "Development work under the rt18_dev brand.",
           disciplineId: "developer",
           contentType: "project",
-          contents: [],
+          contents: [
+            {
+              id: "proj-f1-sns-automator",
+              name: "F1 SNS Automator",
+              slug: "f1-sns-automator",
+              type: "project",
+              description: "Formula 1最新ニュース・リザルトの自動取得・SNS画像テキスト生成投稿ツール。",
+              projectId: "proj-001",
+            },
+            {
+              id: "proj-portfolio-map",
+              name: "Hexagon Map",
+              slug: "hexagon-map",
+              type: "project",
+              description: "Cloudflare Workers & Next.jsで構築された六角形インタラクティブポートフォリオマップ。",
+              projectId: "proj-002",
+            },
+          ],
         },
       ],
     },
@@ -41,7 +58,15 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
           description: "Formula 1 illustration and visual work.",
           disciplineId: "illustrator",
           contentType: "artwork",
-          contents: [],
+          contents: [
+            {
+              id: "art-f1-grand-prix",
+              name: "F1 Grand Prix Series",
+              slug: "f1-grand-prix-series",
+              type: "artwork",
+              description: "シーズン各戦の熱戦を描いたグラフィックアート作品群。",
+            },
+          ],
         },
       ],
     },
@@ -57,7 +82,15 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
           name: "rt18_music",
           slug: "rt18-music",
           disciplineId: "musician",
-          contents: [],
+          contents: [
+            {
+              id: "music-soundtracks",
+              name: "Original Tracks",
+              slug: "original-tracks",
+              type: "project",
+              description: "映像・コンテンツ用オリジナルBGM・サウンドトラック制作。",
+            },
+          ],
         },
         {
           id: "fine-day-plus",
@@ -75,7 +108,23 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
       description:
         "Technical articles, development logs, design notes, and analytical writings on note and technical blogs.",
       color: "#059669",
-      activities: [],
+      activities: [
+        {
+          id: "rt18-blog",
+          name: "rt18_blog",
+          slug: "rt18-blog",
+          disciplineId: "blogger",
+          contents: [
+            {
+              id: "blog-tech-notes",
+              name: "Tech & Formula Notes",
+              slug: "tech-formula-notes",
+              type: "project",
+              description: "Web開発・F1技術・データ分析に関する技術記事・発信。",
+            },
+          ],
+        },
+      ],
     },
     {
       id: "investor",
@@ -84,7 +133,23 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
       description:
         "Market research and investment activities in tech sectors, growth companies, and emerging markets.",
       color: "#d97706",
-      activities: [],
+      activities: [
+        {
+          id: "rt18-invest",
+          name: "rt18_invest",
+          slug: "rt18-invest",
+          disciplineId: "investor",
+          contents: [
+            {
+              id: "invest-market-research",
+              name: "Market Research",
+              slug: "market-research",
+              type: "project",
+              description: "テクノロジー・成長市場の分析とリサーチレポート。",
+            },
+          ],
+        },
+      ],
     },
     {
       id: "photographer",
@@ -108,7 +173,15 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
               url: "https://www.instagram.com/rt18_photo/",
             },
           ],
-          contents: [],
+          contents: [
+            {
+              id: "photo-motorsport",
+              name: "Motorsport Photo",
+              slug: "motorsport-photo",
+              type: "photo",
+              description: "サーキットやモータースポーツの情景を捉えたフォトスナップ。",
+            },
+          ],
         },
       ],
     },

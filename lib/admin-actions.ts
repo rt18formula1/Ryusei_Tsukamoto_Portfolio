@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "./supabaseAdmin";
 import { stripe } from "./stripe";
 import type { DbNews, DbPortfolio, DbAlbum, DbEvent, DbDevProject } from "./supabase-queries";
@@ -202,6 +203,8 @@ export async function createDevProjectAction(project: Partial<DbDevProject>) {
     console.error("Create dev project error:", error);
     throw error;
   }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
   return data as DbDevProject;
 }
 
@@ -214,13 +217,22 @@ export async function updateDevProjectAction(id: string, project: Partial<DbDevP
     console.error("Update dev project error:", error);
     throw error;
   }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
+  revalidatePath(`/portfolio/dev/${id}`);
   return data as DbDevProject;
 }
 
 export async function deleteDevProjectAction(id: string) {
   await verifyAdmin();
   const { error } = await supabaseAdmin.from("dev_projects").delete().eq("id", id);
-  if (error) throw error;
+  if (error) {
+    console.error("Delete dev project error:", error);
+    throw error;
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
+  revalidatePath(`/portfolio/dev/${id}`);
   return { success: true };
 }
 

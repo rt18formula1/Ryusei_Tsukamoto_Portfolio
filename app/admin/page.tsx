@@ -268,9 +268,18 @@ export default function AdminPage() {
 
   const remove = async (project: DbDevProject) => {
     if (!window.confirm(`「${project.project_name}」を削除しますか？この操作は元に戻せません。`)) return;
-    await deleteDevProjectAction(project.id);
-    if (selectedId === project.id) closeProject();
-    await refresh();
+    try {
+      // Optimistically remove from local state
+      setProjects((prev) => prev.filter((p) => p.id !== project.id));
+      if (selectedId === project.id) closeProject();
+
+      await deleteDevProjectAction(project.id);
+      await refresh();
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "削除に失敗しました";
+      alert(msg);
+      await refresh();
+    }
   };
 
   const signOut = async () => {
@@ -405,7 +414,19 @@ export default function AdminPage() {
               }}
               onDeleteProject={async (projectId) => {
                 const project = projects.find((p) => p.id === projectId);
-                if (project) await remove(project);
+                if (project) {
+                  await remove(project);
+                } else {
+                  if (!window.confirm("このプロジェクトを削除しますか？この操作は元に戻せません。")) return;
+                  try {
+                    setProjects((prev) => prev.filter((p) => p.id !== projectId));
+                    await deleteDevProjectAction(projectId);
+                    await refresh();
+                  } catch (error: unknown) {
+                    alert(error instanceof Error ? error.message : "削除に失敗しました");
+                    await refresh();
+                  }
+                }
               }}
             />
           )}

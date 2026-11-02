@@ -4,9 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { mapDbToDevProject } from "@/lib/dev-project/mapper";
 
-export async function generateStaticParams() {
-  return [];
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

@@ -623,53 +623,6 @@ export async function getDevProjectById(id: string) {
     if (!error && data) return data as DbDevProject;
   }
 
-  // Fallback for default seed project
-  if (id === "proj-001" || id === "proj-f1-sns-automator") {
-    return {
-      id: "proj-001",
-      project_name: "F1 SNS Post Automator",
-      short_description: "Formula 1の最新ニュースやセッション結果を自動的に取得し、SNS用の画像とテキストを生成・投稿する自動化ツール。",
-      main_visual_url: "https://images.unsplash.com/photo-1540066019607-e5f6f4870bd8?q=80&w=2940&auto=format&fit=crop",
-      main_visual_focal_point_x: 0.5,
-      main_visual_focal_point_y: 0.5,
-      information: [
-        {
-          category: "GENERAL",
-          items: [
-            { label: "Status", value: "Public", type: "Text" },
-            { label: "Type", value: "Web Application", type: "Text" },
-            { label: "Started", value: "2026/03/15", type: "Text" },
-            { label: "Platform", value: ["Web", "Mobile"], type: "Multiple Values" },
-            { label: "Visibility", value: "Published", type: "Text" },
-          ],
-        },
-        {
-          category: "INFRASTRUCTURE",
-          items: [
-            { label: "Framework", value: "Next.js 15 (App Router)", type: "Text" },
-            { label: "Deployment", value: "Cloudflare Workers", type: "Text" },
-            { label: "Database", value: "Supabase (PostgreSQL)", type: "Text" },
-            { label: "Storage", value: "Cloudflare R2", type: "Text" },
-          ],
-        },
-      ],
-      details: [
-        { id: "d1", order: 1, type: "Section", content: "Background" },
-        { id: "d2", order: 2, type: "Text", content: "F1ファンのための情報発信において、各セッション後のリザルト更新・ニュース配信に多くの手作業が発生していました。\n\nこの課題を解決するため、データ収集から投稿までをワンストップで自動化するパイプラインを構築しました。" },
-        { id: "d3", order: 3, type: "Section", content: "Solution" },
-        { id: "d4", order: 4, type: "Highlight", content: "レース結果が確定してから投稿までの時間をゼロ化し、手動作業なしで正確なデータをファンへ届ける。" },
-      ],
-      gallery: [],
-      links: [
-        { id: "l1", order: 1, title: "Website", description: "F1 Official Automation", url: "https://github.com", buttonLabel: "Open" }
-      ],
-      discipline_id: "developer",
-      sort_order: 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as DbDevProject;
-  }
-
   return null;
 }
 

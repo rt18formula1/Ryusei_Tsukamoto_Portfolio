@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "./supabaseAdmin";
 import { stripe } from "./stripe";
-import type { DbNews, DbPortfolio, DbAlbum, DbEvent, DbDevProject, DbEquipmentSection, DbEquipmentItem } from "./supabase-queries";
+import type { DbNews, DbPortfolio, DbAlbum, DbEvent, DbDevProject, DbEquipmentSection, DbEquipmentItem, DbDiscipline } from "./supabase-queries";
 import { verifyAdmin } from "./admin-auth";
 import { uploadImageToStorage } from "./supabase-queries";
 import type { DbPortfolioActivity } from "@/types/portfolio-hierarchy";
@@ -386,6 +386,60 @@ export async function deleteEquipmentItemAction(id: string) {
   const { error } = await supabaseAdmin.from("equipment_items").delete().eq("id", id);
   if (error) {
     console.error("Delete equipment item error:", error);
+    throw error;
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
+  return { success: true };
+}
+
+// ----------------------------------------------------------------------
+// Disciplines
+// ----------------------------------------------------------------------
+
+export async function getAdminDisciplinesAction(): Promise<DbDiscipline[]> {
+  await verifyAdmin();
+  const { data, error } = await supabaseAdmin.from("disciplines").select("*").order("display_order", { ascending: true });
+  if (error) {
+    console.error("Get disciplines error:", error);
+    throw error;
+  }
+  return data as DbDiscipline[];
+}
+
+export async function createDisciplineAction(discipline: Partial<DbDiscipline>) {
+  await verifyAdmin();
+  const { id, created_at, updated_at, ...clean } = discipline as any;
+  const payload = id ? { id, ...clean } : clean;
+
+  const { data, error } = await supabaseAdmin.from("disciplines").insert(payload).select().single();
+  if (error) {
+    console.error("Create discipline error:", error);
+    throw error;
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
+  return data as DbDiscipline;
+}
+
+export async function updateDisciplineAction(id: string, discipline: Partial<DbDiscipline>) {
+  await verifyAdmin();
+  const { id: _id, created_at, updated_at, ...payload } = discipline as any;
+  const { data, error } = await supabaseAdmin.from("disciplines").update(payload).eq("id", id).select().single();
+  if (error) {
+    console.error("Update discipline error:", error);
+    throw error;
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
+  return data as DbDiscipline;
+}
+
+export async function deleteDisciplineAction(id: string) {
+  await verifyAdmin();
+  const { error } = await supabaseAdmin.from("disciplines").delete().eq("id", id);
+  if (error) {
+    console.error("Delete discipline error:", error);
     throw error;
   }
   revalidatePath("/", "layout");

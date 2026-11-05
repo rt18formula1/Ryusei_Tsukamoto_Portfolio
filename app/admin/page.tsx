@@ -35,8 +35,11 @@ import {
   updateEquipmentSectionAction,
   createEquipmentItemAction,
   updateEquipmentItemAction,
+  createDisciplineAction,
+  updateDisciplineAction,
+  deleteDisciplineAction,
 } from "@/lib/admin-actions";
-import { getDevProjects, getPortfolioActivities, uploadImageToStorage, type DbDevProject, type DbEquipmentSection, type DbEquipmentItem } from "@/lib/supabase-queries";
+import { getDevProjects, getPortfolioActivities, uploadImageToStorage, type DbDevProject, type DbEquipmentSection, type DbEquipmentItem, type DbDiscipline } from "@/lib/supabase-queries";
 import type {
   DevProjectInformation,
   DevProjectDetailBlock,
@@ -52,6 +55,8 @@ import { AdminHierarchyTree } from "@/components/admin/admin-hierarchy-tree";
 import { AdminActivityEditor } from "@/components/admin/admin-activity-editor";
 import { AdminEquipmentEditor } from "@/components/admin/admin-equipment-editor";
 import { AdminEquipmentList } from "@/components/admin/admin-equipment-list";
+import { AdminDisciplineEditor } from "@/components/admin/admin-discipline-editor";
+import { AdminDisciplineList } from "@/components/admin/admin-discipline-list";
 
 // Hierarchy data & service
 import { buildUnifiedHierarchy, computeHierarchyStats } from "@/lib/admin-hierarchy-service";
@@ -201,6 +206,9 @@ export default function AdminPage() {
   // Equipment editor state
   const [editingEquipmentSection, setEditingEquipmentSection] = useState<DbEquipmentSection | null>(null);
   const [editingEquipmentItems, setEditingEquipmentItems] = useState<DbEquipmentItem[] | null>(null);
+
+  // Discipline editor state
+  const [editingDiscipline, setEditingDiscipline] = useState<DbDiscipline | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -368,6 +376,28 @@ export default function AdminPage() {
     await deleteEquipmentSectionAction(id);
   };
 
+  // Discipline handlers
+  const openDisciplineEditor = (discipline?: DbDiscipline) => {
+    setEditingDiscipline(discipline || null);
+  };
+
+  const closeDisciplineEditor = () => {
+    setEditingDiscipline(null);
+  };
+
+  const handleSaveDiscipline = async (discipline: Partial<DbDiscipline>) => {
+    if (editingDiscipline?.id) {
+      await updateDisciplineAction(editingDiscipline.id, discipline);
+    } else {
+      await createDisciplineAction(discipline);
+    }
+    closeDisciplineEditor();
+  };
+
+  const handleDeleteDiscipline = async (id: string) => {
+    await deleteDisciplineAction(id);
+  };
+
   // ── Render: Login ────────────────────────────────────────────────────────
   if (!sessionOk) {
     return (
@@ -488,11 +518,18 @@ export default function AdminPage() {
             />
           )}
 
-          {/* ── Disciplines (read-only view) ── */}
-          {currentTab === "disciplines" && (
-            <DisciplinesView
-              disciplines={hierarchy.disciplines}
-              onNavigate={() => setCurrentTab("activities")}
+          {/* ── Disciplines ── */}
+          {currentTab === "disciplines" && editingDiscipline ? (
+            <AdminDisciplineEditor
+              initialDiscipline={editingDiscipline}
+              onSave={handleSaveDiscipline}
+              onCancel={closeDisciplineEditor}
+            />
+          ) : (
+            <AdminDisciplineList
+              onEdit={openDisciplineEditor}
+              onCreate={() => openDisciplineEditor()}
+              onDelete={handleDeleteDiscipline}
             />
           )}
 
@@ -563,51 +600,6 @@ export default function AdminPage() {
 }
 
 // ─── Sub-views ────────────────────────────────────────────────────────────────
-
-function DisciplinesView({ disciplines, onNavigate }: { disciplines: import("@/types/portfolio-hierarchy").Discipline[]; onNavigate: () => void }) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-[.28em] text-black/35">Portfolio Structure</p>
-        <h1 className="mt-1.5 text-3xl font-bold tracking-tight">Disciplines</h1>
-        <p className="mt-1 text-xs text-black/50">Portfolioのトップレベルカテゴリ（静的定義）</p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {disciplines.map((d) => (
-          <div key={d.id} className="rounded-2xl border border-black/8 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-black/40">{d.id}</p>
-                <h3 className="mt-1 text-lg font-bold">{d.name}</h3>
-              </div>
-              <span className="rounded-lg bg-black/5 px-2.5 py-1 text-[10px] font-bold text-black/50">
-                {d.activities?.length ?? 0} activities
-              </span>
-            </div>
-            {d.activities && d.activities.length > 0 && (
-              <ul className="mt-4 space-y-1.5">
-                {d.activities.map((a) => (
-                  <li key={a.id} className="flex items-center gap-2 text-xs text-black/60">
-                    <span className="h-1.5 w-1.5 rounded-full bg-black/25 shrink-0" />
-                    <span className="font-semibold">{a.name}</span>
-                    <span className="text-black/35">/ {a.id}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button onClick={onNavigate} className="mt-4 flex items-center gap-1 text-[10px] font-bold text-black/45 hover:text-black">
-              <span>Manage Activities</span>
-              <ChevronRight size={11} />
-            </button>
-          </div>
-        ))}
-      </div>
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
-        <strong>Note:</strong> Disciplineは静的定義（<code className="font-mono">lib/portfolio-hierarchy/data.ts</code>）です。追加・削除はコードを変更してください。
-      </div>
-    </div>
-  );
-}
 
 function ActivitiesView({
   disciplines,

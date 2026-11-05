@@ -1,8 +1,9 @@
 import { supabase, getSupabase } from "./supabaseClient";
 import type { DbPortfolioActivity } from "@/types/portfolio-hierarchy";
 import type { DbEquipmentSection, DbEquipmentItem, EquipmentSection, EquipmentItem } from "@/types/equipment";
+import type { DbDiscipline, Discipline } from "@/types/discipline";
 
-export type { DbEquipmentSection, DbEquipmentItem, EquipmentSection, EquipmentItem };
+export type { DbEquipmentSection, DbEquipmentItem, EquipmentSection, EquipmentItem, DbDiscipline, Discipline };
 
 export type DbNews = {
   id: string;
@@ -942,4 +943,74 @@ export async function getEquipmentSectionsWithItems(disciplineId?: DisciplineId)
       updatedAt: item.updated_at,
     })),
   })) as EquipmentSection[];
+}
+
+// ─── Discipline Queries ─────────────────────────────────────────────────────
+
+export async function getDisciplines(): Promise<DbDiscipline[]> {
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getSupabaseAdmin } = require("./supabaseAdmin");
+      const admin = getSupabaseAdmin();
+      const { data, error } = await admin
+        .from("disciplines")
+        .select("*")
+        .order("display_order", { ascending: true });
+      if (!error && data) return data as DbDiscipline[];
+    } catch {}
+  }
+
+  const client = getSupabase();
+  if (!client) return [];
+  const { data, error } = await client
+    .from("disciplines")
+    .select("*")
+    .order("display_order", { ascending: true });
+  if (error) {
+    console.error("Error fetching disciplines:", error);
+    return [];
+  }
+  return data as DbDiscipline[];
+}
+
+export async function getDisciplineById(id: string): Promise<DbDiscipline | null> {
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getSupabaseAdmin } = require("./supabaseAdmin");
+      const admin = getSupabaseAdmin();
+      const { data, error } = await admin.from("disciplines").select("*").eq("id", id).single();
+      if (!error && data) return data as DbDiscipline;
+    } catch {}
+  }
+
+  const client = getSupabase();
+  if (!client) return null;
+  const { data, error } = await client.from("disciplines").select("*").eq("id", id).single();
+  if (error) {
+    console.error("Error fetching discipline:", error);
+    return null;
+  }
+  return data as DbDiscipline;
+}
+
+export async function createDiscipline(discipline: Omit<DbDiscipline, "created_at" | "updated_at">): Promise<DbDiscipline> {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { data, error } = await supabase.from("disciplines").insert(discipline).select().single();
+  if (error) throw error;
+  return data as DbDiscipline;
+}
+
+export async function updateDiscipline(id: string, discipline: Partial<DbDiscipline>): Promise<DbDiscipline> {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { data, error } = await supabase.from("disciplines").update(discipline).eq("id", id).select().single();
+  if (error) throw error;
+  return data as DbDiscipline;
+}
+
+export async function deleteDiscipline(id: string): Promise<void> {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { error } = await supabase.from("disciplines").delete().eq("id", id);
+  if (error) throw error;
 }

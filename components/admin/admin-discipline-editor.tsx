@@ -1,55 +1,52 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowLeft, Save } from "lucide-react";
-import type { Discipline, DisciplineId } from "@/types/portfolio-hierarchy";
+import { ArrowLeft, Save, LoaderCircle } from "lucide-react";
+import type { DbDiscipline } from "@/types/discipline";
 
 interface AdminDisciplineEditorProps {
-  discipline: Partial<Discipline>;
-  onSave: (updatedDiscipline: Discipline) => void;
+  initialDiscipline?: DbDiscipline | null;
+  onSave: (discipline: Partial<DbDiscipline>) => Promise<void>;
   onCancel: () => void;
 }
 
-const DISCIPLINE_COLORS = [
-  { id: "developer", name: "DEVELOPER", color: "#2563eb" },
-  { id: "illustrator", name: "ILLUSTRATOR", color: "#7c3aed" },
-  { id: "musician", name: "MUSICIAN", color: "#db2777" },
-  { id: "blogger", name: "BLOGGER", color: "#059669" },
-  { id: "investor", name: "INVESTOR", color: "#d97706" },
-  { id: "photographer", name: "PHOTOGRAPHER", color: "#0ea5e9" },
-];
-
 export function AdminDisciplineEditor({
-  discipline,
+  initialDiscipline,
   onSave,
   onCancel,
 }: AdminDisciplineEditorProps) {
-  const [name, setName] = useState(discipline.name || "");
-  const [slug, setSlug] = useState(discipline.slug || "");
-  const [description, setDescription] = useState(discipline.description || "");
-  const [color, setColor] = useState(discipline.color || "#2563eb");
-  const [displayOrder, setDisplayOrder] = useState(discipline.displayOrder || 1);
-  const [visible, setVisible] = useState(discipline.visible ?? true);
+  const [name, setName] = useState(initialDiscipline?.name || "");
+  const [slug, setSlug] = useState(initialDiscipline?.slug || "");
+  const [description, setDescription] = useState(initialDiscipline?.description || "");
+  const [color, setColor] = useState(initialDiscipline?.color || "#2563eb");
+  const [displayOrder, setDisplayOrder] = useState(initialDiscipline?.display_order || 0);
+  const [visible, setVisible] = useState(initialDiscipline?.visible ?? true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !slug.trim()) {
       alert("Name and Slug are required.");
       return;
     }
 
-    const payload: Discipline = {
-      id: (discipline.id || slug) as DisciplineId,
-      name,
-      slug,
-      description,
-      color,
-      displayOrder,
-      visible,
-      activities: discipline.activities || [],
-    };
-
-    onSave(payload);
+    setSaving(true);
+    try {
+      await onSave({
+        id: initialDiscipline?.id,
+        name,
+        slug,
+        description: description || null,
+        color,
+        display_order: displayOrder,
+        visible,
+      });
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -61,13 +58,14 @@ export function AdminDisciplineEditor({
           className="flex items-center gap-2 text-xs font-bold text-black/50 hover:text-black"
         >
           <ArrowLeft size={16} />
-          <span>Back to Hierarchy</span>
+          <span>Back to Disciplines</span>
         </button>
         <button
           onClick={handleSubmit}
-          className="flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-black/80"
+          disabled={saving}
+          className="flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-black/80 disabled:opacity-50"
         >
-          <Save size={14} />
+          {saving ? <LoaderCircle size={14} className="animate-spin" /> : <Save size={14} />}
           <span>Save Discipline</span>
         </button>
       </div>
@@ -83,7 +81,7 @@ export function AdminDisciplineEditor({
             Discipline Editor
           </span>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-black">
-            {discipline.id ? `Edit ${discipline.name}` : "Create New Discipline"}
+            {initialDiscipline?.id ? `Edit ${initialDiscipline.name}` : "Create New Discipline"}
           </h2>
         </div>
 
@@ -160,7 +158,7 @@ export function AdminDisciplineEditor({
               type="number"
               value={displayOrder}
               onChange={(e) => setDisplayOrder(Number(e.target.value))}
-              min={1}
+              min={0}
               className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-black/30 focus:ring-2 focus:ring-black/5"
             />
           </div>

@@ -147,15 +147,6 @@ function renderNode(
   // Short labels keep their natural width and therefore do not look stretched.
   const textLength = node.name.length > 10 ? size * 1.68 : undefined;
 
-  // Circular icon positioned neatly next to the hexagon node
-  const iconR = size * 0.36;
-  // Position icon on the outward-facing side of the hexagon
-  const iconOffset = size + iconR * 0.8;
-  const iconAngle = angle + (pos.x < cx ? Math.PI : 0);
-  const iconX = pos.x - iconOffset;
-  const iconY = pos.y;
-  const clipId = `circle-icon-${node.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
-
   return (
     <g
       key={node.id}
@@ -186,37 +177,6 @@ function renderNode(
       >
         {node.name}
       </text>
-
-      {/* Circular icon displayed right beside the activity node */}
-      {node.icon && (
-        <g className="transition-transform duration-300 group-hover:scale-110" style={{ transformOrigin: `${iconX}px ${iconY}px` }}>
-          <defs>
-            <clipPath id={clipId}>
-              <circle cx={iconX} cy={iconY} r={iconR * 0.9} />
-            </clipPath>
-          </defs>
-          {/* White badge background with outline */}
-          <circle
-            cx={iconX}
-            cy={iconY}
-            r={iconR}
-            fill="#ffffff"
-            stroke={color}
-            strokeWidth="0.3"
-            className="shadow-sm"
-          />
-          {/* Inner image clipped to perfect circle */}
-          <image
-            href={node.icon}
-            x={iconX - iconR * 0.9}
-            y={iconY - iconR * 0.9}
-            width={iconR * 1.8}
-            height={iconR * 1.8}
-            clipPath={`url(#${clipId})`}
-            preserveAspectRatio="xMidYMid slice"
-          />
-        </g>
-      )}
 
       {/* Lines from this node's outward vertex to each child */}
       {kids.map((kid, i) => (

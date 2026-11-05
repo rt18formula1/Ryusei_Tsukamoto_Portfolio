@@ -17,9 +17,9 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
       activities: [
         {
           id: "rt18-dev",
-          name: "rt18_dev",
+          name: "rt18.dev",
           slug: "rt18-dev",
-          description: "Development work under the rt18_dev brand.",
+          description: "Development work under the rt18.dev brand.",
           disciplineId: "developer",
           contentType: "project",
           visual: {

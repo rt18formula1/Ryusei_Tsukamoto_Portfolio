@@ -1,5 +1,8 @@
 import { supabase, getSupabase } from "./supabaseClient";
 import type { DbPortfolioActivity } from "@/types/portfolio-hierarchy";
+import type { DbEquipmentSection, DbEquipmentItem, EquipmentSection, EquipmentItem } from "@/types/equipment";
+
+export type { DbEquipmentSection, DbEquipmentItem, EquipmentSection, EquipmentItem };
 
 export type DbNews = {
   id: string;
@@ -644,4 +647,299 @@ export async function deleteDevProject(id: string) {
   if (!supabase) throw new Error("Supabase client not initialized");
   const { error } = await supabase.from("dev_projects").delete().eq("id", id);
   if (error) throw error;
+}
+
+// ----------------------------------------------------------------------
+// Equipment Sections CRUD
+// ----------------------------------------------------------------------
+
+export async function getEquipmentSections(disciplineId?: DisciplineId) {
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getSupabaseAdmin } = require("./supabaseAdmin");
+      const admin = getSupabaseAdmin();
+      let query = admin
+        .from("equipment_sections")
+        .select("*")
+        .order("display_order", { ascending: true });
+      if (disciplineId) query = query.eq("discipline_id", disciplineId);
+      const { data, error } = await query;
+      if (!error && data) return data as DbEquipmentSection[];
+    } catch {}
+  }
+
+  const client = getSupabase();
+  if (!client) return [];
+  let query = client
+    .from("equipment_sections")
+    .select("*")
+    .order("display_order", { ascending: true });
+  
+  if (disciplineId) {
+    query = query.eq("discipline_id", disciplineId);
+  }
+  
+  const { data, error } = await query;
+  if (error) {
+    console.error("Error fetching equipment sections:", error);
+    return [];
+  }
+  return data as DbEquipmentSection[];
+}
+
+export async function getEquipmentSectionById(id: string) {
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getSupabaseAdmin } = require("./supabaseAdmin");
+      const admin = getSupabaseAdmin();
+      const { data, error } = await admin.from("equipment_sections").select("*").eq("id", id).single();
+      if (!error && data) return data as DbEquipmentSection;
+    } catch {}
+  }
+
+  const client = getSupabase();
+  if (client) {
+    const { data, error } = await client.from("equipment_sections").select("*").eq("id", id).single();
+    if (!error && data) return data as DbEquipmentSection;
+  }
+
+  return null;
+}
+
+export async function getEquipmentSectionWithItems(id: string) {
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getSupabaseAdmin } = require("./supabaseAdmin");
+      const admin = getSupabaseAdmin();
+      const { data, error } = await admin
+        .from("equipment_sections")
+        .select(`
+          *,
+          equipment_items (*)
+        `)
+        .eq("id", id)
+        .single();
+      if (!error && data) {
+        const section = data as DbEquipmentSection & { equipment_items: DbEquipmentItem[] };
+        return {
+          id: section.id,
+          disciplineId: section.discipline_id,
+          name: section.name,
+          slug: section.slug,
+          description: section.description || undefined,
+          displayOrder: section.display_order,
+          visible: section.visible,
+          createdAt: section.created_at,
+          updatedAt: section.updated_at,
+          items: section.equipment_items.map((item) => ({
+            id: item.id,
+            sectionId: item.section_id,
+            name: item.name,
+            description: item.description || undefined,
+            imageUrl: item.image_url || undefined,
+            displayOrder: item.display_order,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at,
+          })),
+        } as EquipmentSection;
+      }
+    } catch {}
+  }
+
+  const client = getSupabase();
+  if (client) {
+    const { data, error } = await client
+      .from("equipment_sections")
+      .select(`
+        *,
+        equipment_items (*)
+      `)
+      .eq("id", id)
+      .single();
+    if (!error && data) {
+      const section = data as DbEquipmentSection & { equipment_items: DbEquipmentItem[] };
+      return {
+        id: section.id,
+        disciplineId: section.discipline_id,
+        name: section.name,
+        slug: section.slug,
+        description: section.description || undefined,
+        displayOrder: section.display_order,
+        visible: section.visible,
+        createdAt: section.created_at,
+        updatedAt: section.updated_at,
+        items: section.equipment_items.map((item) => ({
+          id: item.id,
+          sectionId: item.section_id,
+          name: item.name,
+          description: item.description || undefined,
+          imageUrl: item.image_url || undefined,
+          displayOrder: item.display_order,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+        })),
+      } as EquipmentSection;
+    }
+  }
+
+  return null;
+}
+
+export async function createEquipmentSection(section: Partial<DbEquipmentSection>) {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { data, error } = await supabase.from("equipment_sections").insert(section).select().single();
+  if (error) throw error;
+  return data as DbEquipmentSection;
+}
+
+export async function updateEquipmentSection(id: string, section: Partial<DbEquipmentSection>) {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { data, error } = await supabase.from("equipment_sections").update(section).eq("id", id).select().single();
+  if (error) throw error;
+  return data as DbEquipmentSection;
+}
+
+export async function deleteEquipmentSection(id: string) {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { error } = await supabase.from("equipment_sections").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ----------------------------------------------------------------------
+// Equipment Items CRUD
+// ----------------------------------------------------------------------
+
+export async function getEquipmentItems(sectionId: string) {
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getSupabaseAdmin } = require("./supabaseAdmin");
+      const admin = getSupabaseAdmin();
+      const { data, error } = await admin
+        .from("equipment_items")
+        .select("*")
+        .eq("section_id", sectionId)
+        .order("display_order", { ascending: true });
+      if (!error && data) return data as DbEquipmentItem[];
+    } catch {}
+  }
+
+  const client = getSupabase();
+  if (!client) return [];
+  const { data, error } = await client
+    .from("equipment_items")
+    .select("*")
+    .eq("section_id", sectionId)
+    .order("display_order", { ascending: true });
+  if (error) {
+    console.error("Error fetching equipment items:", error);
+    return [];
+  }
+  return data as DbEquipmentItem[];
+}
+
+export async function createEquipmentItem(item: Partial<DbEquipmentItem>) {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { data, error } = await supabase.from("equipment_items").insert(item).select().single();
+  if (error) throw error;
+  return data as DbEquipmentItem;
+}
+
+export async function updateEquipmentItem(id: string, item: Partial<DbEquipmentItem>) {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { data, error } = await supabase.from("equipment_items").update(item).eq("id", id).select().single();
+  if (error) throw error;
+  return data as DbEquipmentItem;
+}
+
+export async function deleteEquipmentItem(id: string) {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { error } = await supabase.from("equipment_items").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function getEquipmentSectionsWithItems(disciplineId?: DisciplineId) {
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getSupabaseAdmin } = require("./supabaseAdmin");
+      const admin = getSupabaseAdmin();
+      let query = admin
+        .from("equipment_sections")
+        .select(`
+          *,
+          equipment_items (*)
+        `)
+        .order("display_order", { ascending: true });
+      if (disciplineId) query = query.eq("discipline_id", disciplineId);
+      const { data, error } = await query;
+      if (!error && data) {
+        return (data as (DbEquipmentSection & { equipment_items: DbEquipmentItem[] })[]).map((section) => ({
+          id: section.id,
+          disciplineId: section.discipline_id,
+          name: section.name,
+          slug: section.slug,
+          description: section.description || undefined,
+          displayOrder: section.display_order,
+          visible: section.visible,
+          createdAt: section.created_at,
+          updatedAt: section.updated_at,
+          items: section.equipment_items.map((item) => ({
+            id: item.id,
+            sectionId: item.section_id,
+            name: item.name,
+            description: item.description || undefined,
+            imageUrl: item.image_url || undefined,
+            displayOrder: item.display_order,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at,
+          })),
+        })) as EquipmentSection[];
+      }
+    } catch {}
+  }
+
+  const client = getSupabase();
+  if (!client) return [];
+  let query = client
+    .from("equipment_sections")
+    .select(`
+      *,
+      equipment_items (*)
+    `)
+    .order("display_order", { ascending: true });
+
+  if (disciplineId) {
+    query = query.eq("discipline_id", disciplineId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Error fetching equipment sections with items:", error);
+    return [];
+  }
+  return (data as (DbEquipmentSection & { equipment_items: DbEquipmentItem[] })[]).map((section) => ({
+    id: section.id,
+    disciplineId: section.discipline_id,
+    name: section.name,
+    slug: section.slug,
+    description: section.description || undefined,
+    displayOrder: section.display_order,
+    visible: section.visible,
+    createdAt: section.created_at,
+    updatedAt: section.updated_at,
+    items: section.equipment_items.map((item) => ({
+      id: item.id,
+      sectionId: item.section_id,
+      name: item.name,
+      description: item.description || undefined,
+      imageUrl: item.image_url || undefined,
+      displayOrder: item.display_order,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
+    })),
+  })) as EquipmentSection[];
 }

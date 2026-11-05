@@ -22,6 +22,9 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
           description: "Development work under the rt18_dev brand.",
           disciplineId: "developer",
           contentType: "project",
+          visual: {
+            icon: "/favicon.png",
+          },
           contents: [],
         },
       ],
@@ -41,6 +44,9 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
           description: "Formula 1 illustration and visual work.",
           disciplineId: "illustrator",
           contentType: "artwork",
+          visual: {
+            icon: "/rt18_formula1-icon.png",
+          },
           contents: [],
         },
       ],
@@ -102,6 +108,9 @@ export const PORTFOLIO_HIERARCHY: PortfolioHierarchy = {
             "写真撮影およびビジュアルストーリーテリングの公式アカウント。日常の情景、モータースポーツ、建築、クリエイティブスナップを公開中。",
           disciplineId: "photographer",
           contentType: "photo",
+          visual: {
+            icon: "/instagram-icon.png",
+          },
           links: [
             {
               label: "Instagram @rt18_photo",

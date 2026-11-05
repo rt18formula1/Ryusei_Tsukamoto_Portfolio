@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowUpRight, Camera, ExternalLink } from "lucide-react";
 import type { Activity, Discipline } from "@/types/portfolio-hierarchy";
 import type { DeveloperProject } from "@/types/dev-project";
+import type { EquipmentSection } from "@/types/equipment";
 import {
   buildBreadcrumbs,
   contentHref,
@@ -12,18 +13,22 @@ import {
 import { HierarchyBreadcrumb } from "@/components/portfolio/hierarchy-breadcrumb";
 import { DevProjectModal } from "@/components/dev-project/dev-project-modal";
 import { SiteFooter } from "@/components/site-footer";
+import { EquipmentSectionDisplay } from "@/components/equipment/equipment-section-display";
 
 interface ActivityContentsClientProps {
   discipline: Discipline;
   activity: Activity;
   /** Full developer projects keyed by id (for modal). Optional for non-dev activities. */
   projectsById?: Record<string, DeveloperProject>;
+  /** Equipment sections for this discipline */
+  equipmentSections?: EquipmentSection[];
 }
 
 export function ActivityContentsClient({
   discipline,
   activity,
   projectsById = {},
+  equipmentSections = [],
 }: ActivityContentsClientProps) {
   const breadcrumbs = buildBreadcrumbs({ discipline, activity });
   const [selectedProject, setSelectedProject] = useState<DeveloperProject | null>(null);
@@ -200,6 +205,17 @@ export function ActivityContentsClient({
             </div>
           )}
         </div>
+
+        {/* Equipment Sections */}
+        {equipmentSections.length > 0 && (
+          <div className="border-t border-black/10">
+            {equipmentSections
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((section) => (
+                <EquipmentSectionDisplay key={section.id} section={section} />
+              ))}
+          </div>
+        )}
 
         {selectedProject && (
           <DevProjectModal

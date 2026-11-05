@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowLeft, Save, Plus, Trash2, X, Upload } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, X, Upload, Check } from "lucide-react";
 import type { Activity, DisciplineId } from "@/types/portfolio-hierarchy";
+import { uploadImageToStorage } from "@/lib/supabase-queries";
 
 interface AdminActivityEditorProps {
   activity: Partial<Activity>;
@@ -19,6 +20,14 @@ const DISCIPLINES: Array<{ id: DisciplineId; label: string }> = [
   { id: "photographer", label: "PHOTOGRAPHER" },
 ];
 
+const PRESET_ICONS = [
+  { label: "Logo (White)", url: "/favicon.png" },
+  { label: "rt18_formula1", url: "/rt18_formula1-icon.png" },
+  { label: "Instagram", url: "/instagram-icon.png" },
+  { label: "Note", url: "/note-icon.ico" },
+  { label: "Dark Logo", url: "/logo.png" },
+];
+
 export function AdminActivityEditor({
   activity,
   onSave,
@@ -31,9 +40,23 @@ export function AdminActivityEditor({
   );
   const [description, setDescription] = useState(activity.description || "");
   const [visualUrl, setVisualUrl] = useState(activity.visual?.image || "");
+  const [iconUrl, setIconUrl] = useState(activity.visual?.icon || "");
+  const [uploading, setUploading] = useState(false);
   const [links, setLinks] = useState(activity.links || []);
   const [displayOrder, setDisplayOrder] = useState(activity.displayOrder || 1);
   const [visible, setVisible] = useState(activity.visible ?? true);
+
+  const handleUploadIcon = async (file: File) => {
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage("portfolio-images", file);
+      setIconUrl(url);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Icon upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,13 +65,18 @@ export function AdminActivityEditor({
       return;
     }
 
+    const visual = (visualUrl || iconUrl) ? {
+      image: visualUrl || undefined,
+      icon: iconUrl || undefined,
+    } : undefined;
+
     const payload: Activity = {
       id: activity.id || slug,
       name,
       slug,
       disciplineId,
       description,
-      visual: visualUrl ? { image: visualUrl } : undefined,
+      visual,
       links,
       contentType: activity.contentType || "project",
       contents: activity.contents || [],
@@ -163,6 +191,80 @@ export function AdminActivityEditor({
             rows={3}
             className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-black/30"
           />
+        </div>
+
+        {/* Circular Node Icon Setting */}
+        <div className="rounded-2xl border border-black/8 bg-black/[.02] p-4">
+          <label className="mb-1 block text-xs font-bold text-black/70">
+            Node Circle Icon (マップ六角形の横に表示する丸アイコン)
+          </label>
+          <p className="mb-3 text-[11px] text-black/45">
+            六角形ノード（rt18_dev, rt18_formula1 等）の横に丸いアイコンバッジとして表示されます。
+          </p>
+
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-black/10 bg-white shadow-sm flex items-center justify-center">
+              {iconUrl ? (
+                <img src={iconUrl} alt="Icon Preview" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-[10px] font-bold text-black/30">None</span>
+              )}
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={iconUrl}
+                  onChange={(e) => setIconUrl(e.target.value)}
+                  placeholder="https://... または /rt18_formula1-icon.png"
+                  className="min-w-0 flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-xs outline-none"
+                />
+                <label className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-bold text-black/60 hover:border-black/30">
+                  <Upload size={13} />
+                  <span>{uploading ? "Uploading..." : "Upload"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void handleUploadIcon(file);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+
+              {/* Preset Quick Select */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] font-bold text-black/40">Presets:</span>
+                {PRESET_ICONS.map((p) => (
+                  <button
+                    key={p.url}
+                    type="button"
+                    onClick={() => setIconUrl(p.url)}
+                    className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition ${
+                      iconUrl === p.url
+                        ? "border-black bg-black text-white"
+                        : "border-black/10 bg-white text-black/60 hover:border-black/30"
+                    }`}
+                  >
+                    <span>{p.label}</span>
+                  </button>
+                ))}
+                {iconUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setIconUrl("")}
+                    className="text-[10px] font-bold text-red-500 hover:underline ml-1"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div>

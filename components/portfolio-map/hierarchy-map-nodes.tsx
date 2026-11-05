@@ -25,7 +25,18 @@ interface TreeNode {
   id: string;
   name: string;
   href: string;
+  icon?: string;
   children: TreeNode[];
+}
+
+function resolveActivityIcon(activity: Activity): string | undefined {
+  if (activity.visual?.icon) return activity.visual.icon;
+  if (activity.visual?.image) return activity.visual.image;
+  if (activity.slug === "rt18-dev") return "/favicon.png";
+  if (activity.slug === "rt18-formula1") return "/rt18_formula1-icon.png";
+  if (activity.slug === "rt18-photo") return "/instagram-icon.png";
+  if (activity.slug === "rt18-music") return "/logo.png";
+  return undefined;
 }
 
 function toTree(activity: Activity, disciplineId: DisciplineId): TreeNode {
@@ -33,10 +44,12 @@ function toTree(activity: Activity, disciplineId: DisciplineId): TreeNode {
     id: activity.id,
     name: activity.name,
     href: activityHref(disciplineId, activity.slug),
+    icon: resolveActivityIcon(activity),
     children: activity.contents.map((c) => ({
       id: c.id,
       name: c.name,
       href: contentHref(disciplineId, activity.slug, c.slug),
+      icon: c.mainVisualUrl,
       children: [],
     })),
   };
@@ -134,10 +147,19 @@ function renderNode(
   // Short labels keep their natural width and therefore do not look stretched.
   const textLength = node.name.length > 10 ? size * 1.68 : undefined;
 
+  // Circular icon positioned neatly next to the hexagon node
+  const iconR = size * 0.36;
+  // Position icon on the outward-facing side of the hexagon
+  const iconOffset = size + iconR * 0.8;
+  const iconAngle = angle + (pos.x < cx ? Math.PI : 0);
+  const iconX = pos.x - iconOffset;
+  const iconY = pos.y;
+  const clipId = `circle-icon-${node.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+
   return (
     <g
       key={node.id}
-      className="cursor-pointer"
+      className="cursor-pointer group"
       role="link"
       aria-label={node.name}
       onClick={() => {
@@ -149,13 +171,14 @@ function renderNode(
         fill={color}
         stroke={color}
         strokeWidth="0.2"
+        className="transition-all duration-300 group-hover:brightness-110"
       />
       <text
         x={pos.x}
         y={pos.y}
         textAnchor="middle"
         dominantBaseline="middle"
-        className="font-bold pointer-events-none"
+        className="font-bold pointer-events-none select-none"
         fill="#fff"
         style={{ fontSize: `${fs}px` }}
         textLength={textLength}
@@ -163,6 +186,37 @@ function renderNode(
       >
         {node.name}
       </text>
+
+      {/* Circular icon displayed right beside the activity node */}
+      {node.icon && (
+        <g className="transition-transform duration-300 group-hover:scale-110" style={{ transformOrigin: `${iconX}px ${iconY}px` }}>
+          <defs>
+            <clipPath id={clipId}>
+              <circle cx={iconX} cy={iconY} r={iconR * 0.9} />
+            </clipPath>
+          </defs>
+          {/* White badge background with outline */}
+          <circle
+            cx={iconX}
+            cy={iconY}
+            r={iconR}
+            fill="#ffffff"
+            stroke={color}
+            strokeWidth="0.3"
+            className="shadow-sm"
+          />
+          {/* Inner image clipped to perfect circle */}
+          <image
+            href={node.icon}
+            x={iconX - iconR * 0.9}
+            y={iconY - iconR * 0.9}
+            width={iconR * 1.8}
+            height={iconR * 1.8}
+            clipPath={`url(#${clipId})`}
+            preserveAspectRatio="xMidYMid slice"
+          />
+        </g>
+      )}
 
       {/* Lines from this node's outward vertex to each child */}
       {kids.map((kid, i) => (

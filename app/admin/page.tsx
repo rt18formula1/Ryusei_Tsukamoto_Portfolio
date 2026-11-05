@@ -29,8 +29,14 @@ import {
   getAdminPortfolioActivitiesAction,
   updateDevProjectAction,
   updatePortfolioActivityAction,
+  deleteEquipmentSectionAction,
+  deleteEquipmentItemAction,
+  createEquipmentSectionAction,
+  updateEquipmentSectionAction,
+  createEquipmentItemAction,
+  updateEquipmentItemAction,
 } from "@/lib/admin-actions";
-import { getDevProjects, getPortfolioActivities, uploadImageToStorage, type DbDevProject } from "@/lib/supabase-queries";
+import { getDevProjects, getPortfolioActivities, uploadImageToStorage, type DbDevProject, type DbEquipmentSection, type DbEquipmentItem } from "@/lib/supabase-queries";
 import type {
   DevProjectInformation,
   DevProjectDetailBlock,
@@ -44,6 +50,8 @@ import { AdminSidebar, type AdminTab } from "@/components/admin/admin-sidebar";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { AdminHierarchyTree } from "@/components/admin/admin-hierarchy-tree";
 import { AdminActivityEditor } from "@/components/admin/admin-activity-editor";
+import { AdminEquipmentEditor } from "@/components/admin/admin-equipment-editor";
+import { AdminEquipmentList } from "@/components/admin/admin-equipment-list";
 
 // Hierarchy data & service
 import { buildUnifiedHierarchy, computeHierarchyStats } from "@/lib/admin-hierarchy-service";
@@ -190,6 +198,10 @@ export default function AdminPage() {
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [editingActivityDisciplineId, setEditingActivityDisciplineId] = useState<string | null>(null);
 
+  // Equipment editor state
+  const [editingEquipmentSection, setEditingEquipmentSection] = useState<DbEquipmentSection | null>(null);
+  const [editingEquipmentItems, setEditingEquipmentItems] = useState<DbEquipmentItem[] | null>(null);
+
   const refresh = useCallback(async () => {
     try {
       const [nextProjects, nextActivities] = await Promise.all([
@@ -312,6 +324,50 @@ export default function AdminPage() {
     setEditingActivityDisciplineId(null);
   }, [activities, refresh]);
 
+  // Equipment handlers
+  const openEquipmentEditor = async (section?: DbEquipmentSection) => {
+    if (section) {
+      const { getAdminEquipmentSectionWithItemsAction } = await import("@/lib/admin-actions");
+      const data = await getAdminEquipmentSectionWithItemsAction(section.id);
+      setEditingEquipmentSection(section);
+      setEditingEquipmentItems(data.equipment_items);
+    } else {
+      setEditingEquipmentSection(null);
+      setEditingEquipmentItems([]);
+    }
+  };
+
+  const closeEquipmentEditor = () => {
+    setEditingEquipmentSection(null);
+    setEditingEquipmentItems(null);
+  };
+
+  const handleSaveEquipmentSection = async (section: Partial<DbEquipmentSection>) => {
+    if (editingEquipmentSection?.id) {
+      await updateEquipmentSectionAction(editingEquipmentSection.id, section);
+    } else {
+      const created = await createEquipmentSectionAction(section);
+      setEditingEquipmentSection(created);
+    }
+    closeEquipmentEditor();
+  };
+
+  const handleSaveEquipmentItem = async (item: Partial<DbEquipmentItem>) => {
+    if (item.id) {
+      await updateEquipmentItemAction(item.id, item);
+    } else {
+      await createEquipmentItemAction(item);
+    }
+  };
+
+  const handleDeleteEquipmentItem = async (id: string) => {
+    await deleteEquipmentItemAction(id);
+  };
+
+  const handleDeleteEquipmentSection = async (id: string) => {
+    await deleteEquipmentSectionAction(id);
+  };
+
   // ── Render: Login ────────────────────────────────────────────────────────
   if (!sessionOk) {
     return (
@@ -371,6 +427,7 @@ export default function AdminPage() {
             <option value="disciplines">Disciplines</option>
             <option value="activities">Activities</option>
             <option value="projects">Projects</option>
+            <option value="equipment">Equipment</option>
             <option value="other-contents">Other Contents</option>
             <option value="media">Media Library</option>
             <option value="settings">Settings</option>
@@ -459,6 +516,25 @@ export default function AdminPage() {
               onDisciplineChange={setSelectedDiscipline}
               onOpenProject={openProject}
               onRemove={remove}
+            />
+          )}
+
+          {/* ── Equipment ── */}
+          {currentTab === "equipment" && editingEquipmentSection ? (
+            <AdminEquipmentEditor
+              initialSection={editingEquipmentSection}
+              initialItems={editingEquipmentItems}
+              onSaveSection={handleSaveEquipmentSection}
+              onSaveItem={handleSaveEquipmentItem}
+              onDeleteItem={handleDeleteEquipmentItem}
+              onCancel={closeEquipmentEditor}
+            />
+          ) : (
+            <AdminEquipmentList
+              disciplineId={selectedDiscipline || undefined}
+              onEdit={openEquipmentEditor}
+              onCreate={() => openEquipmentEditor()}
+              onDelete={handleDeleteEquipmentSection}
             />
           )}
 

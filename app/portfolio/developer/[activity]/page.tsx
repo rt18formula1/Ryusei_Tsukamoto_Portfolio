@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import { ActivityContentsClient } from "@/components/discipline/activity-contents-client";
-import { getDevProjects, getPortfolioActivities, type DbDevProject } from "@/lib/supabase-queries";
+import { getDevProjects, getPortfolioActivities, getEquipmentSectionsWithItems, type DbDevProject } from "@/lib/supabase-queries";
 import { buildUnifiedHierarchy } from "@/lib/admin-hierarchy-service";
 import { mapDbToDevProject } from "@/lib/dev-project/mapper";
 import { projectContent, projectIsPublished } from "@/lib/portfolio-projects";
 import type { DeveloperProject } from "@/types/dev-project";
 import type { DbPortfolioActivity } from "@/types/portfolio-hierarchy";
+import type { EquipmentSection } from "@/types/equipment";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,13 @@ export default async function DeveloperActivityPage({ params }: PageProps) {
   const { activity: activitySlug } = await params;
   let dbProjects: DbDevProject[] = [];
   let dbActivities: DbPortfolioActivity[] = [];
+  let equipmentSections: EquipmentSection[] = [];
   try {
-    [dbProjects, dbActivities] = await Promise.all([getDevProjects(), getPortfolioActivities("developer")]);
+    [dbProjects, dbActivities, equipmentSections] = await Promise.all([
+      getDevProjects(),
+      getPortfolioActivities("developer"),
+      getEquipmentSectionsWithItems("developer"),
+    ]);
   } catch (error) {
     console.warn("Failed to fetch database projects:", error);
   }
@@ -54,6 +60,7 @@ export default async function DeveloperActivityPage({ params }: PageProps) {
       discipline={discipline}
       activity={activity}
       projectsById={projectsById}
+      equipmentSections={equipmentSections.filter((section) => section.visible)}
     />
   );
 }

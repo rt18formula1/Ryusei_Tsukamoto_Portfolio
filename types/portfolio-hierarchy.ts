@@ -26,6 +26,7 @@ export interface ActivityLink {
 
 export interface ActivityVisual {
   image?: string;
+  icon?: string;
 }
 
 /** L3: Project / Content under an Activity */

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "./supabaseAdmin";
 import { stripe } from "./stripe";
-import type { DbNews, DbPortfolio, DbAlbum, DbEvent, DbDevProject } from "./supabase-queries";
+import type { DbNews, DbPortfolio, DbAlbum, DbEvent, DbDevProject, DbEquipmentSection, DbEquipmentItem } from "./supabase-queries";
 import { verifyAdmin } from "./admin-auth";
 import { uploadImageToStorage } from "./supabase-queries";
 import type { DbPortfolioActivity } from "@/types/portfolio-hierarchy";
@@ -269,5 +269,126 @@ export async function saveLinktreeLinksAction(links: LinktreeLink[]) {
   if (rows.some((row) => !row.slug || !row.title || !row.url)) throw new Error("Slug, title, and URL are required");
   const { error: upsertError } = await supabaseAdmin.from("linktree_links").upsert(rows, { onConflict: "slug" });
   if (upsertError) throw upsertError;
+  return { success: true };
+}
+
+// ----------------------------------------------------------------------
+// Equipment Sections & Items (Admin Operations)
+// ----------------------------------------------------------------------
+
+export async function getAdminEquipmentSectionsAction(disciplineId?: string) {
+  await verifyAdmin();
+  let query = supabaseAdmin
+    .from("equipment_sections")
+    .select("*")
+    .order("display_order", { ascending: true });
+
+  if (disciplineId) {
+    query = query.eq("discipline_id", disciplineId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Admin fetch equipment sections error:", error);
+    throw error;
+  }
+  return (data || []) as DbEquipmentSection[];
+}
+
+export async function getAdminEquipmentSectionWithItemsAction(id: string) {
+  await verifyAdmin();
+  const { data, error } = await supabaseAdmin
+    .from("equipment_sections")
+    .select(`
+      *,
+      equipment_items (*)
+    `)
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error("Admin fetch equipment section with items error:", error);
+    throw error;
+  }
+  return data as DbEquipmentSection & { equipment_items: DbEquipmentItem[] };
+}
+
+export async function createEquipmentSectionAction(section: Partial<DbEquipmentSection>) {
+  await verifyAdmin();
+  const { id, created_at, updated_at, ...clean } = section as any;
+  const payload = id ? { id, ...clean } : clean;
+
+  const { data, error } = await supabaseAdmin.from("equipment_sections").insert(payload).select().single();
+  if (error) {
+    console.error("Create equipment section error:", error);
+    throw error;
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
+  return data as DbEquipmentSection;
+}
+
+export async function updateEquipmentSectionAction(id: string, section: Partial<DbEquipmentSection>) {
+  await verifyAdmin();
+  const { id: _id, created_at, updated_at, ...payload } = section as any;
+  const { data, error } = await supabaseAdmin.from("equipment_sections").update(payload).eq("id", id).select().single();
+  if (error) {
+    console.error("Update equipment section error:", error);
+    throw error;
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
+  return data as DbEquipmentSection;
+}
+
+export async function deleteEquipmentSectionAction(id: string) {
+  await verifyAdmin();
+  const { error } = await supabaseAdmin.from("equipment_sections").delete().eq("id", id);
+  if (error) {
+    console.error("Delete equipment section error:", error);
+    throw error;
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
+  return { success: true };
+}
+
+export async function createEquipmentItemAction(item: Partial<DbEquipmentItem>) {
+  await verifyAdmin();
+  const { id, created_at, updated_at, ...clean } = item as any;
+  const payload = id ? { id, ...clean } : clean;
+
+  const { data, error } = await supabaseAdmin.from("equipment_items").insert(payload).select().single();
+  if (error) {
+    console.error("Create equipment item error:", error);
+    throw error;
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
+  return data as DbEquipmentItem;
+}
+
+export async function updateEquipmentItemAction(id: string, item: Partial<DbEquipmentItem>) {
+  await verifyAdmin();
+  const { id: _id, created_at, updated_at, ...payload } = item as any;
+  const { data, error } = await supabaseAdmin.from("equipment_items").update(payload).eq("id", id).select().single();
+  if (error) {
+    console.error("Update equipment item error:", error);
+    throw error;
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
+  return data as DbEquipmentItem;
+}
+
+export async function deleteEquipmentItemAction(id: string) {
+  await verifyAdmin();
+  const { error } = await supabaseAdmin.from("equipment_items").delete().eq("id", id);
+  if (error) {
+    console.error("Delete equipment item error:", error);
+    throw error;
+  }
+  revalidatePath("/", "layout");
+  revalidatePath("/portfolio");
   return { success: true };
 }

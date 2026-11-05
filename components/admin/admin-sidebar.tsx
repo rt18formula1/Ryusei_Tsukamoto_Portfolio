@@ -13,6 +13,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Wrench,
 } from "lucide-react";
 
 export type AdminTab =
@@ -21,6 +22,7 @@ export type AdminTab =
   | "disciplines"
   | "activities"
   | "projects"
+  | "equipment"
   | "other-contents"
   | "media"
   | "settings";
@@ -91,6 +93,11 @@ export function AdminSidebar({
           label: "Projects",
           icon: <FolderGit2 size={16} />,
           badge: projectCount,
+        },
+        {
+          id: "equipment",
+          label: "Equipment",
+          icon: <Wrench size={16} />,
         },
         {
           id: "other-contents",

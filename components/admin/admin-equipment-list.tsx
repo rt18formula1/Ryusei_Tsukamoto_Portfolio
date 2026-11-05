@@ -76,38 +76,32 @@ export function AdminEquipmentList({
   }, {} as Record<string, DbEquipmentSection[]>);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-orange-600">
-            <Wrench size={24} />
-          </div>
-          <div>
-            <h2 className="text-3xl font-black tracking-tight text-black">Equipment</h2>
-            <p className="mt-1 text-sm text-black/60">
-              Manage equipment/gear sections across all disciplines
-            </p>
-          </div>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[.28em] text-black/35">Assets & System</p>
+          <h1 className="mt-1.5 text-3xl font-bold tracking-tight">Equipment</h1>
+          <p className="mt-1 text-xs text-black/50">Manage equipment/gear sections across all disciplines</p>
         </div>
         <button
           onClick={onCreate}
-          className="flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-3 text-xs font-bold text-white hover:bg-orange-700 transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-orange-700"
         >
-          <Plus size={16} />
+          <Plus size={15} />
           <span>New Section</span>
         </button>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30" size={18} />
+        <Search className="absolute left-3.5 top-3.5 text-black/35" size={14} />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search equipment sections..."
-          className="w-full rounded-2xl border border-black/10 bg-white pl-12 pr-4 py-4 text-sm text-black outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
+          className="w-full rounded-xl border border-black/10 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-100"
         />
       </div>
 

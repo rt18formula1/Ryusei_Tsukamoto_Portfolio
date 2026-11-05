@@ -24,6 +24,13 @@ interface ActivityContentsClientProps {
   equipmentSections?: EquipmentSection[];
 }
 
+const ACTIVITY_ICONS: Record<string, string> = {
+  "rt18-dev": "/github-icon.webp",
+  "rt18_music": "/instagram-icon.png",
+  "rt18-photo": "/instagram-icon.png",
+  "fine-day-plus": "/instagram-icon.png",
+};
+
 export function ActivityContentsClient({
   discipline,
   activity,
@@ -34,6 +41,7 @@ export function ActivityContentsClient({
   const [selectedProject, setSelectedProject] = useState<DeveloperProject | null>(null);
 
   const isPhotoActivity = discipline.id === "photographer" || activity.slug === "rt18-photo";
+  const activityIcon = ACTIVITY_ICONS[activity.slug];
 
   return (
     <div className="min-h-screen bg-white flex flex-col justify-between">
@@ -52,14 +60,21 @@ export function ActivityContentsClient({
 
         <div className="border-b border-black/10">
           <div className="container mx-auto px-4 sm:px-6 py-8 md:py-12 max-w-6xl">
-            <div className="flex items-center gap-2 mb-3">
-              <span
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: discipline.color }}
-              />
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400">
-                {discipline.name}
-              </p>
+            <div className="flex items-center gap-3 mb-4">
+              {activityIcon && (
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm border border-black/10">
+                  <img src={activityIcon} alt="" className="h-6 w-6 object-contain" />
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: discipline.color }}
+                />
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400">
+                  {discipline.name}
+                </p>
+              </div>
             </div>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter">
               {activity.name}

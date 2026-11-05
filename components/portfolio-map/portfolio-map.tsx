@@ -47,7 +47,7 @@ function ServiceMarquee() {
       <div className="flex w-max animate-marquee items-center gap-3">
         {logos.map((service, index) => (
           <div key={`${service.name}-${index}`} className="flex h-10 items-center gap-2 rounded-full border border-black/10 bg-white px-4 text-[10px] font-bold uppercase tracking-[.14em] text-black/55 shadow-sm sm:h-12 sm:gap-3 sm:px-5 sm:text-xs sm:tracking-[.16em]">
-            {service.image ? <img src={service.image} alt="" className="h-5 w-5 object-contain" /> : <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-[9px] font-black text-white">{service.name.slice(0, 1)}</span>}
+            {service.image ? <img src={service.image} alt="" className="h-5 w-5 object-contain" /> : null}
             <span>{service.name}</span>
           </div>
         ))}

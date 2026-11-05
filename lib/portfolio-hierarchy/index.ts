@@ -6,11 +6,33 @@ import type {
   HierarchyContent,
 } from "@/types/portfolio-hierarchy";
 import { PORTFOLIO_HIERARCHY } from "./data";
+import { getDisciplines as getDbDisciplines } from "@/lib/supabase-queries";
 
 export { PORTFOLIO_HIERARCHY } from "./data";
 
+// Synchronous version - returns static data (fallback)
 export function getDisciplines(): Discipline[] {
   return PORTFOLIO_HIERARCHY.disciplines;
+}
+
+// Async version - fetches from DB for admin/dynamic use
+export async function getDisciplinesFromDB(): Promise<Discipline[]> {
+  try {
+    const dbDisciplines = await getDbDisciplines();
+    // Map DbDiscipline to Discipline type
+    return dbDisciplines.map((d) => ({
+      id: d.id as DisciplineId,
+      name: d.name,
+      slug: d.slug,
+      description: d.description || undefined,
+      color: d.color,
+      activities: [], // Activities are stored separately in portfolio_activities table
+    }));
+  } catch (error) {
+    console.error("Failed to fetch disciplines from DB, falling back to static:", error);
+    // Fallback to static definition if DB fetch fails
+    return PORTFOLIO_HIERARCHY.disciplines;
+  }
 }
 
 export function getDiscipline(id: DisciplineId): Discipline | undefined {

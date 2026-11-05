@@ -77,7 +77,7 @@ export interface Discipline {
   id: DisciplineId;
   name: string;
   slug: string;
-  description: string;
+  description?: string;
   color: string;
   activities: Activity[];
   displayOrder?: number;

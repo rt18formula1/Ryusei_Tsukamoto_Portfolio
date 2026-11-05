@@ -40,7 +40,7 @@ export function AdminHierarchyTree({
 }: AdminHierarchyTreeProps) {
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({
     developer: true,
-    "rt18-dev": true,
+    "rt18.dev": true,
     illustrator: true,
     "rt18-formula1": true,
     musician: true,

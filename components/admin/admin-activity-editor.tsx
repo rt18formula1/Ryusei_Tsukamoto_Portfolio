@@ -156,7 +156,7 @@ export function AdminActivityEditor({
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              placeholder="e.g. rt18-dev"
+              placeholder="e.g. rt18.dev"
               required
               className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-black/30"
             />

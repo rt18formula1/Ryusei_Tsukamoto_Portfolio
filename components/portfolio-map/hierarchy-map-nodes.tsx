@@ -32,7 +32,7 @@ interface TreeNode {
 function resolveActivityIcon(activity: Activity): string | undefined {
   if (activity.visual?.icon) return activity.visual.icon;
   if (activity.visual?.image) return activity.visual.image;
-  if (activity.slug === "rt18-dev") return "/favicon.png";
+  if (activity.slug === "rt18.dev") return "/favicon.png";
   if (activity.slug === "rt18-formula1") return "/rt18_formula1-icon.png";
   if (activity.slug === "rt18-photo") return "/instagram-icon.png";
   if (activity.slug === "rt18-music") return "/logo.png";

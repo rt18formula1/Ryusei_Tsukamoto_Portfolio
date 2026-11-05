@@ -25,7 +25,7 @@ export async function generateMetadata({
   };
 }
 
-/** Legacy permalink — kept for compatibility; prefer /portfolio/developer/rt18-dev/[slug] */
+/** Legacy permalink — kept for compatibility; prefer /portfolio/developer/rt18.dev/[slug] */
 export default async function DevProjectDetailPage({
   params,
 }: {

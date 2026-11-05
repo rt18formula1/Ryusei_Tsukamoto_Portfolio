@@ -25,7 +25,7 @@ interface ActivityContentsClientProps {
 }
 
 const ACTIVITY_ICONS: Record<string, string> = {
-  "rt18-dev": "/github-icon.webp",
+  "rt18.dev": "/github-icon.webp",
   "rt18_music": "/instagram-icon.png",
   "rt18-photo": "/instagram-icon.png",
   "fine-day-plus": "/instagram-icon.png",

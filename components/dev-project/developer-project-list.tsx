@@ -13,7 +13,7 @@ interface DeveloperProjectListProps {
 export function DeveloperProjectList({ projects }: DeveloperProjectListProps) {
   const [selectedProject, setSelectedProject] = useState<DeveloperProject | null>(null);
   const discipline = getDiscipline("developer");
-  const activity = getActivity("developer", "rt18-dev");
+  const activity = getActivity("developer", "rt18.dev");
   const breadcrumbs =
     discipline && activity
       ? buildBreadcrumbs({ discipline, activity })

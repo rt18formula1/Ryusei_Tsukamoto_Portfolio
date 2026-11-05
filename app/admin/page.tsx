@@ -427,8 +427,8 @@ export default function AdminPage() {
             <option value="disciplines">Disciplines</option>
             <option value="activities">Activities</option>
             <option value="projects">Projects</option>
-            <option value="equipment">Equipment</option>
             <option value="other-contents">Other Contents</option>
+            <option value="equipment">Equipment</option>
             <option value="media">Media Library</option>
             <option value="settings">Settings</option>
           </select>
@@ -531,7 +531,7 @@ export default function AdminPage() {
             />
           ) : (
             <AdminEquipmentList
-              disciplineId={selectedDiscipline || undefined}
+              disciplineId={undefined}
               onEdit={openEquipmentEditor}
               onCreate={() => openEquipmentEditor()}
               onDelete={handleDeleteEquipmentSection}

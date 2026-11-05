@@ -14,6 +14,7 @@ import {
   Eye,
   ArrowUp,
   ArrowDown,
+  Wrench,
 } from "lucide-react";
 import type { DbEquipmentSection, DbEquipmentItem } from "@/lib/supabase-queries";
 import type { EquipmentSection, EquipmentItem } from "@/types/equipment";
@@ -30,6 +31,15 @@ interface AdminEquipmentEditorProps {
 }
 
 const newId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+const DISCIPLINE_COLORS: Record<string, string> = {
+  developer: "bg-blue-100 text-blue-700 border-blue-200",
+  musician: "bg-purple-100 text-purple-700 border-purple-200",
+  illustrator: "bg-pink-100 text-pink-700 border-pink-200",
+  photographer: "bg-amber-100 text-amber-700 border-amber-200",
+  blogger: "bg-green-100 text-green-700 border-green-200",
+  investor: "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
 
 export function AdminEquipmentEditor({
   initialSection,
@@ -164,13 +174,13 @@ export function AdminEquipmentEditor({
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-20">
       {/* Top Action Bar */}
-      <div className="sticky top-0 z-20 flex min-h-16 items-center justify-between border-b border-black/8 bg-[#fbfbfa]/95 px-4 py-3 backdrop-blur sm:px-6">
+      <div className="sticky top-0 z-20 flex min-h-16 items-center justify-between border-b border-black/8 bg-white/95 px-4 py-3 backdrop-blur sm:px-6">
         <button
           onClick={onCancel}
           className="flex items-center gap-2 text-xs font-bold text-black/50 hover:text-black"
         >
           <ArrowLeft size={16} />
-          <span>一覧に戻る</span>
+          <span>Back to Equipment List</span>
         </button>
 
         <div className="flex items-center gap-2.5">
@@ -188,7 +198,7 @@ export function AdminEquipmentEditor({
           <button
             onClick={handleSaveSection}
             disabled={saving}
-            className="flex items-center gap-1.5 rounded-xl bg-black px-4 py-2 text-xs font-bold text-white hover:bg-black/80 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl bg-orange-600 px-4 py-2 text-xs font-bold text-white hover:bg-orange-700 disabled:opacity-50 transition-colors"
           >
             {saving ? <LoaderCircle size={13} className="animate-spin" /> : <Save size={13} />}
             <span>Save Section</span>
@@ -202,13 +212,18 @@ export function AdminEquipmentEditor({
         <div className="space-y-6">
           {/* Section Basic Info */}
           <div className="rounded-3xl border border-black/8 bg-white p-6 sm:p-8 shadow-sm">
-            <div>
-              <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 uppercase tracking-wider">
-                Equipment Section
-              </span>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-black">
-                {initialSection?.id ? `Edit ${sectionName}` : "Create New Equipment Section"}
-              </h2>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                <Wrench size={20} />
+              </div>
+              <div>
+                <span className="rounded-md bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-700 uppercase tracking-wider">
+                  Equipment Section
+                </span>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-black">
+                  {initialSection?.id ? `Edit ${sectionName}` : "Create New Equipment Section"}
+                </h2>
+              </div>
             </div>
 
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -221,7 +236,7 @@ export function AdminEquipmentEditor({
                   value={sectionName}
                   onChange={(e) => setSectionName(e.target.value)}
                   placeholder="e.g. Development Setup"
-                  className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-black/30 focus:ring-2 focus:ring-black/5"
+                  className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
                 />
               </div>
 
@@ -232,7 +247,7 @@ export function AdminEquipmentEditor({
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="e.g. development-setup"
-                  className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-black/30 focus:ring-2 focus:ring-black/5"
+                  className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
                 />
               </div>
             </div>
@@ -247,8 +262,8 @@ export function AdminEquipmentEditor({
                     onClick={() => setDisciplineId(discipline as DisciplineId)}
                     className={`rounded-full border px-3 py-1.5 text-xs font-bold capitalize transition ${
                       disciplineId === discipline
-                        ? "border-black bg-black text-white"
-                        : "border-black/10 bg-white text-black/60 hover:border-black/30"
+                        ? "border-orange-600 bg-orange-600 text-white"
+                        : "border-black/10 bg-white text-black/60 hover:border-orange-300"
                     }`}
                   >
                     {discipline}
@@ -264,7 +279,7 @@ export function AdminEquipmentEditor({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe this equipment section..."
                 rows={3}
-                className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-black/30 focus:ring-2 focus:ring-black/5 resize-none"
+                className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 resize-none"
               />
             </div>
 
@@ -276,7 +291,7 @@ export function AdminEquipmentEditor({
                   value={displayOrder}
                   onChange={(e) => setDisplayOrder(Number(e.target.value))}
                   min={0}
-                  className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-black/30 focus:ring-2 focus:ring-black/5"
+                  className="w-full rounded-xl border border-black/10 px-3.5 py-2.5 text-xs text-black outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
                 />
               </div>
             </div>
@@ -287,7 +302,7 @@ export function AdminEquipmentEditor({
                 id="section-visible"
                 checked={visible}
                 onChange={(e) => setVisible(e.target.checked)}
-                className="h-4 w-4 rounded border-black/20 focus:ring-2 focus:ring-black/5"
+                className="h-4 w-4 rounded border-black/20 focus:ring-2 focus:ring-orange-100"
               />
               <label htmlFor="section-visible" className="text-xs font-bold text-black/60">
                 Visible in Portfolio
@@ -297,12 +312,12 @@ export function AdminEquipmentEditor({
 
           {/* Equipment Items */}
           <div className="rounded-3xl border border-black/8 bg-white p-6 sm:p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-black">Equipment Items</h3>
               <button
                 type="button"
                 onClick={addItem}
-                className="flex items-center gap-1.5 rounded-xl border border-black/10 px-3 py-1.5 text-xs font-bold text-black hover:bg-black/5"
+                className="flex items-center gap-1.5 rounded-xl bg-orange-50 border border-orange-200 px-3 py-1.5 text-xs font-bold text-orange-700 hover:bg-orange-100 transition-colors"
               >
                 <Plus size={13} /> Add Item
               </button>
@@ -312,32 +327,32 @@ export function AdminEquipmentEditor({
               {items.map((item, index) => (
                 <div
                   key={item.id}
-                  className="rounded-2xl border border-black/8 bg-white p-4 shadow-sm space-y-3"
+                  className="rounded-2xl border border-black/8 bg-white p-5 shadow-sm space-y-4"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black/50">
+                    <span className={`rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${DISCIPLINE_COLORS[disciplineId] || "bg-gray-100 text-gray-700 border-gray-200"}`}>
                       Item {index + 1}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => moveItem(index, "up")}
                         disabled={index === 0}
-                        className="rounded p-1 text-black/30 hover:bg-black/5 disabled:opacity-20"
+                        className="rounded p-1.5 text-black/30 hover:bg-black/5 disabled:opacity-20"
                       >
-                        <ArrowUp size={13} />
+                        <ArrowUp size={14} />
                       </button>
                       <button
                         onClick={() => moveItem(index, "down")}
                         disabled={index === items.length - 1}
-                        className="rounded p-1 text-black/30 hover:bg-black/5 disabled:opacity-20"
+                        className="rounded p-1.5 text-black/30 hover:bg-black/5 disabled:opacity-20"
                       >
-                        <ArrowDown size={13} />
+                        <ArrowDown size={14} />
                       </button>
                       <button
                         onClick={() => handleDeleteItem(item.id)}
-                        className="rounded p-1 text-black/30 hover:bg-red-50 hover:text-red-600"
+                        className="rounded p-1.5 text-black/30 hover:bg-red-50 hover:text-red-600"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -353,7 +368,7 @@ export function AdminEquipmentEditor({
                         setItems(next);
                       }}
                       placeholder="e.g. MacBook Pro M3"
-                      className="w-full rounded-lg border border-black/10 px-3 py-2 text-xs outline-none"
+                      className="w-full rounded-xl border border-black/10 px-4 py-2.5 text-sm text-black outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
                     />
                   </div>
 
@@ -368,19 +383,19 @@ export function AdminEquipmentEditor({
                       }}
                       placeholder="Brief description..."
                       rows={2}
-                      className="w-full rounded-lg border border-black/10 px-3 py-2 text-xs outline-none resize-none"
+                      className="w-full rounded-xl border border-black/10 px-4 py-2.5 text-sm text-black outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 resize-none"
                     />
                   </div>
 
                   <div>
                     <label className="mb-1.5 block text-xs font-bold text-black/60">Image</label>
                     {item.imageUrl ? (
-                      <div className="space-y-2">
-                        <div className="aspect-video rounded-lg overflow-hidden bg-black/5">
+                      <div className="space-y-3">
+                        <div className="aspect-video rounded-xl overflow-hidden bg-black/5 border border-black/10">
                           <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
                         </div>
-                        <div className="flex items-center gap-2">
-                          <label className="cursor-pointer text-xs font-bold text-black hover:underline">
+                        <div className="flex items-center gap-3">
+                          <label className="cursor-pointer text-xs font-bold text-orange-600 hover:text-orange-700">
                             Change Image
                             <input
                               type="file"
@@ -399,15 +414,15 @@ export function AdminEquipmentEditor({
                               next[index].imageUrl = "";
                               setItems(next);
                             }}
-                            className="text-xs text-red-500 hover:underline"
+                            className="text-xs text-red-500 hover:text-red-600"
                           >
                             Remove
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <label className="flex aspect-video cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-black/10 bg-black/[.02] text-xs font-bold text-black/40 hover:border-black hover:bg-black/[.04]">
-                        <Upload size={20} />
+                      <label className="flex aspect-video cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-black/10 bg-orange-50/50 text-xs font-bold text-black/40 hover:border-orange-300 hover:bg-orange-50 transition-colors">
+                        <Upload size={24} className="text-orange-400" />
                         <span>{uploading ? "Uploading..." : "Click to Upload Image"}</span>
                         <input
                           type="file"
@@ -423,13 +438,13 @@ export function AdminEquipmentEditor({
                     )}
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-end pt-2">
                     <button
                       onClick={() => handleSaveItem(item)}
                       disabled={saving}
-                      className="flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-bold text-white hover:bg-black/80 disabled:opacity-50"
+                      className="flex items-center gap-1.5 rounded-xl bg-orange-600 px-4 py-2 text-xs font-bold text-white hover:bg-orange-700 disabled:opacity-50 transition-colors"
                     >
-                      <Save size={12} />
+                      <Save size={13} />
                       <span>Save Item</span>
                     </button>
                   </div>
@@ -442,7 +457,10 @@ export function AdminEquipmentEditor({
         {/* Right Column: Info */}
         <div className="space-y-6">
           <div className="rounded-3xl border border-black/8 bg-white p-5 shadow-sm">
-            <h4 className="text-xs font-black uppercase tracking-wider text-black mb-3">Tips</h4>
+            <div className="flex items-center gap-2 mb-3">
+              <Wrench size={16} className="text-orange-600" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-black">Tips</h4>
+            </div>
             <ul className="space-y-2 text-xs text-black/60">
               <li>• Images are optional for equipment items</li>
               <li>• Use display order to control section visibility</li>

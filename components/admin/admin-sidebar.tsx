@@ -22,8 +22,8 @@ export type AdminTab =
   | "disciplines"
   | "activities"
   | "projects"
-  | "equipment"
   | "other-contents"
+  | "equipment"
   | "media"
   | "settings";
 
@@ -95,11 +95,6 @@ export function AdminSidebar({
           badge: projectCount,
         },
         {
-          id: "equipment",
-          label: "Equipment",
-          icon: <Wrench size={16} />,
-        },
-        {
           id: "other-contents",
           label: "Other Contents",
           icon: <FileText size={16} />,
@@ -109,6 +104,11 @@ export function AdminSidebar({
     {
       group: "Assets & System",
       items: [
+        {
+          id: "equipment",
+          label: "Equipment",
+          icon: <Wrench size={16} />,
+        },
         {
           id: "media",
           label: "Media Library",

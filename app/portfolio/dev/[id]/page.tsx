@@ -3,8 +3,27 @@ import { DevProjectDetailClient } from "@/components/dev-project/dev-project-det
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { mapDbToDevProject } from "@/lib/dev-project/mapper";
+import { projectIsPublished } from "@/lib/portfolio-projects";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Drafts are visible only to a signed-in admin (Admin preview).
+ * Everyone else gets a 404, so unpublished work never leaks via this
+ * legacy permalink. Published projects stay public.
+ */
+async function getViewableProject(id: string) {
+  const project = await getDevProjectById(id);
+  if (!project) return null;
+  if (projectIsPublished(project)) return project;
+  try {
+    await verifyAdmin();
+    return project;
+  } catch {
+    return null;
+  }
+}
 
 export async function generateMetadata({
   params,
@@ -12,7 +31,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const project = await getDevProjectById(id);
+  const project = await getViewableProject(id);
   if (!project) return {};
   return {
     title: `${project.project_name} | Developer Project | rt18formula1 Portfolio`,
@@ -32,7 +51,7 @@ export default async function DevProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const dbProject = await getDevProjectById(id);
+  const dbProject = await getViewableProject(id);
   if (!dbProject) notFound();
   const project = mapDbToDevProject(dbProject);
   return <DevProjectDetailClient project={project} />;

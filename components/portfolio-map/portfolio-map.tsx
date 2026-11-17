@@ -164,8 +164,9 @@ export function PortfolioMap() {
   // Animation trigger on mount
   useEffect(() => {
     setIsMounted(true);
-    // Text fade-in after pentagons start expanding
-    const textTimer = setTimeout(() => setTextVisible(true), 800);
+    // Text fade-in only after the shapes have settled into their final
+    // positions (shape transition is 1200ms + 100ms delay = ~1300ms).
+    const textTimer = setTimeout(() => setTextVisible(true), 1400);
     return () => clearTimeout(textTimer);
   }, []);
 

@@ -945,7 +945,7 @@ function NotionWorkspace({ draft, setDraft, state, notice, onBack, onSave, onPub
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-8 sm:py-12 lg:grid-cols-[minmax(0,760px)_280px] lg:gap-14">
         <main>
           <div className="mb-10">
-            <p className="mb-4 text-[10px] font-bold uppercase tracking-[.28em] text-black/30">Project · rt18_dev</p>
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[.28em] text-black/30">Project · {draft.discipline_id || "developer"}</p>
             <input value={draft.project_name || ""} onChange={(e) => update({ project_name: e.target.value })} placeholder="Untitled" autoFocus={!draft.id} className="w-full bg-transparent text-4xl font-semibold tracking-[-.06em] outline-none placeholder:text-black/20 sm:text-6xl" />
             <input value={draft.short_description || ""} onChange={(e) => update({ short_description: e.target.value })} placeholder="Add a short description…" className="mt-5 w-full bg-transparent text-base leading-7 text-black/45 outline-none placeholder:text-black/25 sm:text-lg" />
           </div>

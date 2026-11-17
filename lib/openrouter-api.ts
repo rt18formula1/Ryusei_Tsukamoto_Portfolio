@@ -21,7 +21,7 @@ async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
         "HTTP-Referer":
-          process.env.NEXT_PUBLIC_SITE_URL || "https://rt18-formula1-official-site.vercel.app",
+          process.env.NEXT_PUBLIC_SITE_URL || "https://ryusei-tsukamoto-portfolio.vercel.app",
         "X-Title": "rt18_formula1 F1 DB",
       },
       body: JSON.stringify({

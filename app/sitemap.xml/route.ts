@@ -9,7 +9,7 @@ interface SitemapPage {
 }
 
 export async function GET() {
-  const baseUrl = 'https://rt18-formula1-official-site.vercel.app';
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ryusei-tsukamoto-portfolio.rb18vcarb.workers.dev/').replace(/\/$/, '');
   
   try {
     // データベースから全コンテンツを取得

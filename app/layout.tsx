@@ -9,7 +9,7 @@ import { CookieBanner } from "@/components/cookie-banner";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://ryusei-tsukamoto-portfolio.vercel.app"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://ryusei-tsukamoto-portfolio.rb18vcarb.workers.dev/"
   ),
   other: {
     'google-site-verification': 'G-7V8FYG7SDB',
